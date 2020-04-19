@@ -1,0 +1,53 @@
+Modelled in Blender, textured in Gimp.
+
+
+Questo modello e' rilasciato sotto Creative Commons Licence, Attribution 2.0
+per maggiori informazioni su questa licenza:
+http://creativecommons.org
+http://creativecommons.org/licenses/by/2.0/it/
+Puoi utilizzarlo liberamente, modificarlo e migliorarlo.
+
+************************************************
+
+This model is released under Creative Commons Licence, Attribution 2.0
+for informations see:
+http://creativecommons.org
+http://creativecommons.org/licenses/by/2.0/
+feel free to use and improve it.
+
+
+*********************************************************************
+
+
+By Tiziana aka TiZeta.
+http://www.unbruco.it/offcircle/index.html
+unbrucom1@unbruco.it
+tialo@tiscali.it
+
+##################
+
+Note
+
+Questo e' stato il mio secondo modello completo.
+Per questo motivo potrebbe contenere errori e imprecisioni.
+ 
+Al momento, questi sono i difetti che ho notato:
+	
+	- Non e' nell'origine degli assi.
+	- lo scheletro ha il centro spostato di lato
+	- Nel texture sheet c'e' spazio sprecato.
+	
+
+	
+###################
+
+Notes
+
+This was my first complete model, so it probably contains something
+wrong.
+
+At the moment, this is what i noticed:
+	
+	- She's not in the origin of axis
+	- Armature's center is not in armature's center.
+	- Texture sheet contains wasted space.

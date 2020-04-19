@@ -1,0 +1,7 @@
+.idea/
+.vscode/
+*.exe
+Build/
+.vs/
+Debug/
+obj/

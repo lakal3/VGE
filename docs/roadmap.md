@@ -3,12 +3,12 @@
 Planned VGE features (not in any priority order)
 
 ### Simpler, near term goals
-- [ ] Support multiple probes support in scene.
+- [ ] Support multiple probes in scene.
 - [ ] Forward+ render pass that supports post processing effect like depth fog. 
    - Some shaders like fire should also use postprocessing so that they could sample already rendered scene
    - Depth effect like fog  
 - [ ] Shadows for directional lights
-- [ ] Spot lights
+- [ ] Spot lights (with shadows)
 - [ ] Basic dialogs like yes/no
 - [ ] Water shader (Needs Forward+ render pass)
 - [ ] Asset packing
@@ -18,9 +18,12 @@ Planned VGE features (not in any priority order)
 
 
 ### Complex, longer term goals
-- [ ] Example of large open world scene (most like a separate project)
-- [ ] Real time ray tracing using NVidia's Vulkan extensions
-- [ ] Business UI support including standard dialogs (file open, color picker)
+- [ ] Example of large open world scene (most likely a separate project)
+- [ ] Real time ray tracing using NVidia's Vulkan extensions (Standard extensions in Vulkan 1.2)
+- [ ] Less 'game' UI support including:
+  - Standard dialogs (file open, color picker)
+  - Clipboard handling
+  - Better text editing
 - [ ] Integration with some physics engine (most likely a separate project)
 
-And of cause never ending project to improve documentation, API references and examples.
+And of cause never ending project to improve documentation, API reference and examples.

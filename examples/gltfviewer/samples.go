@@ -203,7 +203,7 @@ func checkAnim(modelRool *vscene.Node) {
 func newPlacedLight(s *Sample, position mgl32.Vec3) *vscene.Node {
 	dl := float32(3)
 	l := shadow.NewPointLight(vscene.PointLight{Intensity: mgl32.Vec3{1, 0.8, 0.4}, Attenuation: mgl32.Vec3{0, 0, 1 / (dl * dl)}}, 512)
-	l.MaxDistance = dl * 4
+	l.MaxDistance = dl * 2
 	f := vscene.NewNode(vscene.NewMultiControl(&vscene.TransformControl{Transform: mgl32.Translate3D(0, -0.15, 0)},
 		noise.NewFire(0.4, 0.8)))
 	return vscene.NewNode(

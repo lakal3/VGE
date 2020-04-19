@@ -43,7 +43,6 @@ func NewRenderWindowAt(title string, wp vk.WindowPos, renderer vscene.Renderer) 
 	rw := &RenderWindow{renderer: renderer}
 	rw.owner = vk.NewOwner(true)
 	rw.owner.AddChild(renderer)
-	RegisterHandler(PRIWindow, rw.eventHandler)
 	rw.win = appStatic.desktop.NewWindow(Ctx, title, wp)
 	rw.WindowSize = image.Point{X: int(wp.Width), Y: int(wp.Height)}
 	rw.owner.AddChild(rw.win)
@@ -56,6 +55,7 @@ func NewRenderWindowAt(title string, wp vk.WindowPos, renderer vscene.Renderer) 
 	rw.Model = rw.Scene.AddNode(nil, nil)
 	rw.Ui = rw.Scene.AddNode(nil, nil)
 	rw.Camera = vscene.NewPerspectiveCamera(1000)
+	RegisterHandler(PRIWindow, rw.eventHandler)
 	go rw.renderLoop()
 	return rw
 }

@@ -2,7 +2,6 @@
 
 VGE is graphics engine for [Vulkan](https://www.khronos.org/vulkan/). It is mostly written in Go language.
 
-Some lower level functions are implemented in C++. See [VGE architecture](docs/architecture.md) for more description of why and how VGE is implemented but you can use prebuilt C++ VGELib.dll (.so on Linux). Windows implementation don't use CGO at all!
 
 ## VGE code example (logo.go)
 
@@ -117,33 +116,42 @@ Running logo.go with `go run logo.go` should produce something like
 
 ## Sample videos
 
-Few sample videos you can use to get preview before installing VGE
-- [glTFViewer example](https://youtu.be/MAgn8qudW-w)
+Few sample videos recorded from VGE example projects:
+- [glTFViewer](https://youtu.be/MAgn8qudW-w) browser for glTF 2.0 samples.
+- [Robomaze](https://youtu.be/RQ3mJl3lQ0Y) performance test animation.
+- [Animation](https://youtu.be/FTCOo1gcA8I) BVH animation support (Experimental)
 
 You can also install VGE and run same examples your self!
 
 ## Installation
 
-First: you need Go compiler. VGE has been mostly tested with Go1.13 and Go1.14. Older version may work but I recommend using latest released.
+First: you need Go compiler. VGE has been mostly tested with Go1.13 and Go1.14. 
+Older version may work but I recommend using latest released version.
 
 Install VGE like any go package:
 `go get github.com/lakal3/VGE`
 
 Note **Only 64bit (amd64) Windows (only tested on Windows 10) or Linux (experimental) is supported**. You must also have **Uptodate** Vulkan drivers.
 
-### Additional steps windows
+### Additional steps on Windows
 
-Copy prebuilt/win_amd64/VGELib.dll to some directory in your search PATH or update searchpath to include prebuilt directory. If you wan't to manually build VGELib, see [Building VGELib](docs/build_vgelib.md)
+Some lower level functions are implemented in C++. See [VGE architecture](docs/architecture.md) for more description of why and how VGE is implemented.
+ 
+On Windows, you don't have to install C/C++ compiler. Instead you can use prebuilt C++ VGELib.dll. Windows implementation don't use CGO at all! 
+ 
+Copy prebuilt/win_amd64/VGELib.dll to some directory in your search PATH or update searchpath to include prebuilt directory.
+Alternatively you can [build](docs/build_vgelib.md) VGELib.dll yourself.
 
-
-If you plan to do any more thing on Vulkan or VGE I also recommend to install [Vulkan SDK](https://www.lunarg.com/vulkan-sdk/). 
+If you plan to do any more thing on Vulkan or VGE, I also recommend to installing [Vulkan SDK](https://www.lunarg.com/vulkan-sdk/). 
 Vulkan SDK contains SPIR-V compiler that you will need when developing you own shaders. 
 Vulkan SDK also contains Vulkan validation layers that are really helpful in pinpointing possible errors in you API calls. 
-VGE supports simple way of enabling validation as long as Vulkan SDK is installed.
+VGE supports a simple way of enabling Vulkan validation layers.
 
+### [Installation on Linux](docs/linux_install.md) (Experimental)
+ 
 ## Learn to use VGE
 
-VGE engine is really tiny compared to most of graphics framework that support Vulkan. 
+VGE engine is really tiny compared to most of graphics frameworks that support Vulkan. 
 However there is still quite a lot of code and browsing API help document isn't that fruitful. 
 
 Maybe best approach to learn VGE is browse through examples included in project. 
@@ -152,7 +160,8 @@ These examples try to pinpoint most important aspects of VGE and it's features.
 - Basic - Most basic samples that you should be able to `go run` if everything is installed ok.
 - Cube - Simple cube using lower level API to draw cube on screen
 - Model - Additional samples on how to load models and manipulate scene.
-- WebView - Render images background and serve them to web client (*Interesting demo because it will show that Vulkan can do multithreaded rendering and you can use Vulkan to render images background*)
+- WebView - Render images background and serve them to web client 
+(*Demo will show that Vulkan can do multithreaded rendering and you can easilly use Vulkan to render images background*)
 - glTFViewer - Tool to browse some of glTF sample images.  
 - Robomaze - Performance test tool / example that support some advanced features like decals.
 - Animate (Experimental) - Support reading animations from BVH (Biovision Hierarchy) files and apply them on rigged models.
@@ -173,8 +182,7 @@ This is short list of features (existing). [Roadmap](docs/roadmap.md) have a lis
 - Basic materials: Unlit, Phong and PBR [Model](docs/vmodel.md)
 - Lights: Point and directional, including shadows for point lights 
 - Scene building and animation [Scene](docs/vscene.md)
-- Forward renderer 
-- Glyph rendering including support for TTF fonts using Signed depth fields. Mainly used to support [VGE UI](docs/vui.md).
+- Glyph rendering including support for TTF fonts. Mainly used to support [VGE UI](docs/vui.md).
 - Background environment using (HDR) equirectangular images [Scene](docs/vscene.md)
 - Environmental probe to support reflections of PBR materials. Probe will also generate spherical harmonics to approximate ambient lightning.  [Scene](docs/vscene.md)
 - Easily extendable game UI support [VGE UI](docs/vui.md).
@@ -183,8 +191,8 @@ This is short list of features (existing). [Roadmap](docs/roadmap.md) have a lis
 - Window, mouse, keyboard etc management  (Uses GLFW C library for multi platform support)
 - High level, easier to use setup for basic applications [VGE App](docs/vapp.md)
 - Multi threaded [Architecture](docs/architecture.md)
-- Rendering without UI (for example to quickly render image in web server!)
-- Calculating algorithms in GPU (See for example vglyph/vdepth shader)
+- Rendering without UI (for example to quickly render images in a web server!)
+- Calculating algorithms in GPU. VGE supports Vulkan compute shaders. (See for example vglyph/vdepth shader)
 - (Experimental) Decal support [Scene](docs/vscene.md)
 - (Experimental) Apply BVH animations to existing rigged models
 
@@ -203,12 +211,9 @@ Features not marked as preview or experimental should be considered fairly stabl
 **Note that number of different devices VGE has been tested on is limit and 
 Vulkan drivers have bugs and inconsistencies. Please report device incompatibilities you find.**
 
-[Roadmap](docs/roadmap.md) lists more planned features or [Changes](changes.md) will contain all important changes between versions.
+[Roadmap](docs/roadmap.md) lists more planned features. [Changes](changes.md) will contain all important changes between versions.
 
 ## [MIT License](license.md)
 
 ## [Credits](docs/credits.md) 
 
-Quite a many resources were used to study different aspects of Vulkan and graphics programming.
- 
-Also several 2D/3D assets are included in VGE for testing and examples.

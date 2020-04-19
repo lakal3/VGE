@@ -262,7 +262,8 @@ func newLightNode(m *maze, onTime float64) *vscene.Node {
 	lp := shadow.NewPointLight(vscene.PointLight{Intensity: mgl32.Vec3{1, 1, 0.7}, Attenuation: mgl32.Vec3{0, 0, 0.3}}, 512)
 	lp.MaxDistance = 4
 	onOff.light = lp
-	return vscene.NewNode(vscene.NewMultiControl(onOff, tr, lp), m.nLampLight)
+	// We must add NoShadow control to lamp light element, otherwise it will shadow all light coming from point light
+	return vscene.NewNode(vscene.NewMultiControl(onOff, tr, lp), vscene.NewNode(shadow.NoShadow{}, m.nLampLight))
 }
 
 func (m *maze) buildNodes() {

@@ -1,7 +1,5 @@
 # Credits
 
-
-
 # Assets in VGE
 
 Following open source assets and software in used in VGE. 

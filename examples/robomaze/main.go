@@ -34,6 +34,7 @@ var app struct {
 	orbitCamera bool
 	predepth    bool
 	oil         bool
+	video       bool
 	devIndex    int
 }
 
@@ -44,6 +45,7 @@ func main() {
 	// Draw oil stains
 	flag.BoolVar(&app.oil, "oil", false, "Add oil leak decals")
 	flag.IntVar(&app.devIndex, "dev", -1, "Device index")
+	flag.BoolVar(&app.video, "video", false, "Set windows to video size 1280 x 768")
 
 	flag.Parse()
 
@@ -65,7 +67,11 @@ func main() {
 		rd.AddDepthPrePass()
 	}
 	vapp.Init("robomaze", vapp.Desktop{})
-	app.mainWnd = vapp.NewRenderWindow("Robo maze", rd)
+	if app.video {
+		app.mainWnd = vapp.NewRenderWindowAt("Robo maze", vk.WindowPos{Left: -1, Top: -1, Width: 1246, Height: 730}, rd)
+	} else {
+		app.mainWnd = vapp.NewRenderWindow("Robo maze", rd)
+	}
 	err := loadModels1()
 	if err != nil {
 		log.Fatal("Failed to load models, ", err)

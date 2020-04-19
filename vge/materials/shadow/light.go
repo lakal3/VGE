@@ -59,6 +59,17 @@ type shadowPass struct {
 	siCount     int
 }
 
+// Objects under this node will not cast shadow!
+type NoShadow struct {
+}
+
+func (n NoShadow) Process(pi *vscene.ProcessInfo) {
+	_, ok := pi.Phase.(*shadowPass)
+	if ok {
+		pi.Visible = false
+	}
+}
+
 func (s *shadowPass) Begin() (atEnd func()) {
 	return nil
 }
@@ -155,10 +166,10 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 			pl.MaxDistance = 10
 		}
 		if pl.MaxShadowDistance == 0 {
-			pl.MaxShadowDistance = pl.MaxDistance * 1.5
+			pl.MaxShadowDistance = pl.MaxDistance * 2
 		}
 		pos := pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1})
-		if pd.F.EyePos.Sub(pos).Len() > pl.MaxShadowDistance {
+		if pd.F.EyePos.Vec3().Sub(pos.Vec3()).Len() > pl.MaxShadowDistance {
 			// Skip shadow pass for light too long aways
 			pd.F.AddLight(vscene.Light{Intensity: pl.Intensity.Vec4(1),
 				Position: pos, Attenuation: pl.Attenuation.Vec4(pl.MaxDistance)})

@@ -208,6 +208,15 @@ void vge::Window::GetNextFrame(Image*& image, SubmitInfo*& submitInfo, int32_t& 
 	submitInfo = pr;
 }
 
+inline void pollDone(std::atomic_flag& done) {
+	int count = 0;
+	while (done.test_and_set()) {
+		std::this_thread::yield();
+		if (count > 1000) {
+			throw std::runtime_error("Waited operation failed");
+		}
+	}
+}
 void vge::Window::SetPos(WindowPos* position)
 {
 	std::atomic_flag done;
@@ -217,9 +226,7 @@ void vge::Window::SetPos(WindowPos* position)
 		done.clear();
 	});
 
-	while (done.test_and_set()) {
-		std::this_thread::yield();
-	}
+	pollDone(done);
 }
 
 void vge::Window::GetPos(WindowPos* position)
@@ -232,9 +239,7 @@ void vge::Window::GetPos(WindowPos* position)
 	});
 
 
-	while (done.test_and_set()) {
-		std::this_thread::yield();
-	}
+	pollDone(done);
 }
 
 
@@ -259,9 +264,7 @@ void vge::Window::init()
 		setPos(_initialPosition);
 		done.clear();
 	});
-	while (done.test_and_set()) {
-		std::this_thread::yield();
-	}
+	pollDone(done);
 }
 
 void vge::Window::createSwapchain(Device *dev)

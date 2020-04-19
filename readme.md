@@ -202,14 +202,13 @@ This is short list of features (existing). [Roadmap](docs/roadmap.md) have a lis
 VGE started when I wanted to learn Vulkan programming. 
 I gradually added new features to handle different aspects of Graphics programming.
 
-Now VGE has all the basic elements to make Vulkan based 3D programs using Go.
-
-Examples also give quite nice overview of existing features in VGE.
+Now VGE has all the basic elements to make Vulkan based 3D programs using Go. 
+Examples give quite nice overview of existing features in VGE.
 
 Features not marked as preview or experimental should be considered fairly stable and breaking API changes will happen only if really necessary.
 
 **Note that number of different devices VGE has been tested on is limit and 
-Vulkan drivers have bugs and inconsistencies. Please report device incompatibilities you find.**
+Vulkan drivers have bugs and inconsistencies. Please report device incompatibilities you find out.**
 
 [Roadmap](docs/roadmap.md) lists more planned features. [Changes](changes.md) will contain all important changes between versions.
 

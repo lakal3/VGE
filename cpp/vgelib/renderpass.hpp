@@ -39,6 +39,24 @@ namespace vge {
 		vk::Format _depthImageFormat;
 	};
 
+	class FPlusRenderPass : public RenderPass {
+	public:
+		FPlusRenderPass(const Device* dev, uint32_t extraPhases, vk::ImageLayout endLayout, vk::Format mainImageFormat, vk::Format depthImageFormat) :
+			RenderPass(dev), _endLayout(endLayout), _mainImageFormat(mainImageFormat), _depthImageFormat(depthImageFormat), _extraPhases(extraPhases)  {
+
+		}
+
+		virtual void Init() override;
+
+	private:
+		virtual void fillClearValues(std::vector<vk::ClearValue>& clearValues) override;
+		virtual uint32_t get_color_attachment_count() override;
+		const vk::ImageLayout _endLayout;
+		const vk::Format _mainImageFormat;
+		const vk::Format _depthImageFormat;
+		const uint32_t _extraPhases;
+	};
+
 	class DepthRenderPass : public RenderPass {
 	public:
 		DepthRenderPass(const Device* dev, vk::ImageLayout endLayout, vk::Format depthImageFormat) :

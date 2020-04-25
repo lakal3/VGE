@@ -33,8 +33,6 @@ func main() {
 		err = genGoInterface2(out)
 	case "goenums":
 		err = genGoEnums(out)
-	case "cppheader":
-		err = genCppHeader(out)
 	case "cppinterface":
 		err = genCppInterface(out)
 	}

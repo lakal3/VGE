@@ -211,6 +211,7 @@ namespace vge {
 		static void NewDesktop(Application* app, Desktop*& desktop);
 		static void AddValidation(Application *app);
 		static void NewForwardRenderPass(Device* dev, vk::ImageLayout finalLayout, vk::Format mainImageFormat, vk::Format depthImageFormat, RenderPass*& rp);
+		static void NewFPlusRenderPass(Device* dev, uint32_t extraPhases, vk::ImageLayout finalLayout, vk::Format mainImageFormat, vk::Format depthImageFormat, RenderPass*& rp);
 		static void NewDepthRenderPass(Device* dev, vk::ImageLayout finalLayout, vk::Format depthImageFormat, RenderPass*& rp);
 		static void NewImageLoader(ImageLoader*& loader);
 		static void DebugPoint(const char* point, size_t len_point);

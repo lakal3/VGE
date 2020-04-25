@@ -24,6 +24,7 @@ namespace vge {
 		void Begin();
 		void CopyBuffer(Buffer* fromBuffer, Buffer* toBuffer);
 		void BeginRenderPass(RenderPass* rp, Framebuffer* fb);
+		void NextSubpass();
 		void EndRenderPass();
 		void SetLayout(Image* view, vge::ImageRange* range, vk::ImageLayout layout);
 		void CopyBufferToImage(Buffer* src, Image* dst, vge::ImageRange* range, size_t offset);

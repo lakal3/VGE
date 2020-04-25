@@ -364,10 +364,6 @@ func loadLib() (err error) {
 	return g.err
 }
 
-func genCppHeader(writer io.Writer) error {
-	return nil
-}
-
 func genCppInterface(writer io.Writer) error {
 	g := newGenerator(writer)
 	g.emitLn(`

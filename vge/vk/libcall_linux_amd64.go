@@ -24,6 +24,7 @@ var libcall struct {
 	t_Command_CopyImageToBuffer         uintptr
 	t_Command_Draw                      uintptr
 	t_Command_EndRenderPass             uintptr
+	t_Command_NextSubpass               uintptr
 	t_Command_SetLayout                 uintptr
 	t_Command_Wait                      uintptr
 	t_ComputePipeline_Create            uintptr
@@ -35,6 +36,7 @@ var libcall struct {
 	t_DescriptorSet_WriteImage          uintptr
 	t_Desktop_CreateWindow              uintptr
 	t_Desktop_GetKeyName                uintptr
+	t_Desktop_GetMonitor                uintptr
 	t_Desktop_PullEvent                 uintptr
 	t_Device_NewBuffer                  uintptr
 	t_Device_NewCommand                 uintptr
@@ -64,6 +66,7 @@ var libcall struct {
 	t_NewApplication                    uintptr
 	t_NewDepthRenderPass                uintptr
 	t_NewDesktop                        uintptr
+	t_NewFPlusRenderPass                uintptr
 	t_NewForwardRenderPass              uintptr
 	t_NewImageLoader                    uintptr
 	t_Pipeline_AddDescriptorLayout      uintptr
@@ -71,7 +74,9 @@ var libcall struct {
 	t_RenderPass_Init                   uintptr
 	t_RenderPass_NewFrameBuffer         uintptr
 	t_Window_GetNextFrame               uintptr
+	t_Window_GetPos                     uintptr
 	t_Window_PrepareSwapchain           uintptr
+	t_Window_SetPos                     uintptr
 }
 
 func loadLib() (err error) {
@@ -138,6 +143,10 @@ func loadLib() (err error) {
 	if err != nil {
 		return err
 	}
+	libcall.t_Command_NextSubpass, err = dldyn.GetProcAddress(libcall.h_lib, "Command_NextSubpass")
+	if err != nil {
+		return err
+	}
 	libcall.t_Command_SetLayout, err = dldyn.GetProcAddress(libcall.h_lib, "Command_SetLayout")
 	if err != nil {
 		return err
@@ -179,6 +188,10 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_Desktop_GetKeyName, err = dldyn.GetProcAddress(libcall.h_lib, "Desktop_GetKeyName")
+	if err != nil {
+		return err
+	}
+	libcall.t_Desktop_GetMonitor, err = dldyn.GetProcAddress(libcall.h_lib, "Desktop_GetMonitor")
 	if err != nil {
 		return err
 	}
@@ -298,6 +311,10 @@ func loadLib() (err error) {
 	if err != nil {
 		return err
 	}
+	libcall.t_NewFPlusRenderPass, err = dldyn.GetProcAddress(libcall.h_lib, "NewFPlusRenderPass")
+	if err != nil {
+		return err
+	}
 	libcall.t_NewForwardRenderPass, err = dldyn.GetProcAddress(libcall.h_lib, "NewForwardRenderPass")
 	if err != nil {
 		return err
@@ -326,7 +343,15 @@ func loadLib() (err error) {
 	if err != nil {
 		return err
 	}
+	libcall.t_Window_GetPos, err = dldyn.GetProcAddress(libcall.h_lib, "Window_GetPos")
+	if err != nil {
+		return err
+	}
 	libcall.t_Window_PrepareSwapchain, err = dldyn.GetProcAddress(libcall.h_lib, "Window_PrepareSwapchain")
+	if err != nil {
+		return err
+	}
+	libcall.t_Window_SetPos, err = dldyn.GetProcAddress(libcall.h_lib, "Window_SetPos")
 	if err != nil {
 		return err
 	}
@@ -437,6 +462,14 @@ func call_Command_EndRenderPass(ctx APIContext, cmd hCommand) {
 	rc := dldyn.Invoke(libcall.t_Command_EndRenderPass, 1, uintptr(cmd), 0, 0)
 	handleError(ctx, rc)
 }
+func call_Command_NextSubpass(ctx APIContext, cmd hCommand) {
+	atEnd := ctx.Begin("Command_NextSubpass")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke(libcall.t_Command_NextSubpass, 1, uintptr(cmd), 0, 0)
+	handleError(ctx, rc)
+}
 func call_Command_SetLayout(ctx APIContext, cmd hCommand, image hImage, imRange *ImageRange, newLayout ImageLayout) {
 	atEnd := ctx.Begin("Command_SetLayout")
 	if atEnd != nil {
@@ -504,12 +537,12 @@ func call_DescriptorSet_WriteImage(ctx APIContext, ds hDescriptorSet, binding ui
 	rc := dldyn.Invoke6(libcall.t_DescriptorSet_WriteImage, 5, uintptr(ds), uintptr(binding), uintptr(at), uintptr(view), uintptr(sampler), 0)
 	handleError(ctx, rc)
 }
-func call_Desktop_CreateWindow(ctx APIContext, desktop hDesktop, title []byte, win *hWindow) {
+func call_Desktop_CreateWindow(ctx APIContext, desktop hDesktop, title []byte, pos *WindowPos, win *hWindow) {
 	atEnd := ctx.Begin("Desktop_CreateWindow")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke6(libcall.t_Desktop_CreateWindow, 4, uintptr(desktop), byteArrayToUintptr(title), uintptr(len(title)), uintptr(unsafe.Pointer(win)), 0, 0)
+	rc := dldyn.Invoke6(libcall.t_Desktop_CreateWindow, 5, uintptr(desktop), byteArrayToUintptr(title), uintptr(len(title)), uintptr(unsafe.Pointer(pos)), uintptr(unsafe.Pointer(win)), 0)
 	handleError(ctx, rc)
 }
 func call_Desktop_GetKeyName(ctx APIContext, desktop hDesktop, keyCode uint32, name []uint8, strLen *uint32) {
@@ -518,6 +551,14 @@ func call_Desktop_GetKeyName(ctx APIContext, desktop hDesktop, keyCode uint32, n
 		defer atEnd()
 	}
 	rc := dldyn.Invoke6(libcall.t_Desktop_GetKeyName, 5, uintptr(desktop), uintptr(keyCode), sliceToUintptr(name), uintptr(len(name)), uintptr(unsafe.Pointer(strLen)), 0)
+	handleError(ctx, rc)
+}
+func call_Desktop_GetMonitor(ctx APIContext, desktop hDesktop, monitor uint32, info *WindowPos) {
+	atEnd := ctx.Begin("Desktop_GetMonitor")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke(libcall.t_Desktop_GetMonitor, 3, uintptr(desktop), uintptr(monitor), uintptr(unsafe.Pointer(info)))
 	handleError(ctx, rc)
 }
 func call_Desktop_PullEvent(ctx APIContext, desktop hDesktop, ev *RawEvent) {
@@ -742,6 +783,14 @@ func call_NewDesktop(ctx APIContext, app hApplication, desktop *hDesktop) {
 	rc := dldyn.Invoke(libcall.t_NewDesktop, 2, uintptr(app), uintptr(unsafe.Pointer(desktop)), 0)
 	handleError(ctx, rc)
 }
+func call_NewFPlusRenderPass(ctx APIContext, dev hDevice, extraPhases uint32, finalLayout ImageLayout, mainImageFormat Format, depthImageFormat Format, rp *hRenderPass) {
+	atEnd := ctx.Begin("NewFPlusRenderPass")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke6(libcall.t_NewFPlusRenderPass, 6, uintptr(dev), uintptr(extraPhases), uintptr(finalLayout), uintptr(mainImageFormat), uintptr(depthImageFormat), uintptr(unsafe.Pointer(rp)))
+	handleError(ctx, rc)
+}
 func call_NewForwardRenderPass(ctx APIContext, dev hDevice, finalLayout ImageLayout, mainImageFormat Format, depthImageFormat Format, rp *hRenderPass) {
 	atEnd := ctx.Begin("NewForwardRenderPass")
 	if atEnd != nil {
@@ -798,11 +847,27 @@ func call_Window_GetNextFrame(ctx APIContext, win hWindow, image *hImage, submit
 	rc := dldyn.Invoke6(libcall.t_Window_GetNextFrame, 4, uintptr(win), uintptr(unsafe.Pointer(image)), uintptr(unsafe.Pointer(submitInfo)), uintptr(unsafe.Pointer(viewIndex)), 0, 0)
 	handleError(ctx, rc)
 }
+func call_Window_GetPos(ctx APIContext, win hWindow, pos *WindowPos) {
+	atEnd := ctx.Begin("Window_GetPos")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke(libcall.t_Window_GetPos, 2, uintptr(win), uintptr(unsafe.Pointer(pos)), 0)
+	handleError(ctx, rc)
+}
 func call_Window_PrepareSwapchain(ctx APIContext, win hWindow, dev hDevice, imageDesc *ImageDescription, imageCount *int32) {
 	atEnd := ctx.Begin("Window_PrepareSwapchain")
 	if atEnd != nil {
 		defer atEnd()
 	}
 	rc := dldyn.Invoke6(libcall.t_Window_PrepareSwapchain, 4, uintptr(win), uintptr(dev), uintptr(unsafe.Pointer(imageDesc)), uintptr(unsafe.Pointer(imageCount)), 0, 0)
+	handleError(ctx, rc)
+}
+func call_Window_SetPos(ctx APIContext, win hWindow, pos *WindowPos) {
+	atEnd := ctx.Begin("Window_SetPos")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke(libcall.t_Window_SetPos, 2, uintptr(win), uintptr(unsafe.Pointer(pos)), 0)
 	handleError(ctx, rc)
 }

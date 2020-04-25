@@ -123,6 +123,9 @@ func (c *Command) Draw(dl *DrawList) {
 	if !c.IsValid(c.Ctx) {
 		return
 	}
+	if len(dl.list) == 0 {
+		return
+	}
 	dl.optimize()
 	call_Command_Draw(c.Ctx, c.hCmd, dl.list)
 }
@@ -141,6 +144,11 @@ func (c *Command) Compute(cp *ComputePipeline, x uint32, y uint32, z uint32, des
 		}
 	}
 	call_Command_Compute(c.Ctx, c.hCmd, cp.hPl, x, y, z, hds)
+}
+
+// NextSubpass begins new subpass of multi pass render phase
+func (c *Command) NextSubpass(ctx APIContext) {
+	call_Command_NextSubpass(ctx, c.hCmd)
 }
 
 func (dr *DrawList) Draw(pl Pipeline, from, count uint32) *DrawItem {

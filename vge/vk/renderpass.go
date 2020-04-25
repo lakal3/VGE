@@ -125,3 +125,49 @@ func NewFramebuffer(ctx APIContext, rp RenderPass, attachments []*ImageView) *Fr
 	call_RenderPass_NewFrameBuffer(ctx, hRenderPass(rp.GetRenderPass()), att, &fb.hFb)
 	return fb
 }
+
+type FPlusRenderPass struct {
+	owner       Owner
+	dev         *Device
+	hRp         hRenderPass
+	extraPhases uint32
+}
+
+func (f *FPlusRenderPass) Get(ctx APIContext, key Key, cons Constructor) interface{} {
+	return f.owner.Get(ctx, key, cons)
+}
+
+func (f *FPlusRenderPass) GetRenderPass() uintptr {
+	return uintptr(f.hRp)
+}
+
+func (f *FPlusRenderPass) Dispose() {
+	if f.hRp != 0 {
+		f.owner.Dispose()
+		call_Disposable_Dispose(hDisposable(f.hRp))
+		f.hRp = 0
+	}
+}
+
+// NewFPlusRenderPass created a new multi phase pass that supports main image and a depth image (Z-buffer) in first pass.
+// In framebuffer, final image will be attachment extraPhases, depth image will be extraPhase + 1.
+// You must supply extraPhase number of images that matches final image format and size. These images are used to store temporary image from each subpass
+func NewFPlusRenderPass(ctx APIContext, dev *Device, extraPhases uint32, mainImageFormat Format,
+	finalLayout ImageLayout, depthImageFormat Format) *FPlusRenderPass {
+	if !dev.IsValid(ctx) {
+		return nil
+	}
+
+	fr := &FPlusRenderPass{dev: dev, extraPhases: extraPhases}
+	call_NewFPlusRenderPass(ctx, dev.hDev, extraPhases, finalLayout, mainImageFormat, depthImageFormat, &fr.hRp)
+	call_RenderPass_Init(ctx, fr.hRp)
+	return fr
+}
+
+func (f *FPlusRenderPass) IsValid(ctx APIContext) bool {
+	if f.hRp == 0 {
+		ctx.SetError(ErrDisposed)
+		return false
+	}
+	return true
+}

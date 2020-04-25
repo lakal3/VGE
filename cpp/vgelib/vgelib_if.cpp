@@ -18,6 +18,7 @@ DLLEXPORT Exception * Command_CopyBufferToImage(Command* cmd, Buffer* src, Image
 DLLEXPORT Exception * Command_CopyImageToBuffer(Command* cmd, Image* src, Buffer* dst, ImageRange* imRange, uint64_t offset);
 DLLEXPORT Exception * Command_Draw(Command* cmd, DrawItem* draws, size_t draws_len);
 DLLEXPORT Exception * Command_EndRenderPass(Command* cmd);
+DLLEXPORT Exception * Command_NextSubpass(Command* cmd);
 DLLEXPORT Exception * Command_SetLayout(Command* cmd, Image* image, ImageRange* imRange, int32_t newLayout);
 DLLEXPORT Exception * Command_Wait(Command* cmd);
 DLLEXPORT Exception * ComputePipeline_Create(ComputePipeline* cp);
@@ -59,6 +60,7 @@ DLLEXPORT Exception * MemoryBlock_Reserve(MemoryBlock* memBlock, MemoryObject* m
 DLLEXPORT Exception * NewApplication(char * name, size_t name_len, Application*& app);
 DLLEXPORT Exception * NewDepthRenderPass(Device* dev, int32_t finalLayout, int32_t depthImageFormat, RenderPass*& rp);
 DLLEXPORT Exception * NewDesktop(Application* app, Desktop*& desktop);
+DLLEXPORT Exception * NewFPlusRenderPass(Device* dev, uint32_t extraPhases, int32_t finalLayout, int32_t mainImageFormat, int32_t depthImageFormat, RenderPass*& rp);
 DLLEXPORT Exception * NewForwardRenderPass(Device* dev, int32_t finalLayout, int32_t mainImageFormat, int32_t depthImageFormat, RenderPass*& rp);
 DLLEXPORT Exception * NewImageLoader(ImageLoader*& loader);
 DLLEXPORT Exception * Pipeline_AddDescriptorLayout(Pipeline* pl, DescriptorLayout* dsLayout);
@@ -184,6 +186,15 @@ Exception * Command_Draw(Command* cmd, DrawItem* draws, size_t draws_len) {
 Exception * Command_EndRenderPass(Command* cmd) {
     try {
         cmd->EndRenderPass();
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Command_NextSubpass(Command* cmd) {
+    try {
+        cmd->NextSubpass();
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }
@@ -538,6 +549,15 @@ Exception * NewDepthRenderPass(Device* dev, int32_t finalLayout, int32_t depthIm
 Exception * NewDesktop(Application* app, Desktop*& desktop) {
     try {
         Static::NewDesktop (app, desktop);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * NewFPlusRenderPass(Device* dev, uint32_t extraPhases, int32_t finalLayout, int32_t mainImageFormat, int32_t depthImageFormat, RenderPass*& rp) {
+    try {
+        Static::NewFPlusRenderPass (dev, extraPhases, vk::ImageLayout(finalLayout), vk::Format(mainImageFormat), vk::Format(depthImageFormat), rp);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }

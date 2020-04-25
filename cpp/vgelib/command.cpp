@@ -121,6 +121,11 @@ void vge::Command::BeginRenderPass(RenderPass* rp, Framebuffer* fb)
 	_cmd.setScissor(0, 1, &rc, _dev->get_dispatch());
 }
 
+void vge::Command::NextSubpass()
+{
+	_cmd.nextSubpass(vk::SubpassContents::eInline, _dev->get_dispatch());
+}
+
 void vge::Command::EndRenderPass()
 {
 	_cmd.endRenderPass(_dev->get_dispatch());

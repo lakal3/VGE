@@ -107,3 +107,25 @@ func (b *BoudingBox) Add(aabb vmodel.AABB) {
 func (b *BoudingBox) Get() (aabb vmodel.AABB, empty bool) {
 	return b.box, b.first
 }
+
+func NewPostProcessPhase(rc *vk.RenderCache, pass vk.RenderPass, cmd *vk.Command, begin func(pp *PostProcessPhase)) *PostProcessPhase {
+	return &PostProcessPhase{DrawContext: vmodel.DrawContext{Cache: rc, Pass: pass}, Cmd: cmd, begin: begin}
+}
+
+type PostProcessPhase struct {
+	vmodel.DrawContext
+	Cmd   *vk.Command
+	begin func(pp *PostProcessPhase)
+}
+
+func (pp *PostProcessPhase) Begin() (atEnd func()) {
+
+	if pp.begin != nil {
+		pp.begin(pp)
+	}
+	return func() {
+		if pp.List != nil {
+			pp.Cmd.Draw(pp.List)
+		}
+	}
+}

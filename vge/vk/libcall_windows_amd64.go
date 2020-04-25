@@ -24,6 +24,7 @@ var libcall struct {
 	t_Command_CopyImageToBuffer         uintptr
 	t_Command_Draw                      uintptr
 	t_Command_EndRenderPass             uintptr
+	t_Command_NextSubpass               uintptr
 	t_Command_SetLayout                 uintptr
 	t_Command_Wait                      uintptr
 	t_ComputePipeline_Create            uintptr
@@ -65,6 +66,7 @@ var libcall struct {
 	t_NewApplication                    uintptr
 	t_NewDepthRenderPass                uintptr
 	t_NewDesktop                        uintptr
+	t_NewFPlusRenderPass                uintptr
 	t_NewForwardRenderPass              uintptr
 	t_NewImageLoader                    uintptr
 	t_Pipeline_AddDescriptorLayout      uintptr
@@ -138,6 +140,10 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_Command_EndRenderPass, err = syscall.GetProcAddress(libcall.h_lib, "Command_EndRenderPass")
+	if err != nil {
+		return err
+	}
+	libcall.t_Command_NextSubpass, err = syscall.GetProcAddress(libcall.h_lib, "Command_NextSubpass")
 	if err != nil {
 		return err
 	}
@@ -305,6 +311,10 @@ func loadLib() (err error) {
 	if err != nil {
 		return err
 	}
+	libcall.t_NewFPlusRenderPass, err = syscall.GetProcAddress(libcall.h_lib, "NewFPlusRenderPass")
+	if err != nil {
+		return err
+	}
 	libcall.t_NewForwardRenderPass, err = syscall.GetProcAddress(libcall.h_lib, "NewForwardRenderPass")
 	if err != nil {
 		return err
@@ -450,6 +460,14 @@ func call_Command_EndRenderPass(ctx APIContext, cmd hCommand) {
 		defer atEnd()
 	}
 	rc, _, _ := syscall.Syscall(libcall.t_Command_EndRenderPass, 1, uintptr(cmd), 0, 0)
+	handleError(ctx, rc)
+}
+func call_Command_NextSubpass(ctx APIContext, cmd hCommand) {
+	atEnd := ctx.Begin("Command_NextSubpass")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall(libcall.t_Command_NextSubpass, 1, uintptr(cmd), 0, 0)
 	handleError(ctx, rc)
 }
 func call_Command_SetLayout(ctx APIContext, cmd hCommand, image hImage, imRange *ImageRange, newLayout ImageLayout) {
@@ -763,6 +781,14 @@ func call_NewDesktop(ctx APIContext, app hApplication, desktop *hDesktop) {
 		defer atEnd()
 	}
 	rc, _, _ := syscall.Syscall(libcall.t_NewDesktop, 2, uintptr(app), uintptr(unsafe.Pointer(desktop)), 0)
+	handleError(ctx, rc)
+}
+func call_NewFPlusRenderPass(ctx APIContext, dev hDevice, extraPhases uint32, finalLayout ImageLayout, mainImageFormat Format, depthImageFormat Format, rp *hRenderPass) {
+	atEnd := ctx.Begin("NewFPlusRenderPass")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall6(libcall.t_NewFPlusRenderPass, 6, uintptr(dev), uintptr(extraPhases), uintptr(finalLayout), uintptr(mainImageFormat), uintptr(depthImageFormat), uintptr(unsafe.Pointer(rp)))
 	handleError(ctx, rc)
 }
 func call_NewForwardRenderPass(ctx APIContext, dev hDevice, finalLayout ImageLayout, mainImageFormat Format, depthImageFormat Format, rp *hRenderPass) {

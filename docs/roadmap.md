@@ -3,7 +3,7 @@
 Planned VGE features (not in any priority order)
 
 ### Simpler, near term goals
-- [ ] Support multiple probes in scene.
+- [ ] Support multiple probes in a scene.
 - [ ] Forward+ render pass that supports post processing effect like depth fog. 
    - Some shaders like fire should also use postprocessing so that they could sample already rendered scene
    - Depth effect like fog  
@@ -11,6 +11,7 @@ Planned VGE features (not in any priority order)
 - [ ] Spot lights (with shadows)
 - [ ] Basic dialogs like yes/no
 - [ ] Water shader (Needs Forward+ render pass)
+- [ ] GPU timers 
 - [ ] Asset packing
    - Currently VGE process all raw assets at start of each run, like: Rendering fonts, uncompressing image and parsing models files and convert them to GPU renderable assets.
    This process is quite fast on modern GPUs, but it would still be nice to store once processed assets

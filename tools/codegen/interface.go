@@ -11,8 +11,6 @@ type hApplication hDisposable
 
 type hInstance hDisposable
 
-type hPhysicalDevice hDisposable
-
 type hDevice hDisposable
 
 type hMemoryBlock hDisposable
@@ -178,6 +176,7 @@ type MainLib interface {
 		rp  hRenderPass
 		fb  hFramebuffer
 	})
+	Command_NextSubpass(struct{ cmd hCommand })
 	Command_EndRenderPass(struct{ cmd hCommand })
 	Command_SetLayout(struct {
 		cmd       hCommand
@@ -259,6 +258,14 @@ type MainLib interface {
 	NewDepthRenderPass(struct {
 		dev              hDevice
 		finalLayout      vk.ImageLayout
+		depthImageFormat vk.Format
+		rp               *hRenderPass
+	})
+	NewFPlusRenderPass(struct {
+		dev              hDevice
+		extraPhases      uint32
+		finalLayout      vk.ImageLayout
+		mainImageFormat  vk.Format
 		depthImageFormat vk.Format
 		rp               *hRenderPass
 	})

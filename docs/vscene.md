@@ -57,6 +57,11 @@ vscene.NodeFromModel. You can have multiple instances of same MeshNodeControl in
 
 Like MeshNodeControl but made from rigged meshes. AnimatedNodeControl has methods to update and change running animation(s).
 
+#### MultiControl
+
+You can place several node controls into one MultiControl. 
+Sometimes it is more convenient to place for example a Transformation and a Light into one node.
+ 
 #### Probe 
 
 Probe will render view from probe location excluding all child nodes. Some shaders like Pbr and Std can use probe images to
@@ -64,14 +69,14 @@ render reflection of metallic surfaces. Probe also computer spherical harmonics 
 
 _Currently only one probe per node tree is supported. This will be changed later. So you can't have a probe inside a child node which parent also has a probe._
 
-_Probe and ambient light are exclusive._
+_Probe and ambient light are exclusive. Ambient light is actually zeroth order of spherical harmonic_
 
 #### Decal (experimental)
 
 Only Std shader support decals. Decals can render 2D image, placed in 3D world over a 3D mesh. 
 
 In VGE decals don't break up mesh. Updating mesh in GPU is quite expensive and not very useful for if you wan't to animate decals. 
-Therefore in VGE are decals are calculated and applied in shader! Decals will only affect current node and it's child nodes.
+Therefore, in VGE are decals are calculated and applied in the shader! Decals will only affect current node and it's child nodes.
 
 See robomaze example with -oil command line switch to see oil stain decals in demo.
  

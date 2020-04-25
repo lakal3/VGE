@@ -41,7 +41,7 @@ To support disposing VGE library have some helpers methods:
 Several struct implement Get method. Get method access resource by a key. 
 If resource is already available, it is just returned. If resource is not available, 
 it will be created using Constructor function. 
-If constructed object is Disposable object implementing Get will own this new object and automatically dispose object when it is disposed.
+If constructed object is a Disposable, object implementing Get will own this new object and automatically dispose object when it is disposed.
 
 #### something.NewXX
 
@@ -84,7 +84,7 @@ Also note that you cannot dispose individual image or buffer. You must dispose w
 Vulkan handles rendering in render passes. See [https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Render_passes].
 
 Render passes are fairly complex to setup. So VGE offers few prebuilt render passes with some options. 
-If you need new kind of render pass, that must be implemented in VGELib (C++ part).
+If you need a new kind of render pass, that must be implemented in VGELib (C++ part).
 
 #### Standard render passes
 
@@ -106,9 +106,9 @@ directly into binary. All VGE material use this tool to combine SPIR-V code to m
 See API documentation for more details about other resources:
 - Sampler are used to sample image 
 - Command are used to record and submit command to Vulkan. In Vulkan API we have command pools and commands. VGE combines those are one entity.
-- DescriptorLayout describe layout of shader biding slots. See [https://vulkan.lunarg.com/doc/view/1.0.49.0/windows/tutorial/html/08-init_pipeline_layout.html]
+- DescriptorLayout describe a layout of a shader biding slots. See [https://vulkan.lunarg.com/doc/view/1.0.49.0/windows/tutorial/html/08-init_pipeline_layout.html]
 - DescriptorPool is used to allocate DescriptorSets. In VGE each DescriptorPool only support one kind of descriptors.
-- DescriptorSet is individual descriptor you can write values (uniforms, sampled images etc..) to and then bind descriptors to recorded commands.
+- DescriptorSet is an individual descriptor you can write values (uniforms, sampled images etc..) to and then bind descriptors to recorded commands.
 Shaders access values and images through these sets.
 - Desktop and Window handles OS Window creating and representing rendered image on OS Window
 - ImageView and ImageRange allows Vulkan to use subrange of Image. Most Vulkan API calls uses ImageView, not Image
@@ -121,7 +121,7 @@ Nice overview of Vulkan objects [https://gpuopen.com/understanding-vulkan-object
 Vulkan in multi threaded. However, most of vk and Vulkan objects are not thread safe. You must use mutex or other mechanism to synchronize access.
 
 So you can render two separate image concurrently without synchronization using different set of Vulkan objects. 
-But you can't use same object in multiple coroutines without external synchronization.
+You can't use same object in multiple coroutines without external synchronization.
  
 API document will tell if some method is safe for concurrent access.
 

@@ -32,11 +32,11 @@ See model example on how to setup ModelBuilder. Unlit shader is simple shader
 3D Meshes are built with MeshBuilder. Mesh builder allows you to add all vertex information that makes up a mesh. 
 Only position is mandatory. Other values (normal, uv, tangent) are calculated automatically but for best results you should provide all values.
 
-_Meshes also support vertex color. Color is not used in existing shaders and you may use this however you like if you implement custom loader / shader_
+_Meshes also support vertex color. Color is not used in existing shaders, and you may use this however you like if you implement custom loader / shader_
 
 ## Loaders
 
-Typically you don't call AddNode, AddMesh, ... methods in ModelBuilder directly. Instead you use model loader that can
+Typically you don't call AddNode, AddMesh, ... methods in ModelBuilder directly. Instead, you use model loader that can
 parse model files in different formats and convert them to ModelBuilder assets. 
 
 VGE has two prebuilt loaders, one to handle Wavefront OBJ format and other to import glTF 2.0 files.

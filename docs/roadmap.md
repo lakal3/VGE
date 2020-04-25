@@ -13,7 +13,7 @@ Planned VGE features (not in any priority order)
 - [ ] Water shader (Needs Forward+ render pass)
 - [ ] Asset packing
    - Currently VGE process all raw assets at start of each run, like: Rendering fonts, uncompressing image and parsing models files and convert them to GPU renderable assets.
-   This process is quite fast on modern GPUs but it would still be nice to store once processed assets
+   This process is quite fast on modern GPUs, but it would still be nice to store once processed assets
    to format that only need loading to GPU.
 
 

@@ -9,7 +9,7 @@ Original idea was to learn modern, multi threaded GPU API. One major goal was to
 This allows full use of API without compromises or really complex extra layers.
  
 Only two major multi threaded GPU API:s, supported on most of modern GPU:s exists, DirectX 12 and Vulkan. 
-Vulkan were more interesting because it has multi platform support. Also glsl shader language is preferences.
+Vulkan were more interesting because it has multi platform support. Also, glsl shader language is preferences.
 
 So, VGE uses Vulkan to access GPU. There is no plan to support other APIs in VGE.
 
@@ -40,7 +40,7 @@ C/C++. All API:s use C ABI conventions. In some way you must be able to consume 
 So the lowest level of VGE is shader library VGELib written in C++. It incorporates some really fine libraries that makes ease up graphics engine design. 
 VGE will only use C/C++ libraries if no equivalent pure Go library where available (with exception of reading JPEG images. Go standard implementation was incredibly slow).
 
-If you wan't to manually build C++ library see [building VGELib](build_vgelib.md).
+If you want to manually build C++ library see [building VGELib](build_vgelib.md).
 
 ### C++ but, no CGO (or very little in Linux)
 
@@ -52,4 +52,4 @@ without some CGO to link in dlopen etc. functions need to load shared library.
 
 VGE project contains own interface generation tool that will write required Go code to call C++ library. 
 This tool also builds up one C++ file to implement call endpoint. 
-You don't need to known anything about this tool unless you plan to change Go/C++ interface.
+You don't need to know anything about this tool unless you plan to change Go/C++ interface.

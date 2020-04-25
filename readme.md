@@ -1,11 +1,12 @@
 # VGE (Vulkan Graphics Engine)
 
-VGE is graphics engine for [Vulkan](https://www.khronos.org/vulkan/). It is mostly written in Go language.
+VGE is graphics engine for Go language that uses [Vulkan](https://www.khronos.org/vulkan/) API. 
 
 
 ## VGE code example (logo.go)
 
-Simple example showing simple user interface and 3D model on screen. See full sample with import in examples/basic/logo.go
+Simple example showing simple user interface and 3D model on screen. 
+See full sample with imports in examples/basic/logo.go
 
 ```go
 func main() {
@@ -126,7 +127,7 @@ You can also install VGE and run same examples your self!
 ## Installation
 
 First: you need Go compiler. VGE has been mostly tested with Go1.13 and Go1.14. 
-Older version may work but I recommend using latest released version.
+Older version may work, but I recommend using latest released version.
 
 Install VGE like any go package:
 `go get github.com/lakal3/VGE`
@@ -137,10 +138,10 @@ Note **Only 64bit (amd64) Windows (only tested on Windows 10) or Linux (experime
 
 Some lower level functions are implemented in C++. See [VGE architecture](docs/architecture.md) for more description of why and how VGE is implemented.
  
-On Windows, you don't have to install C/C++ compiler. Instead you can use prebuilt C++ VGELib.dll. Windows implementation don't use CGO at all! 
+On Windows, you don't have to install C/C++ compiler. You can use prebuilt C++ VGELib.dll. Windows implementation don't use CGO at all! 
  
 Copy prebuilt/win_amd64/VGELib.dll to some directory in your search PATH or update searchpath to include prebuilt directory.
-Alternatively you can [build](docs/build_vgelib.md) VGELib.dll yourself.
+Alternatively you can [build VGELib](docs/build_vgelib.md) VGELib.dll yourself.
 
 If you plan to do any more thing on Vulkan or VGE, I also recommend to installing [Vulkan SDK](https://www.lunarg.com/vulkan-sdk/). 
 Vulkan SDK contains SPIR-V compiler that you will need when developing you own shaders. 
@@ -151,8 +152,8 @@ VGE supports a simple way of enabling Vulkan validation layers.
  
 ## Learn to use VGE
 
-VGE engine is really tiny compared to most of graphics frameworks that support Vulkan. 
-However there is still quite a lot of code and browsing API help document isn't that fruitful. 
+VGE engine is really tiny compared to most of the graphics frameworks that support Vulkan. 
+However, there is still quite a lot of code and browsing API help document isn't that fruitful. 
 
 Maybe best approach to learn VGE is browse through examples included in project. 
 These examples try to pinpoint most important aspects of VGE and it's features.
@@ -161,7 +162,7 @@ These examples try to pinpoint most important aspects of VGE and it's features.
 - Cube - Simple cube using lower level API to draw cube on screen
 - Model - Additional samples on how to load models and manipulate scene.
 - WebView - Render images background and serve them to web client 
-(*Demo will show that Vulkan can do multithreaded rendering and you can easilly use Vulkan to render images background*)
+(*Demo will show that Vulkan can do multi threaded rendering, and you can easily use Vulkan to render images background*)
 - glTFViewer - Tool to browse some of glTF sample images.  
 - Robomaze - Performance test tool / example that support some advanced features like decals.
 - Animate (Experimental) - Support reading animations from BVH (Biovision Hierarchy) files and apply them on rigged models.
@@ -184,7 +185,8 @@ This is short list of features (existing). [Roadmap](docs/roadmap.md) have a lis
 - Scene building and animation [Scene](docs/vscene.md)
 - Glyph rendering including support for TTF fonts. Mainly used to support [VGE UI](docs/vui.md).
 - Background environment using (HDR) equirectangular images [Scene](docs/vscene.md)
-- Environmental probe to support reflections of PBR materials. Probe will also generate spherical harmonics to approximate ambient lightning.  [Scene](docs/vscene.md)
+- An environmental probe to support reflections of PBR materials. 
+Probe will also generate spherical harmonics to approximate ambient lightning.  [Scene](docs/vscene.md)
 - Easily extendable game UI support [VGE UI](docs/vui.md).
 - UI theming [VGE UI](docs/vui.md).
 - Event queue to handle system level events [VGE App](docs/vapp.md)
@@ -203,7 +205,7 @@ VGE started when I wanted to learn Vulkan programming.
 I gradually added new features to handle different aspects of Graphics programming.
 
 Now VGE has all the basic elements to make Vulkan based 3D programs using Go. 
-Examples give quite nice overview of existing features in VGE.
+Examples give a quite nice overview of existing features in VGE.
 
 Features not marked as preview or experimental should be considered fairly stable and breaking API changes will happen only if really necessary.
 

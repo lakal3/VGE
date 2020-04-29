@@ -1,11 +1,11 @@
 # VGE Architecture
 
-This document explains how VGE is built up and upto some point also reasons behind decisions
+This document explains how VGE is built and also, the reasons behind the choices made.
 
 
 ## Vulkan API
 
-Original idea was to learn modern, multi threaded GPU API. One major goal was to select one API (to rule them all) instead of trying to implement abstract Graphics API and then try map that to different API:s as larger engines usually do. 
+The original idea was to learn modern, multi threaded GPU API. One major goal was to select one API (to rule them all) instead of trying to implement abstract Graphics API and then try map that to different API:s as larger engines usually do. 
 This allows full use of API without compromises or really complex extra layers.
  
 Only two major multi threaded GPU API:s, supported on most of modern GPU:s exists, DirectX 12 and Vulkan. 

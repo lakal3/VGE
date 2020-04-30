@@ -87,7 +87,7 @@ func loadModels() (err error) {
 	}
 	vapp.AddChild(app.actorModel)
 	// Load background image (old house)
-	app.houseModel, err = vapp.LoadModel("gltf/medivalhouse/MedievalHouse.gltf")
+	app.houseModel, err = vapp.LoadModel("gltf/Cabin/cabin_hp.gltf")
 	if err != nil {
 		return err
 	}

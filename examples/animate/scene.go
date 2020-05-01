@@ -61,12 +61,12 @@ func buildScene() {
 	rw := app.mainWnd
 	app.actor = vscene.NodeFromModel(app.actorModel, 0, true)
 	// Model sizes don't match so we scale them so that they fit into house and place them on mat
-	tr := mgl32.Scale3D(0.07, 0.07, 0.07).Mul4(mgl32.Translate3D(0, 4, -15))
+	tr := mgl32.Scale3D(0.06, 0.06, 0.06).Mul4(mgl32.Translate3D(0, 4, -70))
 	switch app.elf {
 	case 0:
-		tr = mgl32.Scale3D(0.1, 0.1, 0.1).Mul4(mgl32.Translate3D(0, 2.6, -10))
+		tr = mgl32.Scale3D(0.1, 0.1, 0.1).Mul4(mgl32.Translate3D(0, 2.6, -40))
 	case 1:
-		tr = mgl32.Scale3D(0.04, 0.04, 0.04).Mul4(mgl32.Translate3D(0, 8, -10))
+		tr = mgl32.Scale3D(0.03, 0.03, 0.03).Mul4(mgl32.Translate3D(0, 8, -140))
 	}
 	app.actor.Ctrl = &vscene.TransformControl{Transform: tr}
 	houseNode := vscene.NodeFromModel(app.houseModel, 0, true)
@@ -77,8 +77,8 @@ func buildScene() {
 	pl2 := shadow.NewPointLight(vscene.PointLight{Intensity: mgl32.Vec3{1.5, 1.5, 1.5}, Attenuation: mgl32.Vec3{0, 0, 0.2}}, 512)
 	pl2.MaxDistance = 10
 	lights := vscene.NewNode(nil,
-		vscene.NewNodeAt(mgl32.Translate3D(-1.5, 2.5, 2), pl1),
-		vscene.NewNodeAt(mgl32.Translate3D(1.5, 2.5, 2), pl2))
+		vscene.NewNodeAt(mgl32.Translate3D(-1.5, 2.5, -0.5), pl1),
+		vscene.NewNodeAt(mgl32.Translate3D(1.5, 2.5, -0.5), pl2))
 
 	// Build actual scene
 	rw.Env.Children = append(rw.Env.Children, vscene.NewNode(app.bg), houseNode, lights)
@@ -89,8 +89,8 @@ func buildScene() {
 
 	// Camera
 	pc := vscene.NewPerspectiveCamera(10)
-	pc.Position = mgl32.Vec3{0.02, 1.5, 3}
-	pc.Target = mgl32.Vec3{0, 1.2, 0}
+	pc.Position = mgl32.Vec3{0.02, 1.5, -1}
+	pc.Target = mgl32.Vec3{0, 1.2, -4}
 	app.mainWnd.Camera = pc
 
 	// Orbit camera should have b
@@ -101,11 +101,11 @@ func buildScene() {
 }
 
 func checkLimits(point mgl32.Vec3, target bool) mgl32.Vec3 {
-	if point[0] < -2 {
-		point[0] = -2
+	if point[0] < -1.7 {
+		point[0] = -1.7
 	}
-	if point[0] > 2 {
-		point[0] = 2
+	if point[0] > 1.7 {
+		point[0] = 1.7
 	}
 	if point[1] < 0.2 {
 		point[1] = 0.2
@@ -113,11 +113,11 @@ func checkLimits(point mgl32.Vec3, target bool) mgl32.Vec3 {
 	if point[1] > 2.5 {
 		point[1] = 2.5
 	}
-	if point[2] < -3 {
-		point[2] = -3
+	if point[2] < -6.0 {
+		point[2] = -6.0
 	}
-	if point[2] > 3.5 {
-		point[2] = 3.5
+	if point[2] > -0.5 {
+		point[2] = -0.5
 	}
 	return point
 }

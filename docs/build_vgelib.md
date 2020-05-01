@@ -2,51 +2,50 @@
 
 ## Depencendicies
 
-VGELib uses [GLFW](https://www.glfw.org/) library to handle native UI / event handling in platform independent manner.
-GLFW is included into VGE project as a git submodule. 
+VGELib uses [GLFW](https://www.glfw.org/) library to handle native UI / event handling in a platform independent manner.
+GLFW is included in the VGE project as a git submodule. 
 
-You must update submodules to download actual GLTW code using git submodule command.
+You must update submodules to download the actual GLTW code using the git submodule command.
 
 `git submodule init`
 
 `git submodule update`
 
-Other dependencies (std_image.h) are included in VGE project.
+Other dependencies (std_image.h) are included in the VGE project.
 
 ## Vulkan SDK
 
 Download and install [Vulkan SDK](https://vulkan.lunarg.com/)
 
-Optionally: Run vkcube example from SDK to check that your display drivers supports Vulkan.
+Optionally: Run vkcube example from SDK to check that your display drivers support Vulkan.
  
 ## C++ version
 
-VGE is fairly standard C++ and don't use advanced C++ concepts. However it uses some standard libraries from C++ 17 (std::string_view). 
+VGE is fairly standard C++ code and does not use advanced C++ concepts. However, it uses some standard libraries from C++ 17 (std::string_view). 
  
 ## CMake
 
 VGELib uses CMake build system. 
-In addition to normal CMake parameters you must define VULKAN_SDK cache variable 
-that must point to directory where you installed Vulkan SDK
+In addition to the normal CMake parameters you must define the VULKAN_SDK cache variable 
+that must point to the directory where you installed Vulkan SDK
 
 `cmake -DVULKAN_SDK={Vulkan SDK install path} ...`
 
-Installing release mode binaries should install new version of VGELib.dll (libVGELib.so)
+Installing release mode binaries should install a new version of VGELib.dll (libVGELib.so)
 
 ## Linux build
 
-Linux release build was compiled with clang 9.0 C and C++ compilers and
-build has been tested only with clang compiler. 
-GNU gcc/g++ compilers might still require some tweaking of compiler settings.
+Linux release build was compiled with clang 9.0 C and C++ compilers and the build has been tested only with the clang compiler. 
+GNU gcc/g++ compilers should also work if you prefer them.
 
-Linux need additional libraries to build GLWF. 
-See their documentation about requirements (or just run make and install what is missing).
+Linux needs additional libraries to build GLWF. 
+See their documentation about the requirements (or just run make and install what is missing).
 
-Also ensure that you place your shared library (libVGELib.so) where OS will be able to locate it.
+Also, make sure that you place your shared library (libVGELib.so) where the OS will be able to locate it.
 
 ## Windows build
 
-Windows build was done with Visual Studio 2019 Community edition.
+The Windows build was made with the Visual Studio 2019 Community edition.
 
  
 

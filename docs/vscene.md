@@ -1,107 +1,107 @@
 # Scene handling in VGE
 
-Main scene handling is implemented in vscene module. 
+The main scene handling is implemented in the vscene module. 
 
-Scene in VGE will contain all elements making up a rendered image.
+A Scene in the VGE will contain all the elements making up a rendered image.
  
-Scene is hierarchical acyclic graph of nodes starting from root node. 
-Each node contains optional a NodeControl and child nodes.
+A Scene is a hierarchical acyclic graph of nodes starting from root node. 
+Each node contains optionally a NodeControl and child nodes.
 
-Most of VGE examples shows how to construct, control and manipulate Scenes.
+Most of the VGE examples show how to construct, control and manipulate Scenes.
 
 ## NodeControl
 
 NodeControl is something that controls rendering a Scene. 
-NodeControls can for example control position, draw mesh, add light, add background etc.
+NodeControls can, for example, control the position, draw mesh, add light, add background etc.
 
 Node controls are divided into multiple modules depending on what they do. 
-For example env contains background and probe rendering. Shadow module contains shadow light rendering etc...
+For example, the Env module contains background and probe rendering. The Shadow module contains shadow light rendering etc...
 
 
 #### TransformControl
 
-Applier 3D transform (position, scale, rotation) to current node and all child nodes.
+Applies a 3D transform (position, scale, rotation) to the current node and all child nodes.
 
 #### AmbientLight
 
-Adds ambient light to scene. Only one ambient light can be used in one scene. 
+Adds an ambient light to a scene. Only one ambient light can be used in one scene. 
 
 #### DirectionalLight
 
-Adds directional light to scene.
+Adds a directional light to scene.
 
 #### PointLight  
 
-Adds point light to scene.
+Adds a point light to scene.
 
 #### PointLight (shadow) 
 
-Adds point light to scene that will cast shadow.
+Adds a point light to scene that will cast shadow.
 
-_Shadow casting light are quite much more expensive (uses more GPU resources) that lights without shadow_
+_Shadow casting lights are much more expensive (uses more GPU resources) than lights without a shadow_
 
 #### GrayBg
 
-Gray gradient background for scene. See WebView example. Scene should only have one background.
+Gray gradient background for a scene. See the WebView example. A scene should only have one background.
 
 #### EquiRectBGNode
 
-Background rendered using  image in equirectangular projection as a background. Most examples uses EquiRectBGNode.
+Background rendering using an image in equirectangular projection as a background. Most examples uses EquiRectBGNode.
 
 #### MeshNodeControl
 
-Render mesh using given shader. Typically these nodes are constructed using existing model.
+Renders a mesh using the given shader. Typically, these nodes are constructed using existing model.
 vscene.NodeFromModel. You can have multiple instances of same MeshNodeControl in single scene.
 
 #### AnimatedNodeControl
 
-Like MeshNodeControl but made from rigged meshes. AnimatedNodeControl has methods to update and change running animation(s).
+Like MeshNodeControl but made from rigged meshes. AnimatedNodeControl has methods to update and change a running animation(s).
 
 #### MultiControl
 
 You can place several node controls into one MultiControl. 
-Sometimes it is more convenient to place for example a Transformation and a Light into one node.
+Sometimes it is more convenient to place, for example, a Transformation and a Light into one node.
  
 #### Probe 
 
-Probe will render view from probe location excluding all child nodes. Some shaders like Pbr and Std can use probe images to
-render reflection of metallic surfaces. Probe also computer spherical harmonics for irradiance lightning.
+Probe will render a view from the probe location excluding all child nodes. Some shaders like Pbr and Std can use probe images to
+render the reflection of metallic surfaces. Probes also compute spherical harmonics for irradiance lightning.
 
-_Currently only one probe per node tree is supported. This will be changed later. So you can't have a probe inside a child node which parent also has a probe._
+_Currently, only one probe per node tree is supported. This will be changed later. So you cannot have a probe inside a child node when the parent also has a probe._
 
 _Probe and ambient light are exclusive. Ambient light is actually zeroth order of spherical harmonic_
 
 #### Decal (experimental)
 
-Only Std shader support decals. Decals can render 2D image, placed in 3D world over a 3D mesh. 
+Only Std shader supports decals. Decals can render a 2D image, placed in 3D world over a 3D mesh. 
 
-In VGE decals don't break up mesh. Updating mesh in GPU is quite expensive and not very useful for if you wan't to animate decals. 
-Therefore, in VGE are decals are calculated and applied in the shader! Decals will only affect current node and it's child nodes.
+In VGE, the decals do not break up mesh. Updating a mesh in GPU is quite expensive and not very pragmatic when you desire to animate decals. 
+Therefore, in VGE the decals are calculated and applied in the shader! Decals will only affect the current node and it's child nodes.
 
-See robomaze example with -oil command line switch to see oil stain decals in demo.
+See the robomaze example with -oil command line switch to see oil stain decals in demo.
  
 #### UIView
 
-Places user interface into scene. See [VGE UI](vui.md)
+Places an user interface into a scene. See [VGE UI](vui.md)
 
 ### Custom node control
 
-Robomaze example have quite a lot of custom node controls that handle for example animation of scene.
+Robomaze examples have quite a lot of custom node controls that handle, for example, the animation of scene.
 
 ## Scene updates
 
-When constructing scene you can directly change nodes and node control of scene. However, 
-when you start rendering Scene it is important that you don't change Scene at same time that rendering process in using the Scene. 
+When constructing a scene you can directly change the nodes and node controls of scene. However,
+when you start rendering a scene it is important that you do not change the scene at same time that the rendering process in using the scene. 
 
-Scene has Update method that takes a function. Function will be called when it is safe to update scene. 
+A Scene has an Update method that takes a function. The function will be called when it is safe to the update scene. 
 
-**You should never do any I/O or other time consuming things in update. Prepare information before Update and only call Update to apply prepared changes to Scene.**
+**You should never do any I/O or other time consuming things in an update. Prepare data before the Update and only call Update to apply prepared changes to a scene.**
 
 ## Phases
 
-Scene is rendered in multiple phases. Some phases may be skipped depending on rendering process.
+A scene is rendered in multiple phases. Some phases may be skipped depending on the rendering process.
 
-Typical rendering of scene looks like:
+A typical rendering of scene looks like the following:
 
 ```go
     bg := vscene.NewDrawPhase(rc, f.frp, vscene.LAYERBackground, cmd, func() {
@@ -126,19 +126,19 @@ Typical rendering of scene looks like:
     cmd.Wait()
 ```
  
-PredrawPhase will handle all rendering required to support main scene rendering. 
-This includes for example rendering shadow map for each light cast shadows. 
-Also probes (when updates) renders them in predraw phase. 
+The PredrawPhase will handle all rendering required to support main scene rendering. 
+This includes, for example, rendering a shadow map for each light that casts shadows. 
+Also probes (when updating) renders them in predraw phase.
 
-Predraw phases submit rendering but don't necessarily wait them to complete. This allows GPU to handle multiple submit parallel. 
-In order to ensure that all previous work has been done, implementation must call all pending methods of predraw phase and also
-include all Needed submit infos when submitting main rendering command. See for example shadow.PointLight implementation.
+Predraw phases submit rendering but do not necessarily wait for them to complete. This allows GPU to handle multiple submits in parallel. 
+In order to ensure that all previous work has been done, the implementation must call all pending methods of the predraw phase and also
+include all necessary submit infos when submitting the main rendering command. For example, see the  shadow.PointLight implementation.
 
-Draw phases will draw different layers of scene. Layers are background, main 3D, transparent (not jet supported) and UI. 
-You may add custom phases if needed. 
+Draw phases will draw the different layers of scene. Layers are background, main 3D, transparent (not yet supported) and UI. 
+You may add a custom phases if necessary. 
 
 
-_You can usually use premade implementation ForwardRenderer in vapp module to handle rendering a scene_
+_You can usually use the premade implementation ForwardRenderer in vapp module to handle rendering a scene_
  
 
 

@@ -1,7 +1,7 @@
 
 # Fonts
 
-All fonts downloaded from Google font except Material Icons.
+All fonts have been downloaded from Google fonts, except Material Icons.
 
 Links to specific assets:
 - Oxanium [https://github.com/sevmeyer/oxanium]

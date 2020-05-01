@@ -36,7 +36,7 @@ Installing release mode binaries should install a new version of VGELib.dll (lib
 ## Linux build
 
 Linux release build was compiled with clang 9.0 C and C++ compilers and the build has been tested only with the clang compiler. 
-GNU gcc/g++ compilers might still require some tweaking of compiler settings.
+GNU gcc/g++ compilers should also work if you prefer them.
 
 Linux needs additional libraries to build GLWF. 
 See their documentation about the requirements (or just run make and install what is missing).

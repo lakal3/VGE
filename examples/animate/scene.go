@@ -88,7 +88,7 @@ func buildScene() {
 	buildSelector()
 
 	// Camera
-	pc := vscene.NewPerspectiveCamera(10)
+	pc := vscene.NewPerspectiveCamera(20)
 	pc.Position = mgl32.Vec3{0.02, 1.5, -1}
 	pc.Target = mgl32.Vec3{0, 1.2, -4}
 	app.mainWnd.Camera = pc
@@ -193,22 +193,32 @@ func updateAnimation(node *vscene.Node, bvh *vanimation.BVHAnimation) {
 }
 
 var boneMap1 = map[string]string{
-	"Hips":          "bacino",
-	"Spine":         "addome",
-	"Spine1":        "schienasu",
-	"RightUpLeg":    "coscia.L",
-	"RightLeg":      "polpaccio.L",
-	"LeftUpLeg":     "coscia.R",
-	"LeftLeg":       "polpaccio.R",
-	"RightShoulder": "clavicola.L",
-	"RightArm":      "bracciosu.L",
-	"RightForeArm":  "bracciogiu.L",
-	"RightHand":     "mano.L",
-	"LeftShoulder":  "clavicola.R",
-	"LeftArm":       "bracciosu.R",
-	"LeftForeArm":   "bracciogiu.R",
-	"LeftHand":      "mano.R",
-	"Neck":          "collogiu",
+	"Hips":             "bacino",
+	"Spine":            "addome",
+	"Spine1":           "schienasu",
+	"RightUpLeg":       "coscia.L",
+	"RightLeg":         "polpaccio.L",
+	"LeftUpLeg":        "coscia.R",
+	"LeftLeg":          "polpaccio.R",
+	"RightShoulder":    "clavicola.L",
+	"RightArm":         "bracciosu.L",
+	"RightForeArm":     "bracciogiu.L",
+	"RightHand":        "mano.L",
+	"LeftShoulder":     "clavicola.R",
+	"LeftArm":          "bracciosu.R",
+	"LeftForeArm":      "bracciogiu.R",
+	"LeftHand":         "mano.R",
+	"LeftHandThumb1":   "pollice1.R",
+	"LeftHandIndex1":   "indice1.R",
+	"LeftHandMiddle1":  "medio1.R",
+	"LeftHandRing1":    "anulare1.R",
+	"LeftHandPinky1":   "mignolo1.R",
+	"RightHandThumb1":  "pollice1.L",
+	"RightHandIndex1":  "indice1.L",
+	"RightHandMiddle1": "medio1.L",
+	"RightHandRing1":   "anulare1.L",
+	"RightHandPinky1":  "mignolo1.L",
+	"Neck":             "collogiu",
 }
 
 var boneMap2 = map[string]string{

@@ -117,7 +117,7 @@ func loadModels() (err error) {
 	vapp.AddChild(app.probe)
 
 	// Night time background image
-	app.bg = vapp.MustLoadAsset("envhdr/moonless_golf_1k.hdr", func(content []byte) (asset interface{}, err error) {
+	app.bg = vapp.MustLoadAsset("envhdr/preller_drive_2k.hdr", func(content []byte) (asset interface{}, err error) {
 		return env.NewEquiRectBGNode(vapp.Ctx, vapp.Dev, 100, "hdr", content), nil
 	}).(*env.EquiRectBGNode)
 	return nil

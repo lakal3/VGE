@@ -57,6 +57,8 @@ type hWindow hDisposable
 
 type hSubmitInfo uintptr
 
+type hQueryPool uintptr
+
 type MainLib interface {
 	Exception_GetError(struct {
 		ex     hException
@@ -145,6 +147,12 @@ type MainLib interface {
 		prevLayout     hDescriptorLayout
 		dsLayout       *hDescriptorLayout
 	})
+	Device_NewTimestampQuery(struct {
+		dev  hDevice
+		size uint32
+		qp   *hQueryPool
+	})
+
 	MemoryBlock_Reserve(struct {
 		memBlock  hMemoryBlock
 		memObject hMemoryObject
@@ -202,6 +210,12 @@ type MainLib interface {
 	Command_Draw(struct {
 		cmd   hCommand
 		draws []vk.DrawItem
+	})
+	Command_WriteTimer(struct {
+		cmd        hCommand
+		qp         hQueryPool
+		stages     vk.PipelineStageFlags
+		timerIndex uint32
 	})
 	Device_Submit(struct {
 		dev       hDevice
@@ -372,5 +386,11 @@ type MainLib interface {
 		y           uint32
 		z           uint32
 		descriptors []hDescriptorSet
+	})
+
+	QueryPool_Get(struct {
+		qp              hQueryPool
+		values          []uint64
+		timestampPeriod *float32
 	})
 }

@@ -54,7 +54,7 @@ type hWindow hDisposable
 
 type hSubmitInfo uintptr
 
-type hFontLoader hDisposable
+type hQueryPool hDisposable
 
 type ImageDescription struct {
 	Width     uint32

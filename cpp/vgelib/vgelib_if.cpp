@@ -20,6 +20,7 @@ DLLEXPORT Exception * Command_Draw(Command* cmd, DrawItem* draws, size_t draws_l
 DLLEXPORT Exception * Command_EndRenderPass(Command* cmd);
 DLLEXPORT Exception * Command_SetLayout(Command* cmd, Image* image, ImageRange* imRange, int32_t newLayout);
 DLLEXPORT Exception * Command_Wait(Command* cmd);
+DLLEXPORT Exception * Command_WriteTimer(Command* cmd, QueryPool* qp, int32_t stages, uint32_t timerIndex);
 DLLEXPORT Exception * ComputePipeline_Create(ComputePipeline* cp);
 DLLEXPORT void DebugPoint(char * point, size_t point_len);
 DLLEXPORT Exception * DescriptorLayout_NewPool(DescriptorLayout* layout, uint32_t size, DescriptorPool*& pool);
@@ -39,6 +40,7 @@ DLLEXPORT Exception * Device_NewGraphicsPipeline(Device* dev, GraphicsPipeline*&
 DLLEXPORT Exception * Device_NewImage(Device* dev, int32_t usage, ImageDescription* desc, Image*& image);
 DLLEXPORT Exception * Device_NewMemoryBlock(Device* dev, MemoryBlock*& memBlock);
 DLLEXPORT Exception * Device_NewSampler(Device* dev, int32_t repeatMode, Sampler*& sampler);
+DLLEXPORT Exception * Device_NewTimestampQuery(Device* dev, uint32_t size, QueryPool*& qp);
 DLLEXPORT Exception * Device_Submit(Device* dev, Command* cmd, uint32_t priority, SubmitInfo** info, size_t info_len, int32_t waitStage, SubmitInfo*& waitInfo);
 DLLEXPORT void Disposable_Dispose(Disposable* disp);
 DLLEXPORT void Exception_GetError(Exception* ex, char * msg, size_t msg_len, int32_t& msgLen);
@@ -63,6 +65,7 @@ DLLEXPORT Exception * NewForwardRenderPass(Device* dev, int32_t finalLayout, int
 DLLEXPORT Exception * NewImageLoader(ImageLoader*& loader);
 DLLEXPORT Exception * Pipeline_AddDescriptorLayout(Pipeline* pl, DescriptorLayout* dsLayout);
 DLLEXPORT Exception * Pipeline_AddShader(Pipeline* pl, int32_t stage, uint8_t* code, size_t code_len);
+DLLEXPORT Exception * QueryPool_Get(QueryPool* qp, uint64_t* values, size_t values_len, float& timestampPeriod);
 DLLEXPORT Exception * RenderPass_Init(RenderPass* rp);
 DLLEXPORT Exception * RenderPass_NewFrameBuffer(RenderPass* rp, ImageView** attachments, size_t attachments_len, Framebuffer*& fb);
 DLLEXPORT Exception * Window_GetNextFrame(Window* win, Image*& image, SubmitInfo*& submitInfo, int32_t& viewIndex);
@@ -202,6 +205,15 @@ Exception * Command_SetLayout(Command* cmd, Image* image, ImageRange* imRange, i
 Exception * Command_Wait(Command* cmd) {
     try {
         cmd->Wait();
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Command_WriteTimer(Command* cmd, QueryPool* qp, int32_t stages, uint32_t timerIndex) {
+    try {
+        cmd->WriteTimer(qp, vk::PipelineStageFlags(stages), timerIndex);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }
@@ -368,6 +380,15 @@ Exception * Device_NewMemoryBlock(Device* dev, MemoryBlock*& memBlock) {
 Exception * Device_NewSampler(Device* dev, int32_t repeatMode, Sampler*& sampler) {
     try {
         dev->NewSampler(vk::SamplerAddressMode(repeatMode), sampler);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Device_NewTimestampQuery(Device* dev, uint32_t size, QueryPool*& qp) {
+    try {
+        dev->NewTimestampQuery(size, qp);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }
@@ -574,6 +595,15 @@ Exception * Pipeline_AddDescriptorLayout(Pipeline* pl, DescriptorLayout* dsLayou
 Exception * Pipeline_AddShader(Pipeline* pl, int32_t stage, uint8_t* code, size_t code_len) {
     try {
         pl->AddShader(vk::ShaderStageFlags(stage), code, code_len);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * QueryPool_Get(QueryPool* qp, uint64_t* values, size_t values_len, float& timestampPeriod) {
+    try {
+        qp->Get(values, values_len, timestampPeriod);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }

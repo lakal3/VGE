@@ -305,6 +305,11 @@ void vge::Command::init()
 
 }
 
+void vge::Command::WriteTimer(QueryPool* qp, vk::PipelineStageFlags stages, uint32_t timerIndex) {
+	auto stage = static_cast<vk::PipelineStageFlagBits>(static_cast<VkMemoryMapFlags>(stages));
+	_cmd.writeTimestamp(stage, qp->_handle, timerIndex, _dev->get_dispatch());
+}
+
 void vge::WaitForCmd::prepare(vk::SubmitInfo& si, std::vector<vk::Semaphore>& waitFor, std::vector<vk::PipelineStageFlags>& waitAt)
 {
 	waitFor.push_back(this->semWait);
@@ -313,4 +318,23 @@ void vge::WaitForCmd::prepare(vk::SubmitInfo& si, std::vector<vk::Semaphore>& wa
 
 void vge::WaitForCmd::submitted(Queue* queue)
 {
+}
+
+void vge::QueryPool::init() {
+	vk::QueryPoolCreateInfo cqi;
+	cqi.queryCount = _size;
+	cqi.queryType = _queryType;
+	_handle = _dev->get_device().createQueryPool(cqi, allocator, _dev->get_dispatch());
+}
+
+void vge::QueryPool::Get(uint64_t* values, size_t values_len, float &timestampPeriod)
+{
+	auto result =_dev->get_device().getQueryPoolResults(_handle, 0, static_cast<uint32_t>(values_len), 8 * values_len, static_cast<void*>(values), 8,
+		vk::QueryResultFlagBits::e64, _dev->get_dispatch());
+	timestampPeriod = _dev->get_pdProperties().limits.timestampPeriod;
+}
+
+void vge::QueryPool::Dispose()
+{
+	_dev->get_device().destroyQueryPool(_handle, allocator, _dev->get_dispatch());
 }

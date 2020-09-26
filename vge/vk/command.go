@@ -143,6 +143,41 @@ func (c *Command) Compute(cp *ComputePipeline, x uint32, y uint32, z uint32, des
 	call_Command_Compute(c.Ctx, c.hCmd, cp.hPl, x, y, z, hds)
 }
 
+// Write value of timer after all commands in stage has completed
+func (c *Command) WriteTimer(tp *TimerPool, timerIndex uint32, stage PipelineStageFlags) {
+	call_Command_WriteTimer(c.Ctx, c.hCmd, tp.pool, stage, timerIndex)
+}
+
+type TimerPool struct {
+	dev  *Device
+	pool hQueryPool
+	size uint32
+}
+
+func (t *TimerPool) Dispose() {
+	if t.pool != 0 {
+		call_Disposable_Dispose(hDisposable(t.pool))
+		t.pool = 0
+	}
+}
+
+func (t *TimerPool) Get(ctx APIContext) []float64 {
+	result := make([]uint64, t.size)
+	var multiplier float32
+	call_QueryPool_Get(ctx, t.pool, result, &multiplier)
+	fresult := make([]float64, t.size)
+	for idx, r := range result {
+		fresult[idx] = float64(r) * float64(multiplier)
+	}
+	return fresult
+}
+
+func NewTimerPool(ctx APIContext, dev *Device, size uint32) *TimerPool {
+	t := &TimerPool{dev: dev, size: size}
+	call_Device_NewTimestampQuery(ctx, dev.hDev, size, &t.pool)
+	return t
+}
+
 func (dr *DrawList) Draw(pl Pipeline, from, count uint32) *DrawItem {
 	di := DrawItem{pipeline: pl.handle(), from: from, count: count, instances: 1}
 	dr.list = append(dr.list, di)

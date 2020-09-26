@@ -457,6 +457,8 @@ func paramToCpp(pt reflect.Type) string {
 		return "uint64_t"
 	case reflect.Uint8:
 		return "uint8_t"
+	case reflect.Float32:
+		return "float"
 	case reflect.String:
 		return "char *"
 	}

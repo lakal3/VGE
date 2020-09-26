@@ -35,6 +35,7 @@ namespace vge {
     class Sampler;
     class Desktop;
     class Window;
+    class QueryPool;
     struct SubmitInfo;
 }
 

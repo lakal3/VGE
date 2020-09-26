@@ -113,7 +113,11 @@ func testRender(tc *testContext, d *Device, ld ImageLoader) {
 		return
 	}
 	defer cmd.Dispose()
+	timer := NewTimerPool(tc, d, 2)
+	defer timer.Dispose()
 	cmd.Begin()
+	cmd.WriteTimer(timer, 0, PIPELINEStageTopOfPipeBit)
+
 	cmd.BeginRenderPass(fp, fb)
 	drawList := &DrawList{}
 	for idx := uint32(0); idx < triangleCount; idx++ {
@@ -122,11 +126,16 @@ func testRender(tc *testContext, d *Device, ld ImageLoader) {
 	}
 	cmd.Draw(drawList)
 	cmd.EndRenderPass()
+	cmd.WriteTimer(timer, 1, PIPELINEStageFragmentShaderBit)
+
 	r := mainImage.FullRange()
 	r.Layout = IMAGELayoutTransferSrcOptimal
 	cmd.CopyImageToBuffer(ib, mainImage, &r)
 	cmd.Submit()
 	cmd.Wait()
+	times := timer.Get(tc)
+	tc.t.Log("Time was ", times[0], times[1], times[1]-times[0])
+
 	defer tp.pl.Dispose()
 	im := image.NewRGBA(image.Rect(0, 0, int(mainImage.Description.Width), int(mainImage.Description.Height)))
 	copy(im.Pix, ib.Bytes(tc))

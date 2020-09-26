@@ -137,6 +137,7 @@ namespace vge {
 		void NewGraphicsPipeline(GraphicsPipeline*& gp);
 		void NewComputePipeline(ComputePipeline*& cp);
 		void NewSampler(vk::SamplerAddressMode mode, Sampler*& sampler);
+		void NewTimestampQuery(uint32_t size, QueryPool*& qp);
 		void Submit(Command* command, uint32_t priority, SubmitInfo **info, size_t info_len, vk::PipelineStageFlags waitForStage, SubmitInfo*& waitFor);
 
 		const vk::DispatchLoaderDynamic& get_dispatch() const {
@@ -160,6 +161,10 @@ namespace vge {
 		}
 		uint32_t get_graphicQueueFamily() {
 			return _graphicsQueueIdx;
+		}
+
+		const vk::PhysicalDeviceProperties& get_pdProperties() const {
+			return _properties;
 		}
 	protected:
 		virtual void Dispose() override;

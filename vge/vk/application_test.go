@@ -22,7 +22,7 @@ func (t *testContext) Begin(callName string) (atEnd func()) {
 }
 
 func TestNewApplication(t *testing.T) {
-	// VGEDllPath = "D:\\vcc19\\VGE\\cpp\\Build\\Debug\\VGELibd.dll"
+	VGEDllPath = "VGELibd.dll"
 	tc := &testContext{t: t}
 	a := NewApplication(tc, "Test")
 	a.AddValidation(tc)
@@ -42,7 +42,7 @@ func TestNewApplication(t *testing.T) {
 	a.Dispose()
 }
 
-func testCopy(ctx APIContext, dev *Device) error {
+func testCopy(ctx *testContext, dev *Device) error {
 	mp := NewMemoryPool(dev)
 	defer mp.Dispose()
 	b1 := mp.ReserveBuffer(ctx, 999, true, BUFFERUsageTransferSrcBit)

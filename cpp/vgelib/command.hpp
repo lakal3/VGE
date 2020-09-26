@@ -31,6 +31,7 @@ namespace vge {
 		void Draw(DrawItem* draws, size_t draws_len);
 		void Compute(ComputePipeline* pl, uint32_t x, uint32_t y, uint32_t z, DescriptorSet** descriptors, size_t descriptors_len);
 		void Wait();
+		void WriteTimer(QueryPool* qp, vk::PipelineStageFlags stages, uint32_t timerIndex);
 	private:
 		Command(Device* dev, uint32_t family, bool once) : _dev(dev), _family(family), _once(once) {
 
@@ -74,5 +75,22 @@ namespace vge {
 
 		vk::Semaphore _presentSem;
 		
+	};
+
+	class QueryPool: Disposable {
+		friend class Command;
+		friend class Device;
+	public:
+		void Get(uint64_t* values, size_t values_len, float& timestampPeriod);
+	private:
+		QueryPool(Device* dev, vk::QueryType queryType, uint32_t size) : _dev(dev), _queryType(queryType), _size(size) {
+
+		}
+		void init();
+		virtual void Dispose() override;
+		Device* _dev;
+		vk::QueryPool _handle;
+		const vk::QueryType _queryType;
+		const uint32_t _size;
 	};
 }

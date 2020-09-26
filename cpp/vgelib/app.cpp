@@ -291,6 +291,12 @@ void vge::Device::NewSampler(vk::SamplerAddressMode mode, Sampler*& sampler)
 
 }
 
+void vge::Device::NewTimestampQuery(uint32_t size, QueryPool*& qp)
+{
+	qp = new QueryPool(this, vk::QueryType::eTimestamp, size);
+	qp->init();
+}
+
 void vge::Device::Submit(Command* command, uint32_t priority, SubmitInfo **info, size_t info_len, vk::PipelineStageFlags waitForStage, SubmitInfo* &waitFor)
 {
 	Queue* found = nullptr;

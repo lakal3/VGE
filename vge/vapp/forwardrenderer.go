@@ -13,6 +13,11 @@ type ForwardRenderer struct {
 	// RenderDone is an optional function that is called each time after completing rendering of scene
 	RenderDone func(started time.Time)
 
+	// GPSTiming if set, records GPU timings for each frame
+	// First value is start time, second at start of main cmd, third at end of main cmd
+	// NOTE! First timing if from different submit and maybe different submit queue. See Vulkan documentation for vkCmdWriteTimestamp.
+	GPUTiming func([]float64)
+
 	owner        vk.Owner
 	dev          *vk.Device
 	Ctx          vk.APIContext
@@ -88,6 +93,9 @@ func (f *ForwardRenderer) Render(sc *vscene.Scene, rc *vk.RenderCache, mainImage
 	f.RenderView(sc, rc, mainView, depthView, infos)
 }
 
+var kTimer = vk.NewKey()
+var kTimerCmd = vk.NewKey()
+
 func (f *ForwardRenderer) RenderView(sc *vscene.Scene, rc *vk.RenderCache, mainView *vk.ImageView, depthView *vk.ImageView, infos []vk.SubmitInfo) {
 	fb := rc.Get(kFp, func(ctx vk.APIContext) interface{} {
 		if f.depth {
@@ -96,11 +104,23 @@ func (f *ForwardRenderer) RenderView(sc *vscene.Scene, rc *vk.RenderCache, mainV
 		return vk.NewFramebuffer(ctx, f.frp, []*vk.ImageView{mainView})
 	}).(*vk.Framebuffer)
 	start := time.Now()
+	var tp *vk.TimerPool
+	if f.GPUTiming != nil {
+		tp = vk.NewTimerPool(rc.Ctx, rc.Device, 3)
+		rc.SetPerFrame(kTimer, tp)
+		timerCmd := vk.NewCommand(rc.Ctx, rc.Device, vk.QUEUEComputeBit, true)
+		timerCmd.Begin()
+		timerCmd.WriteTimer(tp, 0, vk.PIPELINEStageTopOfPipeBit)
+		infos = append(infos, timerCmd.SubmitForWait(1, vk.PIPELINEStageTopOfPipeBit))
+		rc.SetPerFrame(kTimerCmd, timerCmd)
+	}
 	cmd := rc.Get(kCmd, func(ctx vk.APIContext) interface{} {
 		return vk.NewCommand(f.Ctx, f.dev, vk.QUEUEGraphicsBit, false)
 	}).(*vk.Command)
 	cmd.Begin()
-
+	if f.GPUTiming != nil {
+		cmd.WriteTimer(tp, 1, vk.PIPELINEStageTopOfPipeBit)
+	}
 	bg := vscene.NewDrawPhase(rc, f.frp, vscene.LAYERBackground, cmd, func() {
 		if !f.depthPrePass {
 			cmd.BeginRenderPass(f.frp, fb)
@@ -127,9 +147,15 @@ func (f *ForwardRenderer) RenderView(sc *vscene.Scene, rc *vk.RenderCache, mainV
 		pd()
 	}
 	infos = append(infos, ppPhase.Needeed...)
+	if tp != nil {
+		cmd.WriteTimer(tp, 2, vk.PIPELINEStageAllCommandsBit)
+	}
 	cmd.Submit(infos...)
 	cmd.Wait()
 	runtime.KeepAlive(infos)
+	if tp != nil {
+		f.GPUTiming(tp.Get(rc.Ctx))
+	}
 	if f.RenderDone != nil {
 		f.RenderDone(start)
 	}

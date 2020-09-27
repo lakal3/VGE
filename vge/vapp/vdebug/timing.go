@@ -9,27 +9,47 @@ import (
 	"time"
 )
 
+// NewFPSTimer creates a simple UI to display FPS.
+// FPS is calculated from start of scene to end of submit (CPU time).
+// FPS times is attached to end of current scenes UI nodes.
 func NewFPSTimer(rw *vapp.RenderWindow, theme vui.Theme) *FPSTimer {
 	fp := &FPSTimer{rw: rw}
 	fr, ok := rw.GetRenderer().(*vapp.ForwardRenderer)
 	if ok {
 		fr.RenderDone = fp.renderDone
-		fp.uiView = vui.NewUIView(theme, fp.getArea(), rw)
-		fp.uiView.MainCtrl = vui.NewLabel("FPS").AssignTo(&fp.lFPS)
+		fp.UIView = vui.NewUIView(theme, fp.getArea(), rw)
+		fp.UIView.MainCtrl = vui.NewVStack(2, vui.NewLabel("FPS").AssignTo(&fp.lFPS),
+			vui.NewLabel("").AssignTo(&fp.lGPU))
 		rw.Scene.Update(func() {
-			rw.Env.Children = append(rw.Env.Children, vscene.NewNode(fp.uiView))
+			rw.Ui.Children = append(rw.Ui.Children, vscene.NewNode(fp.UIView))
 		})
 	}
 	return fp
 }
 
+// AddGPUTiming adds support for timing from start of first submit in render phase to end of main command submit.
+// GPU time should include all time used in rendering but not time used to manage swap chain
+func (fp *FPSTimer) AddGPUTiming() {
+	fr, ok := fp.rw.GetRenderer().(*vapp.ForwardRenderer)
+	if ok {
+		fr.GPUTiming = func(times []float64) {
+			var delta = (times[2] - times[0]) / 1e9
+			fp.gpuCount++
+			fp.gpuTotal += delta
+		}
+	}
+}
+
 type FPSTimer struct {
-	rw      *vapp.RenderWindow
-	count   int
-	total   float64
-	visible bool
-	lFPS    *vui.Label
-	uiView  *vui.UIView
+	rw       *vapp.RenderWindow
+	count    int
+	total    float64
+	gpuCount int
+	gpuTotal float64
+	visible  bool
+	lFPS     *vui.Label
+	UIView   *vui.UIView
+	lGPU     *vui.Label
 }
 
 func (t *FPSTimer) renderDone(started time.Time) {
@@ -39,12 +59,17 @@ func (t *FPSTimer) renderDone(started time.Time) {
 	if t.count > 50 {
 		t.rw.Scene.Update(func() {
 			if !t.visible {
-				t.uiView.ShowInactive()
+				t.UIView.ShowInactive()
 				t.visible = true
 			}
 			ft := t.total / float64(t.count) * 1000.0
-			t.lFPS.Text = fmt.Sprintf("Average render time %.2f ms (FPS %.1f)", ft, 1000/ft)
-			t.uiView.Area = t.getArea()
+			t.lFPS.Text = fmt.Sprintf("Render time %.2f ms (FPS %.1f)", ft, 1000/ft)
+			if t.gpuCount > 0 {
+				ft = t.gpuTotal / float64(t.gpuCount) * 1000.0
+				t.lGPU.Text = fmt.Sprintf("GPU time %.2fms (FPS %.1f)", ft, 1000/ft)
+			}
+			t.count, t.gpuCount, t.total, t.gpuTotal = 0, 0, 0, 0
+			t.UIView.Area = t.getArea()
 		})
 	}
 }

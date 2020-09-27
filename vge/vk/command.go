@@ -161,6 +161,9 @@ func (t *TimerPool) Dispose() {
 	}
 }
 
+// Get retrieve recorded values converted to nanosecond. Values are valid only after command(s) have completed.
+// Only difference of values make any sense and if you record time events from multiple queues, times may no be comparable
+// Use WriteTimer in command to record actual timer values.
 func (t *TimerPool) Get(ctx APIContext) []float64 {
 	result := make([]uint64, t.size)
 	var multiplier float32
@@ -172,6 +175,9 @@ func (t *TimerPool) Get(ctx APIContext) []float64 {
 	return fresult
 }
 
+// NewTimerPool creates a QueryPool for timing.
+// You must specify how many time events you want to write to in one pool
+// Currently pool can be used only once. Dispose and create a new pool if you need multiple recording
 func NewTimerPool(ctx APIContext, dev *Device, size uint32) *TimerPool {
 	t := &TimerPool{dev: dev, size: size}
 	call_Device_NewTimestampQuery(ctx, dev.hDev, size, &t.pool)

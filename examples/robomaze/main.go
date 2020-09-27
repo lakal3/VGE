@@ -36,6 +36,7 @@ var app struct {
 	oil         bool
 	video       bool
 	devIndex    int
+	fps         bool
 }
 
 func main() {
@@ -46,7 +47,7 @@ func main() {
 	flag.BoolVar(&app.oil, "oil", false, "Add oil leak decals")
 	flag.IntVar(&app.devIndex, "dev", -1, "Device index")
 	flag.BoolVar(&app.video, "video", false, "Set windows to video size 1280 x 768")
-
+	flag.BoolVar(&app.fps, "fps", false, "Add FPS debug control to window")
 	flag.Parse()
 
 	if app.devIndex >= 0 {
@@ -54,7 +55,7 @@ func main() {
 	}
 	if debug {
 		vapp.AddOption(vapp.Validate{})
-		// vk.VGEDllPath = "VGELibd.dll"
+		//  vk.VGEDllPath = "VGELibd.dll"
 	}
 	if app.oil {
 		// Add dynamics descriptor support.
@@ -72,6 +73,7 @@ func main() {
 	} else {
 		app.mainWnd = vapp.NewRenderWindow("Robo maze", rd)
 	}
+
 	err := loadModels1()
 	if err != nil {
 		log.Fatal("Failed to load models, ", err)

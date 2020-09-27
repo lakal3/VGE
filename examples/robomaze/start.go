@@ -5,6 +5,7 @@ import (
 	"github.com/lakal3/vge/vge/materials/env"
 	"github.com/lakal3/vge/vge/materials/shadow"
 	"github.com/lakal3/vge/vge/vapp"
+	"github.com/lakal3/vge/vge/vapp/vdebug"
 	"github.com/lakal3/vge/vge/vscene"
 	"github.com/lakal3/vge/vge/vui"
 	"image"
@@ -63,7 +64,12 @@ func (w *logoWindow) startRun() {
 		w.ui.Hide()
 		app.mainWnd.Ui.Children = nil
 		w.nLogoParent.Ctrl = sa
+
 	})
+	if app.fps {
+		fpsDebug := vdebug.NewFPSTimer(app.mainWnd, app.theme)
+		fpsDebug.AddGPUTiming()
+	}
 }
 
 func buildStartScene() *logoWindow {

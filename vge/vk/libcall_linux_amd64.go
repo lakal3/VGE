@@ -26,6 +26,7 @@ var libcall struct {
 	t_Command_EndRenderPass             uintptr
 	t_Command_SetLayout                 uintptr
 	t_Command_Wait                      uintptr
+	t_Command_WriteTimer                uintptr
 	t_ComputePipeline_Create            uintptr
 	t_DebugPoint                        uintptr
 	t_DescriptorLayout_NewPool          uintptr
@@ -45,6 +46,7 @@ var libcall struct {
 	t_Device_NewImage                   uintptr
 	t_Device_NewMemoryBlock             uintptr
 	t_Device_NewSampler                 uintptr
+	t_Device_NewTimestampQuery          uintptr
 	t_Device_Submit                     uintptr
 	t_Disposable_Dispose                uintptr
 	t_Exception_GetError                uintptr
@@ -69,6 +71,7 @@ var libcall struct {
 	t_NewImageLoader                    uintptr
 	t_Pipeline_AddDescriptorLayout      uintptr
 	t_Pipeline_AddShader                uintptr
+	t_QueryPool_Get                     uintptr
 	t_RenderPass_Init                   uintptr
 	t_RenderPass_NewFrameBuffer         uintptr
 	t_Window_GetNextFrame               uintptr
@@ -149,6 +152,10 @@ func loadLib() (err error) {
 	if err != nil {
 		return err
 	}
+	libcall.t_Command_WriteTimer, err = dldyn.GetProcAddress(libcall.h_lib, "Command_WriteTimer")
+	if err != nil {
+		return err
+	}
 	libcall.t_ComputePipeline_Create, err = dldyn.GetProcAddress(libcall.h_lib, "ComputePipeline_Create")
 	if err != nil {
 		return err
@@ -222,6 +229,10 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_Device_NewSampler, err = dldyn.GetProcAddress(libcall.h_lib, "Device_NewSampler")
+	if err != nil {
+		return err
+	}
+	libcall.t_Device_NewTimestampQuery, err = dldyn.GetProcAddress(libcall.h_lib, "Device_NewTimestampQuery")
 	if err != nil {
 		return err
 	}
@@ -318,6 +329,10 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_Pipeline_AddShader, err = dldyn.GetProcAddress(libcall.h_lib, "Pipeline_AddShader")
+	if err != nil {
+		return err
+	}
+	libcall.t_QueryPool_Get, err = dldyn.GetProcAddress(libcall.h_lib, "QueryPool_Get")
 	if err != nil {
 		return err
 	}
@@ -468,6 +483,14 @@ func call_Command_Wait(ctx APIContext, cmd hCommand) {
 	rc := dldyn.Invoke(libcall.t_Command_Wait, 1, uintptr(cmd), 0, 0)
 	handleError(ctx, rc)
 }
+func call_Command_WriteTimer(ctx APIContext, cmd hCommand, qp hQueryPool, stages PipelineStageFlags, timerIndex uint32) {
+	atEnd := ctx.Begin("Command_WriteTimer")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke6(libcall.t_Command_WriteTimer, 4, uintptr(cmd), uintptr(qp), uintptr(stages), uintptr(timerIndex), 0, 0)
+	handleError(ctx, rc)
+}
 func call_ComputePipeline_Create(ctx APIContext, cp hComputePipeline) {
 	atEnd := ctx.Begin("ComputePipeline_Create")
 	if atEnd != nil {
@@ -613,6 +636,14 @@ func call_Device_NewSampler(ctx APIContext, dev hDevice, repeatMode SamplerAddre
 		defer atEnd()
 	}
 	rc := dldyn.Invoke(libcall.t_Device_NewSampler, 3, uintptr(dev), uintptr(repeatMode), uintptr(unsafe.Pointer(sampler)))
+	handleError(ctx, rc)
+}
+func call_Device_NewTimestampQuery(ctx APIContext, dev hDevice, size uint32, qp *hQueryPool) {
+	atEnd := ctx.Begin("Device_NewTimestampQuery")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke(libcall.t_Device_NewTimestampQuery, 3, uintptr(dev), uintptr(size), uintptr(unsafe.Pointer(qp)))
 	handleError(ctx, rc)
 }
 func call_Device_Submit(ctx APIContext, dev hDevice, cmd hCommand, priority uint32, info []hSubmitInfo, waitStage PipelineStageFlags, waitInfo *hSubmitInfo) {
@@ -795,6 +826,14 @@ func call_Pipeline_AddShader(ctx APIContext, pl hPipeline, stage ShaderStageFlag
 		defer atEnd()
 	}
 	rc := dldyn.Invoke6(libcall.t_Pipeline_AddShader, 4, uintptr(pl), uintptr(stage), sliceToUintptr(code), uintptr(len(code)), 0, 0)
+	handleError(ctx, rc)
+}
+func call_QueryPool_Get(ctx APIContext, qp hQueryPool, values []uint64, timestampPeriod *float32) {
+	atEnd := ctx.Begin("QueryPool_Get")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke6(libcall.t_QueryPool_Get, 4, uintptr(qp), sliceToUintptr(values), uintptr(len(values)), uintptr(unsafe.Pointer(timestampPeriod)), 0, 0)
 	handleError(ctx, rc)
 }
 func call_RenderPass_Init(ctx APIContext, rp hRenderPass) {

@@ -113,6 +113,7 @@ Shaders access values and images through these sets.
 - Desktop and Window handle the operating system window creation and representing the rendered image on an operating system window
 - ImageView and ImageRange allow Vulkan to use a subrange of Image. Most Vulkan API calls use ImageView, not Image
 - RenderCache is a helper to handle per instance and per frame resources needs during rendering
+- TimerPool can be used to record GPU times during Vulkan command submits (added on v0.11.1)
 
 A nice overview of Vulkan objects [https://gpuopen.com/understanding-vulkan-objects/] might make it easier to understand how Vulkan objects are related. 
 

@@ -1,6 +1,6 @@
 module github.com/lakal3/vge
 
-go 1.12
+go 1.16
 
 require (
 	github.com/go-gl/mathgl v0.0.0-20190713194549-592312d8590a

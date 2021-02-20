@@ -1,12 +1,5 @@
 //
 
-//go:generate glslangValidator.exe -V copy.comp.glsl -o copy.comp.spv
-//go:generate glslangValidator.exe -V copy_rgb.comp.glsl -o copy_rgb.comp.spv
-//go:generate glslangValidator.exe -V vdepth.comp.glsl -o vdepth.comp.spv
-//go:generate glslangValidator.exe -V glyph.vert.glsl -o glyph.vert.spv
-//go:generate glslangValidator.exe -V glyph.frag.glsl -o glyph.frag.spv
-//go:generate packspv -p vglyph .
-
 package vglyph
 
 import (

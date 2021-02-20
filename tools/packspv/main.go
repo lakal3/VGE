@@ -22,6 +22,7 @@ func main() {
 	flag.StringVar(&shaderFile, "f", "shaders.go", "Go file name")
 	flag.StringVar(&manifestFile, "m", "", "Manifest file name")
 	flag.Parse()
+	fmt.Println("Packspv is depreciated tool. Use go:embed to import shaders and other attachments to go modules!")
 	if flag.NArg() < 1 {
 		usage()
 	}

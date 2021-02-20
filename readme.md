@@ -126,8 +126,9 @@ You can also install the VGE and run the same examples yourself!
 
 ## Installation
 
-First: you need a Go compiler. The VGE has been mostly tested with Go1.13 and Go1.14. 
-An older version may work, but I recommend using latest released version.
+First: you need a Go compiler. Go version 1.16 or later is required to build VGE. 
+Some modules use new go:embed directive to import shaders and other assets to modules.   
+
 
 Install VGE like any go package:
 `go get github.com/lakal3/VGE`

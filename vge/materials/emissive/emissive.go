@@ -1,9 +1,5 @@
 //
 
-//go:generate glslangValidator.exe -V emissive.vert.glsl -o emissive.vert.spv
-//go:generate glslangValidator.exe -V -DSKINNED=1 emissive.vert.glsl -o emissive.vert_skin.spv
-//go:generate glslangValidator.exe -V emissive.frag.glsl -o emissive.frag.spv
-//go:generate packspv -p emissive .
 package emissive
 
 import (

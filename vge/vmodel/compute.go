@@ -1,7 +1,5 @@
 //
 
-//go:generate glslangValidator.exe -V genmip.comp.glsl -o genmip.comp.spv
-//go:generate packspv -p vmodel .
 package vmodel
 
 import (

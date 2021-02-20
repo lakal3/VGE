@@ -1,10 +1,5 @@
 //
 
-//go:generate glslangValidator.exe -V pbr.vert.glsl -o pbr.vert.spv
-//go:generate glslangValidator.exe -V -DSKINNED=1 pbr.vert.glsl -o pbr.vert_skin.spv
-//go:generate glslangValidator.exe -V pbr.frag.glsl -o pbr.frag.spv
-//go:generate packspv -p pbr .
-
 package pbr
 
 import (

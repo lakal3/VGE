@@ -1,9 +1,5 @@
 //
 
-//go:generate glslangValidator.exe -V unlit.vert.glsl -o unlit.vert.spv
-//go:generate glslangValidator.exe -V -DSKINNED=1 unlit.vert.glsl -o unlit.vert_skin.spv
-//go:generate glslangValidator.exe -V unlit.frag.glsl -o unlit.frag.spv
-//go:generate packspv -p unlit .
 package unlit
 
 import (

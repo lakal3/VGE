@@ -1,8 +1,5 @@
 //
 
-//go:generate glslangValidator.exe -V fire.vert.glsl -o fire.vert.spv
-//go:generate glslangValidator.exe -V fire.frag.glsl -o fire.frag.spv
-//go:generate packspv -p noise .
 package noise
 
 import (

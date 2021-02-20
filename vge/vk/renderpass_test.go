@@ -6,6 +6,8 @@
 package vk
 
 import (
+	_ "embed"
+	"errors"
 	"github.com/go-gl/mathgl/mgl32"
 	"image"
 	"image/png"
@@ -154,6 +156,12 @@ func testRender(tc *testContext, d *Device, ld ImageLoader) {
 	}
 }
 
+//go:embed testsh/testsh.frag.spv
+var testsh_frag []byte
+
+//go:embed testsh/testsh.vert.spv
+var testsh_vert []byte
+
 func (tp *testPipeline) build(ctx APIContext, dev *Device) {
 	tp.l1 = dev.NewDynamicDescriptorLayout(ctx, DESCRIPTORTypeCombinedImageSampler, SHADERStageFragmentBit,
 		8, DESCRIPTORBindingPartiallyBoundBitExt|DESCRIPTORBindingUpdateUnusedWhilePendingBitExt)
@@ -175,18 +183,11 @@ func (tp *testPipeline) build(ctx APIContext, dev *Device) {
 	tp.pl.AddLayout(ctx, tp.l1)
 	tp.pl.AddLayout(ctx, tp.l2)
 	tp.pl.AddVextexInput(ctx, VERTEXInputRateVertex, FORMATR32g32Sfloat)
-	code, err := ioutil.ReadFile("testsh/testsh.frag.spv")
-	if err != nil {
-		ctx.SetError(err)
-		return
+	if len(testsh_frag) == 0 {
+		ctx.SetError(errors.New("No fragment shader code. Ensure that you are using go1.16 or later!"))
 	}
-	tp.pl.AddShader(ctx, SHADERStageFragmentBit, code)
-	code, err = ioutil.ReadFile("testsh/testsh.vert.spv")
-	if err != nil {
-		ctx.SetError(err)
-		return
-	}
-	tp.pl.AddShader(ctx, SHADERStageVertexBit, code)
+	tp.pl.AddShader(ctx, SHADERStageFragmentBit, testsh_frag)
+	tp.pl.AddShader(ctx, SHADERStageVertexBit, testsh_vert)
 	tp.pl.Create(ctx, tp.rp)
 }
 

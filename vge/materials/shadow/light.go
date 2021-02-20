@@ -1,10 +1,5 @@
 //
 
-//go:generate glslangValidator.exe -V shadow.vert.glsl -o shadow.vert.spv
-//go:generate glslangValidator.exe -V -DSKINNED=1 shadow.vert.glsl -o shadow.vert_skin.spv
-//go:generate glslangValidator.exe -V shadow.geom.glsl -o shadow.geom.spv
-//go:generate glslangValidator.exe -V shadow.frag.glsl -o shadow.frag.spv
-//go:generate packspv -p shadow .
 package shadow
 
 import (

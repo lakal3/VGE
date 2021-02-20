@@ -1,10 +1,5 @@
 //
 
-//go:generate glslangValidator.exe -V predepth.vert.glsl -o predepth.vert.spv
-//go:generate glslangValidator.exe -V -DSKINNED=1 predepth.vert.glsl -o predepth.vert_skin.spv
-//go:generate glslangValidator.exe -V predepth.frag.glsl -o predepth.frag.spv
-//go:generate packspv -p predepth .
-
 package predepth
 
 import (

@@ -1,9 +1,5 @@
 //
 
-//go:generate glslangValidator.exe -V phong.vert.glsl -o phong.vert.spv
-//go:generate glslangValidator.exe -V phong.frag.glsl -o phong.frag.spv
-//go:generate packspv -p phong .
-
 package phong
 
 import (

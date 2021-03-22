@@ -71,7 +71,7 @@ void vge::GraphicsPipeline::Create(RenderPass* renderPass)
 	pmsci.minSampleShading = 1;
 	pmsci.rasterizationSamples = vk::SampleCountFlagBits::e1;
 	gpci.pMultisampleState = &pmsci;
-	_pipeline = _dev->get_device().createGraphicsPipeline(nullptr, gpci, allocator, _dev->get_dispatch());
+	_pipeline = _dev->get_device().createGraphicsPipeline(nullptr, gpci, allocator, _dev->get_dispatch()).value;
 }
 
 void vge::GraphicsPipeline::AddVertexBinding(uint32_t stride, vk::VertexInputRate rate)
@@ -172,5 +172,5 @@ void vge::ComputePipeline::Create()
 		throw std::runtime_error("Compute shader need 1 stage");
 	}
 	cpci.stage = _shaders[0];
-	_pipeline = _dev->get_device().createComputePipeline(nullptr, cpci, allocator, _dev->get_dispatch());
+	_pipeline = _dev->get_device().createComputePipeline(nullptr, cpci, allocator, _dev->get_dispatch()).value;
 }

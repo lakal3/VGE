@@ -12,7 +12,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 endif()
-set(VULKAN_SDK "D:/Libs/VulkanSDK/1_1_101" CACHE PATH "Vulkan SDK path")
+set(VULKAN_SDK "" CACHE PATH "Vulkan SDK path")
 
 
 
@@ -21,7 +21,11 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_subdirectory("third_party/glfw")
 
-include_directories(${PROJECT_SOURCE_DIR} "third_party/glfw/include" "${VULKAN_SDK}/include" )
+include_directories(${PROJECT_SOURCE_DIR} "third_party/glfw/include")
+
+if(NOT VULKAN_SDK STREQUAL "")
+    include_directories("${VULKAN_SDK}/include")
+endif()
 
 if(NOT CMAKE_DEBUG_POSTFIX)
   set(CMAKE_DEBUG_POSTFIX d)
@@ -34,7 +38,11 @@ if(CMAKE_SYSTEM_NAME MATCHES "Windows")
     set(VULKAN_LIB "${VULKAN_SDK}/lib/vulkan-1.lib")
     set(VGELIB_OS_SRC "vgelib/common/stb_image.cpp")
 else()
-    set(VULKAN_LIB "${VULKAN_SDK}/lib/libvulkan.so")
+    if(NOT VULKAN_SDK STREQUAL "")
+        set(VULKAN_LIB "${VULKAN_SDK}/lib/libvulkan.so")
+    else()
+        set(VULKAN_LIB "/usr/lib/libvulkan.so")
+    endif()
     set(VGELIB_OS_SRC "vgelib/common/stb_image.cpp" )
 endif()
 

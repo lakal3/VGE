@@ -1,6 +1,6 @@
 # Building and loading a model in VGE
 
-Before you can render any complex 3D object in Vulkan, you must build a vertex buffer containing input(s) for the Vextex shader <sup>1</sup>.
+Before you can render any complex 3D object in Vulkan, you must build a vertex buffer containing input(s) for the Vextex shader <sup name="anchor1">[1](#footnote1)</sup>.
 Of course, you can manually assemble a vertex buffer and other assets required to render 3D models, however, this is really quite tedious work.
 (See vge/materials/env/erbgmap.go cubeVertex for an example)
 
@@ -68,4 +68,4 @@ When a model is baked all the images are uploaded to the GPU. The ModelBuilder c
 
 ----
 
-<sup>1</sup> Assuming you are using a vertex shader. You could use the very latest real time rendering extensions or compute shaders to render 3D images.
+<b id="footnote1">1</b> Assuming you are using a vertex shader. You could use the very latest real time rendering extensions or compute shaders to render 3D images. [↩](#anchor1)

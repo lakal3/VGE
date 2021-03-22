@@ -63,7 +63,7 @@ func DLOpen(libraryPath string) (Handle, error) {
 	}
 	rHandle := C.dlopen(C.CString(libraryPath), C.RTLD_NOW)
 	if uintptr(rHandle) == 0 {
-		return 0, fmt.Errorf("Load %s failed", libraryPath)
+		return 0, fmt.Errorf("Load %s failed; %s", libraryPath, C.GoString(C.dlerror()))
 	}
 	libHandle := Handle(rHandle)
 	return libHandle, nil

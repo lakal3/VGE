@@ -5,11 +5,11 @@ package phong
 
 import _ "embed"
 
-//go:generate glslangValidator.exe -V phong.vert.glsl -o phong.vert.spv
-//go:generate glslangValidator.exe -V phong.frag.glsl -o phong.frag.spv
+//go:generate glslangValidator -V phong.vert.glsl -o phong.vert.spv
+//go:generate glslangValidator -V phong.frag.glsl -o phong.frag.spv
 
-//go:embed phong.vert.gls
+//go:embed phong.vert.spv
 var phong_vert_spv []byte
 
-//go:embed phong.frag.gls
+//go:embed phong.frag.spv
 var phong_frag_spv []byte

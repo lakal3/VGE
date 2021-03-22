@@ -71,6 +71,8 @@ void vge::GraphicsPipeline::Create(RenderPass* renderPass)
 	pmsci.minSampleShading = 1;
 	pmsci.rasterizationSamples = vk::SampleCountFlagBits::e1;
 	gpci.pMultisampleState = &pmsci;
+	// If you receive error 'value': is not a member of 'vk::Pipeline' upgrade your VulkanSDK to v1.2.x.
+	// ResultValue handling was changes in vulkan.hpp
 	_pipeline = _dev->get_device().createGraphicsPipeline(nullptr, gpci, allocator, _dev->get_dispatch()).value;
 }
 

@@ -14,7 +14,7 @@ To run the examples, just use go run. Ensure that you have either:
 
 - hello.go - Opens a window and shows a very simple UI
 - logo.go - In addition to hello, loads a logo from a gltf 2.0 file
-- logo_an.go - In addition to logo, adds some simple animation to the scene
+- logo_anim.go - In addition to logo, adds some simple animation to the scene
 
 ## Troubleshooting
 

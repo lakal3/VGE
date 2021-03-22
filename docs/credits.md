@@ -2,13 +2,13 @@
 
 # Assets in VGE
 
-The following open source assets and software are used in VGE. 
+The following open source assets and software are used in VGE.
 
 ## Software and libraries
 
 [Vulkan SDK](https://www.lunarg.com/vulkan-sdk/)
 
-The Vulkan headers and validation layers. Vulkan SDK's glslangValidator is used to 
+The Vulkan headers and validation layers. Vulkan SDK's glslangValidator is used to
 compile glsl files to the SPIR-V format.
 
 [Go GL math library](https://godoc.org/github.com/go-gl/mathgl/mgl32)
@@ -17,7 +17,7 @@ The 3D math library used in VGE
 
 [GLFW library](https://www.glfw.org/)
 
-In VGE, GLFW multi-platform desktop support library handles all lower lever interactions with the desktop. 
+In VGE, GLFW multi-platform desktop support library handles all lower lever interactions with the desktop.
 The library allows a nice OS independent way of handling windowing and event handling (mouse, keyboard etc.).
 
 [STB libraries](https://github.com/nothings/stb)
@@ -27,13 +27,13 @@ Single file C/C++ libraries used for png, jpg and hdr image decompression
 [Blender](https://www.blender.org/)
 
 A superior tool to edit the 3D models. Although, not directly in the project, most of the assets models were post processed with Blender 2.8x.
- 
+
 
 ## 2D and 3D assets
 
 [HDRI heaver](https://hdrihaven.com/)
 
-Multiple nice HDR images in assets/envhdr are from HDRI heaven. 
+Multiple nice HDR images in assets/envhdr are from HDRI heaven.
 
 [CC0textures](https://cc0textures.com/)
 
@@ -51,11 +51,11 @@ Some textures in models.
 
 Mixamo was used to rerig some test assets using it's automated character rigging tool.
 Also, some sample animations are from Mixamo.
- 
+
 
 # Tutorials and samples
 
-Articles and samples that mostly influenced building the VGE. 
+Articles and samples that mostly influenced building the VGE.
 
 [github.com/SaschaWillems/Vulkan](https://github.com/SaschaWillems/Vulkan)
 
@@ -63,7 +63,7 @@ Excellent C++ Vulkan samples that solved many problems that were not so obvious 
 
 [Vulkan tutorial](https://vulkan-tutorial.com/)
 
-Vulkan tutorial has a nice step-by-step description on how to setup Vulkan assets 
+Vulkan tutorial has a nice step-by-step description on how to setup Vulkan assets
 
 [Intel Vulkan tutorial](https://software.intel.com/en-us/articles/api-without-secrets-introduction-to-vulkan-part-1)
 
@@ -71,7 +71,7 @@ Another nice tutorial used to make the first Vulkan renderings.
 
 [Learn opengl](https://learnopengl.com)
 
-Lots of good glsl examples. Same techniques can be used easily in Vulkan. 
+Lots of good glsl examples. Same techniques can be used easily in Vulkan.
 
 [glTF samples](https://github.com/KhronosGroup/glTF-Sample-Models)
 

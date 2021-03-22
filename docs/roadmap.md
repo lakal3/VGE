@@ -4,9 +4,9 @@ Planned VGE features (not in priority order)
 
 ### Simpler, near-term goals
 - [ ] Support for multiple probes in a scene.
-- [ ] Forward+ render pass that supports post processing effects like the depth fog. 
+- [ ] Forward+ render pass that supports post processing effects like the depth fog.
    - Some shaders like fire should also use postprocessing so that they could sample an already rendered scene
-   - Depth effects like the fog  
+   - Depth effects like the fog
 - [ ] Shadows for directional lights
 - [ ] Spot lights (with shadows)
 - [ ] Basic dialogs like yes/no

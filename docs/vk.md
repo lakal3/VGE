@@ -97,8 +97,7 @@ Pipelines are used to combine shaders (vertex, frag), inputs and descriptors set
 For examples, see different materials (vge/materials/...) on how to build up pipelines.
 
 _Pipelines need compiled SPIR-V shader modules. It is possible to load those from a hard drive.
-However, the VGE has also tool called packspv that will convert SPIR-V files to Go code that compiles the SPIR-V code
-directly into binary. All VGE materials use this tool to combine SPIR-V code to the module itself._
+However, the recommended approach in VGE is to embed the SPIR-V binary files directly into binary._
 
 
 ## Other resources in vk

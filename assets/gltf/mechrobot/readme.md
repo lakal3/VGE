@@ -4,7 +4,7 @@ The original MechRobot model is from sketchfab [https://sketchfab.com/3d-models/
 
 The model was edited to change Specular Glossiness to Metallic Roughness.
 Also, the orientation was changed and the flame removed
- 
+
 GLTF 2.0 was exported from Blender 2.80
 
 

@@ -52,14 +52,14 @@ type GLFWKeyCode uint32
 
 const (
 	// Shirt, Ctrl (+1), Alt (+2), System (+3)
-	GLFWKeyLeftShift  = 340
-	GLFWKeyRightShift = 344
-	GLFWKeyTab        = 258
-	GLFWKeyLeft       = 263
-	GLFWKeyRight      = 262
-	GLFWKeyBackspace  = 259
-	GLFWKeyDelete     = 261
-	GLFWKeyF1         = 290
+	GLFWKeyLeftShift  GLFWKeyCode = 340
+	GLFWKeyRightShift GLFWKeyCode = 344
+	GLFWKeyTab        GLFWKeyCode = 258
+	GLFWKeyLeft       GLFWKeyCode = 263
+	GLFWKeyRight      GLFWKeyCode = 262
+	GLFWKeyBackspace  GLFWKeyCode = 259
+	GLFWKeyDelete     GLFWKeyCode = 261
+	GLFWKeyF1         GLFWKeyCode = 290
 )
 
 type UIEvent struct {

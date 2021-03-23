@@ -9,10 +9,10 @@ import (
 type Layer uint32
 
 const (
-	LAYERBackground  = 1000
-	LAYER3D          = 2000
-	LAYERTransparent = 3000
-	LAYERUI          = 4000
+	LAYERBackground  Layer = 1000
+	LAYER3D          Layer = 2000
+	LAYERTransparent Layer = 3000
+	LAYERUI          Layer = 4000
 )
 
 type Phase interface {

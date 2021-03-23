@@ -1,4 +1,5 @@
-// +build linux
+//+build linux
+
 package dldyn
 
 /*

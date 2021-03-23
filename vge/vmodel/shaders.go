@@ -4,7 +4,7 @@ package vmodel
 
 import _ "embed"
 
-//go:generate glslangValidator.exe -V genmip.comp.glsl -o genmip.comp.spv
+//go:generate glslangValidator -V genmip.comp.glsl -o genmip.comp.spv
 
 //go:embed genmip.comp.spv
 var genmip_comp_spv []byte

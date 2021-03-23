@@ -4,9 +4,9 @@ package emissive
 
 import _ "embed"
 
-//go:generate glslangValidator.exe -V emissive.vert.glsl -o emissive.vert.spv
-//go:generate glslangValidator.exe -V -DSKINNED=1 emissive.vert.glsl -o emissive.vert_skin.spv
-//go:generate glslangValidator.exe -V emissive.frag.glsl -o emissive.frag.spv
+//go:generate glslangValidator -V emissive.vert.glsl -o emissive.vert.spv
+//go:generate glslangValidator -V -DSKINNED=1 emissive.vert.glsl -o emissive.vert_skin.spv
+//go:generate glslangValidator -V emissive.frag.glsl -o emissive.frag.spv
 
 //go:embed emissive.frag.spv
 var emissive_frag_spv []byte

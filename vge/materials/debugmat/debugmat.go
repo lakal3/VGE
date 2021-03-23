@@ -1,8 +1,8 @@
 //
 
-//go:generate glslangValidator.exe -V debugmat.vert.glsl -o debugmat.vert.spv
-//go:generate glslangValidator.exe -V -DSKINNED=1 debugmat.vert.glsl -o debugmat.vert_skinned.spv
-//go:generate glslangValidator.exe -V debugmat.frag.glsl -o debugmat.frag.spv
+//go:generate glslangValidator -V debugmat.vert.glsl -o debugmat.vert.spv
+//go:generate glslangValidator -V -DSKINNED=1 debugmat.vert.glsl -o debugmat.vert_skinned.spv
+//go:generate glslangValidator -V debugmat.frag.glsl -o debugmat.frag.spv
 
 package debugmat
 

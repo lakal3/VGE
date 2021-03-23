@@ -4,9 +4,9 @@ package std
 
 import _ "embed"
 
-//go:generate glslangValidator.exe -V std.vert.glsl -o std.vert.spv
-//go:generate glslangValidator.exe -V -DSKINNED=1 std.vert.glsl -o std.vert_skin.spv
-//go:generate glslangValidator.exe -V std.frag.glsl -o std.frag.spv
+//go:generate glslangValidator -V std.vert.glsl -o std.vert.spv
+//go:generate glslangValidator -V -DSKINNED=1 std.vert.glsl -o std.vert_skin.spv
+//go:generate glslangValidator -V std.frag.glsl -o std.frag.spv
 
 //go:embed std.frag.spv
 var std_frag_spv []byte

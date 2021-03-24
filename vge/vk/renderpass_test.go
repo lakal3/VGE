@@ -1,7 +1,7 @@
 //
 
-//go:generate glslangValidator.exe -V testsh/testsh.vert.glsl -o testsh/testsh.vert.spv
-//go:generate glslangValidator.exe -V testsh/testsh.frag.glsl -o testsh/testsh.frag.spv
+//go:generate glslangValidator -V testsh/testsh.vert.glsl -o testsh/testsh.vert.spv
+//go:generate glslangValidator -V testsh/testsh.frag.glsl -o testsh/testsh.frag.spv
 
 package vk
 

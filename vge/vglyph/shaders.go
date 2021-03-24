@@ -4,11 +4,11 @@ package vglyph
 
 import _ "embed"
 
-//go:generate glslangValidator.exe -V copy.comp.glsl -o copy.comp.spv
-//go:generate glslangValidator.exe -V copy_rgb.comp.glsl -o copy_rgb.comp.spv
-//go:generate glslangValidator.exe -V vdepth.comp.glsl -o vdepth.comp.spv
-//go:generate glslangValidator.exe -V glyph.vert.glsl -o glyph.vert.spv
-//go:generate glslangValidator.exe -V glyph.frag.glsl -o glyph.frag.spv
+//go:generate glslangValidator -V copy.comp.glsl -o copy.comp.spv
+//go:generate glslangValidator -V copy_rgb.comp.glsl -o copy_rgb.comp.spv
+//go:generate glslangValidator -V vdepth.comp.glsl -o vdepth.comp.spv
+//go:generate glslangValidator -V glyph.vert.glsl -o glyph.vert.spv
+//go:generate glslangValidator -V glyph.frag.glsl -o glyph.frag.spv
 
 //go:embed copy.comp.spv
 var copy_comp_spv []byte

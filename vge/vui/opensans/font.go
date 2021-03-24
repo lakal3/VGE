@@ -4,6 +4,7 @@ package opensans
 
 import (
 	_ "embed"
+
 	"github.com/lakal3/vge/vge/vglyph"
 	"github.com/lakal3/vge/vge/vk"
 )

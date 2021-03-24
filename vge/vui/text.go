@@ -1,10 +1,11 @@
 package vui
 
 import (
+	"image"
+
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vglyph"
 	"github.com/lakal3/vge/vge/vmodel"
-	"image"
 )
 
 type Label struct {

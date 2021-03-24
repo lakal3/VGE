@@ -1,9 +1,10 @@
 package vglyph
 
 import (
-	"github.com/lakal3/vge/vge/vk"
 	"image"
 	"math"
+
+	"github.com/lakal3/vge/vge/vk"
 )
 
 type SetKind int

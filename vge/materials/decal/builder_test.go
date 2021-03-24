@@ -1,12 +1,13 @@
 package decal
 
 import (
+	"io/ioutil"
+	"testing"
+
 	"github.com/lakal3/vge/vge/vapp/vtestapp"
 	"github.com/lakal3/vge/vge/vasset"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
-	"io/ioutil"
-	"testing"
 )
 
 func TestBuilder_Build(t *testing.T) {

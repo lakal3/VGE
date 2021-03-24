@@ -1,12 +1,13 @@
 package vscene
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
 	"reflect"
 	"runtime"
 	"sync"
 	"sync/atomic"
 	"unsafe"
+
+	"github.com/go-gl/mathgl/mgl32"
 )
 
 // Mat4ToBytes will convert array of matrixes to byte array using slice manipulation. Returned byte slice is not an copy

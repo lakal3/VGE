@@ -1,9 +1,10 @@
 package vapp
 
 import (
-	"github.com/lakal3/vge/vge/vk"
 	"sync"
 	"testing"
+
+	"github.com/lakal3/vge/vge/vk"
 )
 
 type testCtx struct {

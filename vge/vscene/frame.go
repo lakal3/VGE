@@ -1,11 +1,12 @@
 package vscene
 
 import (
+	"image"
+	"unsafe"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
-	"image"
-	"unsafe"
 )
 
 const MAX_LIGHTS = 64

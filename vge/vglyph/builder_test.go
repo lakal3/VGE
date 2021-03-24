@@ -1,12 +1,13 @@
 package vglyph
 
 import (
-	"github.com/lakal3/vge/vge/vapp/vtestapp"
-	"github.com/lakal3/vge/vge/vasset"
-	"github.com/lakal3/vge/vge/vk"
 	"image"
 	"io/ioutil"
 	"testing"
+
+	"github.com/lakal3/vge/vge/vapp/vtestapp"
+	"github.com/lakal3/vge/vge/vasset"
+	"github.com/lakal3/vge/vge/vk"
 )
 
 func TestMain(m *testing.M) {

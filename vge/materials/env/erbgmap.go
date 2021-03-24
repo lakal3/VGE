@@ -3,12 +3,13 @@
 package env
 
 import (
+	"math"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vasset"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
 	"github.com/lakal3/vge/vge/vscene"
-	"math"
 )
 
 // Render equirectangular projection image as background

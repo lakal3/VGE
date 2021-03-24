@@ -3,10 +3,11 @@ package pngloader
 import (
 	"bytes"
 	"errors"
-	"github.com/lakal3/vge/vge/vasset"
-	"github.com/lakal3/vge/vge/vk"
 	"image"
 	"image/png"
+
+	"github.com/lakal3/vge/vge/vasset"
+	"github.com/lakal3/vge/vge/vk"
 )
 
 func RegisterPngLoader() {

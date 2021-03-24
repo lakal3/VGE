@@ -5,8 +5,9 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/lakal3/vge/vge/vk"
 	"io"
+
+	"github.com/lakal3/vge/vge/vk"
 )
 
 type DdsImageLoader struct {

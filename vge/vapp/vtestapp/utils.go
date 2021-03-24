@@ -2,13 +2,14 @@ package vtestapp
 
 import (
 	"errors"
-	"github.com/lakal3/vge/vge/vk"
-	"github.com/lakal3/vge/vge/vmodel"
-	"github.com/lakal3/vge/vge/vscene"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/lakal3/vge/vge/vk"
+	"github.com/lakal3/vge/vge/vmodel"
+	"github.com/lakal3/vge/vge/vscene"
 )
 
 type MainImage struct {

@@ -5,14 +5,15 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+	"math"
+	"time"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/materials/unlit"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
 	"github.com/lakal3/vge/vge/vscene"
-	"log"
-	"math"
-	"time"
 )
 
 var config struct {

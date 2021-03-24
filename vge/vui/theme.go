@@ -1,12 +1,13 @@
 package vui
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
-	"github.com/lakal3/vge/vge/vglyph"
-	"github.com/lakal3/vge/vge/vmodel"
 	"image"
 	"strconv"
 	"strings"
+
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/lakal3/vge/vge/vglyph"
+	"github.com/lakal3/vge/vge/vmodel"
 )
 
 type State uint32

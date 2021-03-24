@@ -5,9 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vmodel"
-	"math"
 )
 
 const (

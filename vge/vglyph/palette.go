@@ -2,9 +2,10 @@ package vglyph
 
 import (
 	"errors"
+	"image/color"
+
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
-	"image/color"
 )
 
 const (

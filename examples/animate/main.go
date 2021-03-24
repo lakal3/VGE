@@ -9,6 +9,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+
 	"github.com/lakal3/vge/vge/materials/env"
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vasset"
@@ -18,7 +20,6 @@ import (
 	"github.com/lakal3/vge/vge/vscene"
 	"github.com/lakal3/vge/vge/vui"
 	"github.com/lakal3/vge/vge/vui/mintheme"
-	"log"
 )
 
 var app struct {

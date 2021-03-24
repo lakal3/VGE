@@ -1,10 +1,11 @@
 package vasset
 
 import (
-	"github.com/lakal3/vge/vge/vk"
 	"io"
 	"io/ioutil"
 	"sync"
+
+	"github.com/lakal3/vge/vge/vk"
 )
 
 type AssetManager struct {

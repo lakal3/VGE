@@ -2,13 +2,14 @@ package env
 
 import (
 	"fmt"
+	"image"
+	"io/ioutil"
+	"math"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
 	"github.com/lakal3/vge/vge/vscene"
-	"image"
-	"io/ioutil"
-	"math"
 )
 
 type Probe struct {

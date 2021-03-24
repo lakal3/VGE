@@ -2,11 +2,12 @@ package vglyph
 
 import (
 	"errors"
+	"image"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vk"
 	"golang.org/x/image/font/sfnt"
 	"golang.org/x/image/math/fixed"
-	"image"
 )
 
 type segment struct {

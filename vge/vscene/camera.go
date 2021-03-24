@@ -1,9 +1,10 @@
 package vscene
 
 import (
+	"image"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vk"
-	"image"
 )
 
 var kView = vk.NewKey()

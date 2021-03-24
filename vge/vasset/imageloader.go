@@ -2,6 +2,7 @@ package vasset
 
 import (
 	"errors"
+
 	"github.com/lakal3/vge/vge/vk"
 )
 

@@ -7,12 +7,13 @@
 package debugmat
 
 import (
+	"unsafe"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/materials/decal"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
 	"github.com/lakal3/vge/vge/vscene"
-	"unsafe"
 )
 
 const maxInstaces = 200 // Must match to shader definition!

@@ -1,6 +1,10 @@
 package vui
 
 import (
+	"image"
+	"io/ioutil"
+	"testing"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vapp/vtestapp"
@@ -9,9 +13,6 @@ import (
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
 	"golang.org/x/image/font/sfnt"
-	"image"
-	"io/ioutil"
-	"testing"
 )
 
 func TestMain(m *testing.M) {

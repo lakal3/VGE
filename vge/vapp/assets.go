@@ -2,6 +2,9 @@ package vapp
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/lakal3/vge/vge/materials/pbr"
 	"github.com/lakal3/vge/vge/materials/std"
 	"github.com/lakal3/vge/vge/vasset"
@@ -10,8 +13,6 @@ import (
 	"github.com/lakal3/vge/vge/vmodel/gltf2loader"
 	"github.com/lakal3/vge/vge/vmodel/objloader"
 	"github.com/lakal3/vge/vge/vscene"
-	"path/filepath"
-	"strings"
 )
 
 var AM *vasset.AssetManager

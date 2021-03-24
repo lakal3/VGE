@@ -3,13 +3,14 @@
 package main
 
 import (
+	"image"
+
 	"github.com/lakal3/vge/vge/materials/env"
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vasset"
 	"github.com/lakal3/vge/vge/vscene"
 	"github.com/lakal3/vge/vge/vui"
 	"github.com/lakal3/vge/vge/vui/mintheme"
-	"image"
 )
 
 func main() {

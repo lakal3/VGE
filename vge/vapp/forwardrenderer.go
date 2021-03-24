@@ -1,12 +1,13 @@
 package vapp
 
 import (
+	"runtime"
+	"time"
+
 	"github.com/lakal3/vge/vge/materials/predepth"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
 	"github.com/lakal3/vge/vge/vscene"
-	"runtime"
-	"time"
 )
 
 type ForwardRenderer struct {

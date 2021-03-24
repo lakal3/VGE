@@ -1,11 +1,12 @@
 package main
 
 import (
+	"math"
+	"math/rand"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/materials/decal"
 	"github.com/lakal3/vge/vge/vscene"
-	"math"
-	"math/rand"
 )
 
 type stain struct {

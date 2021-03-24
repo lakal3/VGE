@@ -1,14 +1,15 @@
 package vglyph
 
 import (
+	"image"
+	"io/ioutil"
+	"testing"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vapp/vtestapp"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
 	"golang.org/x/image/font/sfnt"
-	"image"
-	"io/ioutil"
-	"testing"
 )
 
 func TestVectorSetBuilder(t *testing.T) {

@@ -3,11 +3,12 @@
 package noise
 
 import (
+	"unsafe"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
 	"github.com/lakal3/vge/vge/vscene"
-	"unsafe"
 )
 
 type Fire struct {

@@ -2,9 +2,10 @@ package vapp
 
 import (
 	"errors"
-	"github.com/lakal3/vge/vge/vk"
 	"sort"
 	"sync"
+
+	"github.com/lakal3/vge/vge/vk"
 )
 
 type Event interface {

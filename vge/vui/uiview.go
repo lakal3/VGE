@@ -1,12 +1,13 @@
 package vui
 
 import (
+	"image"
+	"math"
+
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vglyph"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vscene"
-	"image"
-	"math"
 )
 
 const WinPriority = 10

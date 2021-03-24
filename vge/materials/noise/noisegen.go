@@ -1,8 +1,9 @@
 package noise
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
 	"math/rand"
+
+	"github.com/go-gl/mathgl/mgl32"
 )
 
 type PerlinNoise struct {

@@ -1,12 +1,13 @@
 package vglyph
 
 import (
+	"image"
+	"unsafe"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
 	"github.com/lakal3/vge/vge/vscene"
-	"image"
-	"unsafe"
 )
 
 type Position struct {

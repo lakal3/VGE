@@ -8,7 +8,6 @@ package vk
 import (
 	_ "embed"
 	"errors"
-	"github.com/go-gl/mathgl/mgl32"
 	"image"
 	"image/png"
 	"io/ioutil"
@@ -16,6 +15,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/go-gl/mathgl/mgl32"
 )
 
 func TestNewForwardRenderPass(t *testing.T) {

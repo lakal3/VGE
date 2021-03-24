@@ -2,14 +2,15 @@ package vmodel
 
 import (
 	"errors"
-	"github.com/go-gl/mathgl/mgl32"
-	"github.com/lakal3/vge/vge/vasset"
-	"github.com/lakal3/vge/vge/vk"
 	"math"
 	"reflect"
 	"runtime"
 	"sync"
 	"unsafe"
+
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/lakal3/vge/vge/vasset"
+	"github.com/lakal3/vge/vge/vk"
 )
 
 type SkinIndex int

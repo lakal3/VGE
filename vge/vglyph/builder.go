@@ -4,9 +4,10 @@ package vglyph
 
 import (
 	"errors"
+	"image"
+
 	"github.com/lakal3/vge/vge/vasset"
 	"github.com/lakal3/vge/vge/vk"
-	"image"
 )
 
 type ColorIndex uint32

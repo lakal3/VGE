@@ -116,7 +116,7 @@ func (v *cubeApp) buildModel() {
 	// including position, normal, tangent and uv0. Model will also copy all attributes to device memory.
 	v.m = mb.ToModel(v, v.dev)
 
-	// We must dispose model when no longer need.
+	// We must dispose model when no longer needed.
 	v.owner.AddChild(v.m)
 }
 
@@ -177,7 +177,7 @@ func (v *cubeApp) renderLoop(w *vk.Window) {
 	for v.running {
 		// Aquire next image
 		im, imageIndex, submitInfo := w.GetNextFrame(v, v.dev)
-		// If image index < 0, there was some error acquiring image. Most likely window was resized witch in many cases mean that we
+		// If image index < 0, there was some error acquiring image. Most likely window was resized which in many cases mean that we
 		// must destroy existing rendering assets like depth buffers etc and recreate them. Next call to GetNextFrame should again succeed
 		if imageIndex < 0 {
 			// Reset all render caches
@@ -214,7 +214,7 @@ func (v *cubeApp) renderLoop(w *vk.Window) {
 		dc := &vmodel.DrawContext{Cache: rc, Pass: v.frp}
 		// Retrieve view for image. If cache already has this value it is just returned. Otherwise we construct it using
 		// given constructor function. This is standard way to create assets in VGE. Get api will handle disposing created items
-		// when render cache is disposed. There is separate struct Owner in vk module if you wan't to implement same pattern in your
+		// when render cache is disposed. There is separate struct Owner in vk module if you want to implement same pattern in your
 		// own classes
 		iv := rc.Get(kImageView, func(ctx vk.APIContext) interface{} {
 			// Construct default view of image
@@ -225,7 +225,7 @@ func (v *cubeApp) renderLoop(w *vk.Window) {
 		// Submit rendering. In case of swap chain images, we must pass submitinfo from GetNextFrame to Submit. This information
 		// instructs VGE to present image after it has been rendered
 		cmd.Submit(submitInfo)
-		// Just wait that command in completed. This is the point where rendering actually happend. In more advances application you
+		// Just wait that command in completed. This is the point where rendering actually happened. In more advances application you
 		// could delay waiting and do other task while GPU is processing commands.
 		cmd.Wait()
 	}

@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
-	"github.com/lakal3/vge/vge/vscene"
 	"math"
 	"math/rand"
+
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/lakal3/vge/vge/vscene"
 )
 
 type roboPos struct {

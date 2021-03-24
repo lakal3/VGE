@@ -1,11 +1,12 @@
 package vapp
 
 import (
+	"image"
+	"math"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vscene"
-	"image"
-	"math"
 )
 
 type OrbitControl struct {

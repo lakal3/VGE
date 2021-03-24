@@ -1,8 +1,9 @@
 package vanimation
 
 import (
-	"github.com/lakal3/vge/vge/vasset"
 	"testing"
+
+	"github.com/lakal3/vge/vge/vasset"
 )
 
 func TestLoadBVH(t *testing.T) {

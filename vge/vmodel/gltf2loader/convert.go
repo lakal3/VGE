@@ -3,11 +3,12 @@ package gltf2loader
 import (
 	"errors"
 	"fmt"
+	"math"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vasset"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
-	"math"
 )
 
 type meshMaterial struct {

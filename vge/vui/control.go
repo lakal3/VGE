@@ -2,12 +2,13 @@ package vui
 
 import (
 	"fmt"
+	"image"
+	"sync/atomic"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vglyph"
 	"github.com/lakal3/vge/vge/vmodel"
-	"image"
-	"sync/atomic"
 )
 
 type Control interface {

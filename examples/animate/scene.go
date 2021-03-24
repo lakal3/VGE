@@ -1,6 +1,9 @@
 package main
 
 import (
+	"image"
+	"log"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/materials/shadow"
 	"github.com/lakal3/vge/vge/vanimation"
@@ -9,8 +12,6 @@ import (
 	"github.com/lakal3/vge/vge/vmodel"
 	"github.com/lakal3/vge/vge/vscene"
 	"github.com/lakal3/vge/vge/vui"
-	"image"
-	"log"
 )
 
 type Sample struct {

@@ -1,8 +1,9 @@
 package vtestapp
 
 import (
-	"github.com/lakal3/vge/vge/vk"
 	"testing"
+
+	"github.com/lakal3/vge/vge/vk"
 )
 
 var TestApp struct {

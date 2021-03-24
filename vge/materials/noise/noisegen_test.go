@@ -1,11 +1,12 @@
 package noise
 
 import (
-	"github.com/lakal3/vge/vge/vasset"
-	"github.com/lakal3/vge/vge/vk"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/lakal3/vge/vge/vasset"
+	"github.com/lakal3/vge/vge/vk"
 )
 
 func TestNewPerlinNoise(t *testing.T) {

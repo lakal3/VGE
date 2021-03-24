@@ -1,11 +1,12 @@
 package vapp
 
 import (
-	"github.com/lakal3/vge/vge/vk"
-	"github.com/lakal3/vge/vge/vscene"
 	"image"
 	"sync"
 	"time"
+
+	"github.com/lakal3/vge/vge/vk"
+	"github.com/lakal3/vge/vge/vscene"
 )
 
 const (

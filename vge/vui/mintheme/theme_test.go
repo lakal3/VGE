@@ -1,13 +1,14 @@
 package mintheme
 
 import (
+	"image"
+	"testing"
+
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vapp/vtestapp"
 	"github.com/lakal3/vge/vge/vasset"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vui"
-	"image"
-	"testing"
 )
 
 func TestMain(m *testing.M) {

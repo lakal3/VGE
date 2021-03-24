@@ -1,9 +1,10 @@
 package env
 
 import (
+	"math"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vk"
-	"math"
 )
 
 var kSPHLayout = vk.NewKeys(4)

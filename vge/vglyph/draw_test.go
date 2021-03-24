@@ -1,15 +1,16 @@
 package vglyph
 
 import (
+	"image"
+	"image/color"
+	"math"
+	"testing"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vapp/vtestapp"
 	"github.com/lakal3/vge/vge/vasset"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
-	"image"
-	"image/color"
-	"math"
-	"testing"
 )
 
 func TestDrawInfo_Draw(t *testing.T) {

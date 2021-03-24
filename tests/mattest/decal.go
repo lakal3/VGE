@@ -1,6 +1,9 @@
 package main
 
 import (
+	"log"
+	"path/filepath"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/materials/debugmat"
 	"github.com/lakal3/vge/vge/materials/decal"
@@ -10,8 +13,6 @@ import (
 	"github.com/lakal3/vge/vge/vmodel"
 	"github.com/lakal3/vge/vge/vmodel/gltf2loader"
 	"github.com/lakal3/vge/vge/vscene"
-	"log"
-	"path/filepath"
 )
 
 func loadDecals() (set *decal.Set) {

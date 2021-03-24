@@ -1,6 +1,8 @@
 package main
 
 import (
+	"image"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/materials/env"
 	"github.com/lakal3/vge/vge/materials/shadow"
@@ -8,7 +10,6 @@ import (
 	"github.com/lakal3/vge/vge/vapp/vdebug"
 	"github.com/lakal3/vge/vge/vscene"
 	"github.com/lakal3/vge/vge/vui"
-	"image"
 )
 
 type logoWindow struct {

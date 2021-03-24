@@ -2,6 +2,11 @@ package main
 
 import (
 	"fmt"
+	"image"
+	"log"
+	"math"
+	"path/filepath"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/materials/env"
 	"github.com/lakal3/vge/vge/materials/pbr"
@@ -11,10 +16,6 @@ import (
 	"github.com/lakal3/vge/vge/vmodel"
 	"github.com/lakal3/vge/vge/vmodel/gltf2loader"
 	"github.com/lakal3/vge/vge/vscene"
-	"image"
-	"log"
-	"math"
-	"path/filepath"
 )
 
 func initApp(ctx initContext) error {

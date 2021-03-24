@@ -3,6 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/materials/env"
 	"github.com/lakal3/vge/vge/materials/pbr"
@@ -14,11 +20,6 @@ import (
 	"github.com/lakal3/vge/vge/vmodel/gltf2loader"
 	"github.com/lakal3/vge/vge/vmodel/objloader"
 	"github.com/lakal3/vge/vge/vscene"
-	"io/ioutil"
-	"log"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 var config struct {

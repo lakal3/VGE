@@ -2,13 +2,14 @@ package vanimation
 
 import (
 	"fmt"
-	"github.com/go-gl/mathgl/mgl32"
-	"github.com/lakal3/vge/vge/vasset"
-	"github.com/lakal3/vge/vge/vmodel"
 	"math"
 	"strconv"
 	"strings"
 	"text/scanner"
+
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/lakal3/vge/vge/vasset"
+	"github.com/lakal3/vge/vge/vmodel"
 )
 
 type BVHAnimation struct {

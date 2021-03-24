@@ -1,6 +1,13 @@
 package main
 
 import (
+	"io"
+	"log"
+	"math"
+	"math/rand"
+	"os"
+	"path/filepath"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/materials/env"
 	"github.com/lakal3/vge/vge/materials/noise"
@@ -11,12 +18,6 @@ import (
 	"github.com/lakal3/vge/vge/vmodel/gltf2loader"
 	"github.com/lakal3/vge/vge/vscene"
 	"github.com/lakal3/vge/vge/vui"
-	"io"
-	"log"
-	"math"
-	"math/rand"
-	"os"
-	"path/filepath"
 )
 
 type Sample struct {

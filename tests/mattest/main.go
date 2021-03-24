@@ -6,6 +6,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/materials/env"
 	"github.com/lakal3/vge/vge/vapp"
@@ -14,7 +16,6 @@ import (
 	"github.com/lakal3/vge/vge/vscene"
 	"github.com/lakal3/vge/vge/vui"
 	"github.com/lakal3/vge/vge/vui/mintheme"
-	"log"
 )
 
 var app struct {

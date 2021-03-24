@@ -12,14 +12,15 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/lakal3/vge/vge/vk"
-	"github.com/lakal3/vge/vge/vmodel"
 	"image"
 	"log"
 	"math"
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"github.com/lakal3/vge/vge/vk"
+	"github.com/lakal3/vge/vge/vmodel"
 )
 
 var wwApp struct {

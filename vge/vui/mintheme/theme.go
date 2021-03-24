@@ -1,6 +1,8 @@
 package mintheme
 
 import (
+	"image"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vglyph"
 	"github.com/lakal3/vge/vge/vk"
@@ -8,7 +10,6 @@ import (
 	"github.com/lakal3/vge/vge/vui"
 	"github.com/lakal3/vge/vge/vui/materialicons"
 	"github.com/lakal3/vge/vge/vui/opensans"
-	"image"
 )
 
 var minPalette *vglyph.Palette

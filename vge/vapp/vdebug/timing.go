@@ -2,11 +2,12 @@ package vdebug
 
 import (
 	"fmt"
+	"image"
+	"time"
+
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vscene"
 	"github.com/lakal3/vge/vge/vui"
-	"image"
-	"time"
 )
 
 // NewFPSTimer creates a simple UI to display FPS.

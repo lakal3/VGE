@@ -2,10 +2,11 @@ package vapp
 
 import (
 	"errors"
+	"log"
+
 	"github.com/lakal3/vge/vge/vasset"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vscene"
-	"log"
 )
 
 // APIContext used in nearly all methods in vapp. You can change context but preferable before calling Init

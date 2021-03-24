@@ -51,6 +51,7 @@ func (i initContext) Begin(callName string) (atEnd func()) {
 func main() {
 	flag.BoolVar(&wwApp.debug, "debug", false, "Use debug layers")
 	flag.IntVar(&wwApp.pdIndex, "dev", 0, "Physical device index")
+	flag.Parse()
 	ctx := initContext{}
 	err := initApp(ctx)
 	if err != nil {

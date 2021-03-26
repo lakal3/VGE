@@ -291,7 +291,7 @@ void vge::Window::createSwapchain(Device *dev)
 		}
 		_crInfo.imageColorSpace = formats[0].colorSpace;
 		_crInfo.minImageCount = sfCap.minImageCount + 1;
-		if (_crInfo.minImageCount > sfCap.maxImageCount) {
+		if (sfCap.maxImageCount > 0 && _crInfo.minImageCount > sfCap.maxImageCount) {
 			_crInfo.minImageCount = sfCap.maxImageCount;
 		}
 		_crInfo.imageArrayLayers = 1;

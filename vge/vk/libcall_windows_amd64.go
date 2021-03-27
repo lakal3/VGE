@@ -13,6 +13,7 @@ var libcall struct {
 
 	t_AddDynamicDescriptors             uintptr
 	t_AddValidation                     uintptr
+	t_AddValidationException            uintptr
 	t_Application_Init                  uintptr
 	t_Buffer_GetPtr                     uintptr
 	t_Buffer_NewView                    uintptr
@@ -65,14 +66,12 @@ var libcall struct {
 	t_MemoryBlock_Allocate              uintptr
 	t_MemoryBlock_Reserve               uintptr
 	t_NewApplication                    uintptr
-	t_NewDepthRenderPass                uintptr
 	t_NewDesktop                        uintptr
-	t_NewForwardRenderPass              uintptr
 	t_NewImageLoader                    uintptr
+	t_NewRenderPass                     uintptr
 	t_Pipeline_AddDescriptorLayout      uintptr
 	t_Pipeline_AddShader                uintptr
 	t_QueryPool_Get                     uintptr
-	t_RenderPass_Init                   uintptr
 	t_RenderPass_NewFrameBuffer         uintptr
 	t_Window_GetNextFrame               uintptr
 	t_Window_GetPos                     uintptr
@@ -97,6 +96,10 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_AddValidation, err = syscall.GetProcAddress(libcall.h_lib, "AddValidation")
+	if err != nil {
+		return err
+	}
+	libcall.t_AddValidationException, err = syscall.GetProcAddress(libcall.h_lib, "AddValidationException")
 	if err != nil {
 		return err
 	}
@@ -308,19 +311,15 @@ func loadLib() (err error) {
 	if err != nil {
 		return err
 	}
-	libcall.t_NewDepthRenderPass, err = syscall.GetProcAddress(libcall.h_lib, "NewDepthRenderPass")
-	if err != nil {
-		return err
-	}
 	libcall.t_NewDesktop, err = syscall.GetProcAddress(libcall.h_lib, "NewDesktop")
 	if err != nil {
 		return err
 	}
-	libcall.t_NewForwardRenderPass, err = syscall.GetProcAddress(libcall.h_lib, "NewForwardRenderPass")
+	libcall.t_NewImageLoader, err = syscall.GetProcAddress(libcall.h_lib, "NewImageLoader")
 	if err != nil {
 		return err
 	}
-	libcall.t_NewImageLoader, err = syscall.GetProcAddress(libcall.h_lib, "NewImageLoader")
+	libcall.t_NewRenderPass, err = syscall.GetProcAddress(libcall.h_lib, "NewRenderPass")
 	if err != nil {
 		return err
 	}
@@ -333,10 +332,6 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_QueryPool_Get, err = syscall.GetProcAddress(libcall.h_lib, "QueryPool_Get")
-	if err != nil {
-		return err
-	}
-	libcall.t_RenderPass_Init, err = syscall.GetProcAddress(libcall.h_lib, "RenderPass_Init")
 	if err != nil {
 		return err
 	}
@@ -377,6 +372,14 @@ func call_AddValidation(ctx APIContext, app hApplication) {
 		defer atEnd()
 	}
 	rc, _, _ := syscall.Syscall(libcall.t_AddValidation, 1, uintptr(app), 0, 0)
+	handleError(ctx, rc)
+}
+func call_AddValidationException(ctx APIContext, msgId int32) {
+	atEnd := ctx.Begin("AddValidationException")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall(libcall.t_AddValidationException, 1, uintptr(msgId), 0, 0)
 	handleError(ctx, rc)
 }
 func call_Application_Init(ctx APIContext, app hApplication, inst *hInstance) {
@@ -780,14 +783,6 @@ func call_NewApplication(ctx APIContext, name []byte, app *hApplication) {
 	rc, _, _ := syscall.Syscall(libcall.t_NewApplication, 3, byteArrayToUintptr(name), uintptr(len(name)), uintptr(unsafe.Pointer(app)))
 	handleError(ctx, rc)
 }
-func call_NewDepthRenderPass(ctx APIContext, dev hDevice, finalLayout ImageLayout, depthImageFormat Format, rp *hRenderPass) {
-	atEnd := ctx.Begin("NewDepthRenderPass")
-	if atEnd != nil {
-		defer atEnd()
-	}
-	rc, _, _ := syscall.Syscall6(libcall.t_NewDepthRenderPass, 4, uintptr(dev), uintptr(finalLayout), uintptr(depthImageFormat), uintptr(unsafe.Pointer(rp)), 0, 0)
-	handleError(ctx, rc)
-}
 func call_NewDesktop(ctx APIContext, app hApplication, desktop *hDesktop) {
 	atEnd := ctx.Begin("NewDesktop")
 	if atEnd != nil {
@@ -796,20 +791,20 @@ func call_NewDesktop(ctx APIContext, app hApplication, desktop *hDesktop) {
 	rc, _, _ := syscall.Syscall(libcall.t_NewDesktop, 2, uintptr(app), uintptr(unsafe.Pointer(desktop)), 0)
 	handleError(ctx, rc)
 }
-func call_NewForwardRenderPass(ctx APIContext, dev hDevice, finalLayout ImageLayout, mainImageFormat Format, depthImageFormat Format, rp *hRenderPass) {
-	atEnd := ctx.Begin("NewForwardRenderPass")
-	if atEnd != nil {
-		defer atEnd()
-	}
-	rc, _, _ := syscall.Syscall6(libcall.t_NewForwardRenderPass, 5, uintptr(dev), uintptr(finalLayout), uintptr(mainImageFormat), uintptr(depthImageFormat), uintptr(unsafe.Pointer(rp)), 0)
-	handleError(ctx, rc)
-}
 func call_NewImageLoader(ctx APIContext, loader *hImageLoader) {
 	atEnd := ctx.Begin("NewImageLoader")
 	if atEnd != nil {
 		defer atEnd()
 	}
 	rc, _, _ := syscall.Syscall(libcall.t_NewImageLoader, 1, uintptr(unsafe.Pointer(loader)), 0, 0)
+	handleError(ctx, rc)
+}
+func call_NewRenderPass(ctx APIContext, dev hDevice, rp *hRenderPass, depthAttachment bool, attachments []AttachmentInfo) {
+	atEnd := ctx.Begin("NewRenderPass")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall6(libcall.t_NewRenderPass, 5, uintptr(dev), uintptr(unsafe.Pointer(rp)), boolToUintptr(depthAttachment), sliceToUintptr(attachments), uintptr(len(attachments)), 0)
 	handleError(ctx, rc)
 }
 func call_Pipeline_AddDescriptorLayout(ctx APIContext, pl hPipeline, dsLayout hDescriptorLayout) {
@@ -834,14 +829,6 @@ func call_QueryPool_Get(ctx APIContext, qp hQueryPool, values []uint64, timestam
 		defer atEnd()
 	}
 	rc, _, _ := syscall.Syscall6(libcall.t_QueryPool_Get, 4, uintptr(qp), sliceToUintptr(values), uintptr(len(values)), uintptr(unsafe.Pointer(timestampPeriod)), 0, 0)
-	handleError(ctx, rc)
-}
-func call_RenderPass_Init(ctx APIContext, rp hRenderPass) {
-	atEnd := ctx.Begin("RenderPass_Init")
-	if atEnd != nil {
-		defer atEnd()
-	}
-	rc, _, _ := syscall.Syscall(libcall.t_RenderPass_Init, 1, uintptr(rp), 0, 0)
 	handleError(ctx, rc)
 }
 func call_RenderPass_NewFrameBuffer(ctx APIContext, rp hRenderPass, attachments []hImageView, fb *hFramebuffer) {

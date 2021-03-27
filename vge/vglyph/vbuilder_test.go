@@ -63,6 +63,7 @@ func TestVectorPalette(t *testing.T) {
 	vtestapp.Init(ctx, "vdrawtest")
 	theme := testBuildVPalette(ctx)
 	mm := vtestapp.NewMainImage()
+	vtestapp.AddChild(mm)
 	mm.ForwardRender(false, func(cmd *vk.Command, dc *vmodel.DrawContext) {
 		s := Position{ImageSize: image.Pt(int(mm.Desc.Width), int(mm.Desc.Height)),
 			Clip: image.Rect(100, 100, 500, 780)}

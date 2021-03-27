@@ -7,6 +7,7 @@ using namespace vge;
 extern "C" {
 DLLEXPORT Exception * AddDynamicDescriptors(Application* app);
 DLLEXPORT Exception * AddValidation(Application* app);
+DLLEXPORT Exception * AddValidationException(int32_t msgId);
 DLLEXPORT Exception * Application_Init(Application* app, Instance*& inst);
 DLLEXPORT Exception * Buffer_GetPtr(Buffer* buffer, void *& ptr);
 DLLEXPORT Exception * Buffer_NewView(Buffer* buffer, int32_t format, uint64_t offset, uint64_t size, BufferView*& view);
@@ -59,14 +60,12 @@ DLLEXPORT Exception * Instance_NewDevice(Instance* instance, int32_t index, Devi
 DLLEXPORT Exception * MemoryBlock_Allocate(MemoryBlock* memBlock);
 DLLEXPORT Exception * MemoryBlock_Reserve(MemoryBlock* memBlock, MemoryObject* memObject, bool& suitable);
 DLLEXPORT Exception * NewApplication(char * name, size_t name_len, Application*& app);
-DLLEXPORT Exception * NewDepthRenderPass(Device* dev, int32_t finalLayout, int32_t depthImageFormat, RenderPass*& rp);
 DLLEXPORT Exception * NewDesktop(Application* app, Desktop*& desktop);
-DLLEXPORT Exception * NewForwardRenderPass(Device* dev, int32_t finalLayout, int32_t mainImageFormat, int32_t depthImageFormat, RenderPass*& rp);
 DLLEXPORT Exception * NewImageLoader(ImageLoader*& loader);
+DLLEXPORT Exception * NewRenderPass(Device* dev, RenderPass*& rp, bool depthAttachment, AttachmentInfo* attachments, size_t attachments_len);
 DLLEXPORT Exception * Pipeline_AddDescriptorLayout(Pipeline* pl, DescriptorLayout* dsLayout);
 DLLEXPORT Exception * Pipeline_AddShader(Pipeline* pl, int32_t stage, uint8_t* code, size_t code_len);
 DLLEXPORT Exception * QueryPool_Get(QueryPool* qp, uint64_t* values, size_t values_len, float& timestampPeriod);
-DLLEXPORT Exception * RenderPass_Init(RenderPass* rp);
 DLLEXPORT Exception * RenderPass_NewFrameBuffer(RenderPass* rp, ImageView** attachments, size_t attachments_len, Framebuffer*& fb);
 DLLEXPORT Exception * Window_GetNextFrame(Window* win, Image*& image, SubmitInfo*& submitInfo, int32_t& viewIndex);
 DLLEXPORT Exception * Window_GetPos(Window* win, WindowPos* pos);
@@ -88,6 +87,15 @@ Exception * AddDynamicDescriptors(Application* app) {
 Exception * AddValidation(Application* app) {
     try {
         Static::AddValidation (app);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * AddValidationException(int32_t msgId) {
+    try {
+        Static::AddValidationException (msgId);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }
@@ -547,15 +555,6 @@ Exception * NewApplication(char * name, size_t name_len, Application*& app) {
     return Exception::getValidationError();
 }
 
-Exception * NewDepthRenderPass(Device* dev, int32_t finalLayout, int32_t depthImageFormat, RenderPass*& rp) {
-    try {
-        Static::NewDepthRenderPass (dev, vk::ImageLayout(finalLayout), vk::Format(depthImageFormat), rp);
-    } catch (const std::exception &ex) {
-        return new Exception(ex);
-    }
-    return Exception::getValidationError();
-}
-
 Exception * NewDesktop(Application* app, Desktop*& desktop) {
     try {
         Static::NewDesktop (app, desktop);
@@ -565,18 +564,18 @@ Exception * NewDesktop(Application* app, Desktop*& desktop) {
     return Exception::getValidationError();
 }
 
-Exception * NewForwardRenderPass(Device* dev, int32_t finalLayout, int32_t mainImageFormat, int32_t depthImageFormat, RenderPass*& rp) {
+Exception * NewImageLoader(ImageLoader*& loader) {
     try {
-        Static::NewForwardRenderPass (dev, vk::ImageLayout(finalLayout), vk::Format(mainImageFormat), vk::Format(depthImageFormat), rp);
+        Static::NewImageLoader (loader);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }
     return Exception::getValidationError();
 }
 
-Exception * NewImageLoader(ImageLoader*& loader) {
+Exception * NewRenderPass(Device* dev, RenderPass*& rp, bool depthAttachment, AttachmentInfo* attachments, size_t attachments_len) {
     try {
-        Static::NewImageLoader (loader);
+        Static::NewRenderPass (dev, rp, depthAttachment, attachments, attachments_len);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }
@@ -604,15 +603,6 @@ Exception * Pipeline_AddShader(Pipeline* pl, int32_t stage, uint8_t* code, size_
 Exception * QueryPool_Get(QueryPool* qp, uint64_t* values, size_t values_len, float& timestampPeriod) {
     try {
         qp->Get(values, values_len, timestampPeriod);
-    } catch (const std::exception &ex) {
-        return new Exception(ex);
-    }
-    return Exception::getValidationError();
-}
-
-Exception * RenderPass_Init(RenderPass* rp) {
-    try {
-        rp->Init();
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }

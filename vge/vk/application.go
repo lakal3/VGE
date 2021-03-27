@@ -36,12 +36,24 @@ func DebugPoint(point string) {
 	call_DebugPoint([]byte(point))
 }
 
+// AddValidationException register validation exception to ignore. Normally validation errors cause Vulkan API call to fail if
+// validation is enabled for application and validation layer reports an error.
+// Some errors are not always valid and call to AddValidationException can put validation message to ignore list
+//
+// In VGE validation ignore list is global, not per application instance
+func AddValidationException(ctx APIContext, msgId int32) {
+	call_AddValidationException(ctx, msgId)
+}
+
 func NewApplication(ctx APIContext, name string) *Application {
 	err := loadLib()
 	if err != nil {
 		ctx.SetError(err)
 		return nil
 	}
+	AddValidationException(ctx, 0x9cacd67a-0x100000000) // UNASSIGNED-CoreValidation-DrawState-QueryNotReset
+	// VGE bind cube and normal images on same descriptor slot using slot override in glsl
+	AddValidationException(ctx, 0xa44449d4-0x100000000) // VUID-vkCmdDrawIndexed-None-02699
 	a := &Application{}
 	call_NewApplication(ctx, []byte(name), &a.hApp)
 	return a
@@ -52,6 +64,7 @@ func NewApplication(ctx APIContext, name string) *Application {
 // You must have Vulkan SDK installed on your machine because validation layers are part of Vulkan SDK, not driver API:s.
 // See https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Validation_layers for more info
 func (a *Application) AddValidation(ctx APIContext) {
+	call_AddValidation(ctx, a.hApp)
 }
 
 // AddDynamicDescriptors adds dynamics descriptor support to device.
@@ -61,6 +74,7 @@ func (a *Application) AddValidation(ctx APIContext) {
 // This call must be done before any device is created.
 // Note that device creating will fail if dynamic descriptor are not supported or request maxSize is too high
 func (a *Application) AddDynamicDescriptors(ctx APIContext) {
+	call_AddDynamicDescriptors(ctx, a.hApp)
 }
 
 // Initialize Vulkan application. Create Vulkan application and Vulkan instance.

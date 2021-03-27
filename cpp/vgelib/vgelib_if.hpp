@@ -44,6 +44,13 @@ namespace vge {
         uint32_t _padding;
     };
 
+    struct AttachmentInfo {
+        uint32_t initialLayout;
+        uint32_t finalLayout;
+        uint32_t format;
+        float clearColor[4];
+    };
+
     enum EventType : uint32_t {
         Nil = 0,
         Quit = 100,

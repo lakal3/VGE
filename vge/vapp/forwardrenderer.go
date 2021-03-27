@@ -133,15 +133,16 @@ func (f *ForwardRenderer) RenderView(sc *vscene.Scene, rc *vk.RenderCache, mainV
 		cmd.EndRenderPass()
 	})
 	frame := vscene.GetFrame(rc)
-	ppPhase := &vscene.PredrawPhase{Scene: sc, F: frame, Cache: rc, Cmd: cmd}
+	ppPhase := &vscene.PredrawPhase{Scene: sc, Cache: rc, Cmd: cmd}
+	lightPhase := vscene.FrameLightPhase{F: frame, Cache: rc}
 	if f.depthPrePass {
 		pdp := &predepth.PreDepthPass{Cmd: cmd, DC: vmodel.DrawContext{Cache: rc, Pass: f.frp}}
 		pdp.OnBegin = func() {
 			cmd.BeginRenderPass(f.frp, fb)
 		}
-		sc.Process(sc.Time, &vscene.AnimatePhase{}, ppPhase, pdp, bg, dp, dt, ui)
+		sc.Process(sc.Time, &vscene.AnimatePhase{}, ppPhase, pdp, lightPhase, bg, dp, dt, ui)
 	} else {
-		sc.Process(sc.Time, &vscene.AnimatePhase{}, ppPhase, bg, dp, dt, ui)
+		sc.Process(sc.Time, &vscene.AnimatePhase{}, ppPhase, lightPhase, bg, dp, dt, ui)
 	}
 	// Complete pendings from predraw phase
 	for _, pd := range ppPhase.Pending {

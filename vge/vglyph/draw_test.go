@@ -1,24 +1,26 @@
 package vglyph
 
 import (
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/lakal3/vge/vge/vasset/pngloader"
+	"github.com/lakal3/vge/vge/vk"
+	"github.com/lakal3/vge/vge/vmodel"
 	"image"
 	"image/color"
 	"math"
 	"testing"
 
-	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vapp/vtestapp"
-	"github.com/lakal3/vge/vge/vasset"
-	"github.com/lakal3/vge/vge/vk"
-	"github.com/lakal3/vge/vge/vmodel"
 )
 
 func TestDrawInfo_Draw(t *testing.T) {
 	ctx := vtestapp.TestContext{T: t}
 	vtestapp.Init(ctx, "drawtest")
-	vasset.RegisterNativeImageLoader(ctx, vtestapp.TestApp.App)
+	// vasset.RegisterNativeImageLoader(ctx, vtestapp.TestApp.App)
+	pngloader.RegisterPngLoader()
 	theme := testBuildPalette(ctx)
 	mm := vtestapp.NewMainImage()
+	vtestapp.AddChild(mm)
 	mm.ForwardRender(false, func(cmd *vk.Command, dc *vmodel.DrawContext) {
 		s := Position{ImageSize: image.Pt(int(mm.Desc.Width), int(mm.Desc.Height)),
 			Clip: image.Rect(100, 100, 500, 780)}
@@ -66,9 +68,8 @@ func TestDrawInfo_Draw(t *testing.T) {
 }
 
 func testBuildPalette(ctx vtestapp.TestContext) *Palette {
-	tl := vtestapp.TestLoader{Path: "glyphs/basicui"}
 	gb := NewSetBuilder(ctx, SETGrayScale)
-	tl = vtestapp.TestLoader{Path: "glyphs/test"}
+	tl := vtestapp.TestLoader{Path: "glyphs/test"}
 	testLoadImage(ctx, gb, "btn_focus", tl, "button_focus.png", RED_GREENA, image.Rect(40, 40, 50, 50))
 	gb.AddComputedGray("white", image.Pt(64, 64), image.Rect(16, 16, 16, 16),
 		func(x, y int) (float32, float32) {
@@ -85,14 +86,15 @@ func testBuildPalette(ctx vtestapp.TestContext) *Palette {
 			return 0, 1
 		})
 	gs := gb.Build(vtestapp.TestApp.Dev)
-	gb = NewSetBuilder(ctx, SETRGBA)
 	vtestapp.AddChild(gs)
+	gb = NewSetBuilder(ctx, SETRGBA)
 	testLoadImage(ctx, gb, "btn_next", tl, "next_button.png", 0, image.Rect(40, 40, 40, 40))
 	gs3 := gb.Build(vtestapp.TestApp.Dev)
 	vtestapp.AddChild(gs3)
 
 	vb := testVectorSet1()
 	gs2 := vb.Build(ctx, vtestapp.TestApp.Dev)
+	vtestapp.AddChild(gs2)
 	th := NewPalette(ctx, vtestapp.TestApp.Dev, 4, 128)
 	th.ComputeMask(ctx, vtestapp.TestApp.Dev, func(x, y, maskSize int) color.RGBA {
 		return color.RGBA{A: 255, B: 0,

@@ -2,6 +2,7 @@
 #include "vgelib/vgelib.hpp"
 #include <algorithm>
 #include <iostream>
+#include <set>
 
 vk::Optional<const vk::AllocationCallbacks> vge::allocator(nullptr);
 
@@ -159,10 +160,15 @@ void vge::ValidationOption::prepare(vk::InstanceCreateInfo& ici, std::vector<con
 	if (!InstanceExtension::addExtension(extensions, "VK_EXT_debug_utils") || !InstanceExtension::addExtension(extensions, "VK_EXT_debug_report")) {
 		return;
 	}
-	if (!InstanceExtension::addLayer(layers, "VK_LAYER_LUNARG_standard_validation")) {
+	// Renamed validation layers (https://vulkan.lunarg.com/doc/view/1.1.114.0/windows/validation_layers.html)
+	if (InstanceExtension::addLayer(layers, "VK_LAYER_KHRONOS_validation")) {
+		active = true;
 		return;
 	}
-	active = true;
+	if (InstanceExtension::addLayer(layers, "VK_LAYER_LUNARG_standard_validation")) {
+		active = true;
+		return;
+	}
 }
 
 
@@ -183,6 +189,8 @@ private:
 	std::string error;
 };
 
+static std::set<uint32_t> messageExceptions;
+
 VkBool32 debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	vk::DebugUtilsMessageTypeFlagsEXT                  messageTypes,
 	const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -195,7 +203,7 @@ VkBool32 debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 			if (validationError == nullptr) {
 				std::string error("Vulkan validation error: ");
 				error.append(pCallbackData->pMessage);
-				if (suppressValidation > 0) {
+				if (messageExceptions.find(pCallbackData->messageIdNumber) != messageExceptions.end()) {
 					return 0;
 				}
 				validationError = new vge::Exception(error);
@@ -439,6 +447,11 @@ void vge::Static::AddDynamicDescriptors(Application* app)
 	new DynamicDescriptorOption(app);
 }
 
+void vge::Static::AddValidationException(int32_t msgId)
+{
+	messageExceptions.insert(msgId);
+}
+
 
 void vge::Static::NewImageLoader(ImageLoader*& loader)
 {
@@ -453,12 +466,3 @@ void vge::Static::DebugPoint(const char* point, size_t len_point)
 }
 
 
-vge::SuppressValidation::SuppressValidation()
-{
-	suppressValidation++;
-}
-
-vge::SuppressValidation::~SuppressValidation()
-{
-	suppressValidation--;
-}

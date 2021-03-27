@@ -6,22 +6,26 @@ namespace vge {
 	class RenderPass : public Disposable {
 		friend class Command;
 	public:
+		RenderPass(const Device* dev, bool depthAttachment, AttachmentInfo* attachments, size_t attachmentCount);
 		void NewFrameBuffer(ImageView** attachments, size_t attachments_len, Framebuffer*& fb);
-		virtual void Init() = 0;
+		void init();
 		const vk::RenderPass get_handle() const {
 			return _renderPass;
 		}
-		virtual uint32_t get_color_attachment_count() = 0;
-	protected:
-		RenderPass(const Device* dev) :_dev(dev) {
-
+		uint32_t get_color_attachment_count() const {
+			return static_cast<uint32_t>(_attachments.size() - (_depthAttachment ? 1 : 0));
 		}
-		virtual void fillClearValues(std::vector<vk::ClearValue> &clearValues) = 0;
+	protected:
 		virtual void Dispose() override;
 		vk::RenderPass _renderPass;
+		std::vector<vk::AttachmentDescription> _attachments;
+		std::vector<vk::ClearValue> _clearValues;
+		const bool _depthAttachment;
+
 		const Device * const _dev;
 	};
 
+	/*
 	class ForwardRenderPass : public RenderPass {
 	public:
 		ForwardRenderPass(const Device* dev, vk::ImageLayout endLayout, vk::Format mainImageFormat, vk::Format depthImageFormat ) : 
@@ -56,6 +60,7 @@ namespace vge {
 		vk::ImageLayout _endLayout;
 		vk::Format _depthImageFormat;
 	};
+	*/
 
 	class Framebuffer: public Disposable {
 		friend class RenderPass;

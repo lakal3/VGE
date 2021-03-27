@@ -100,11 +100,9 @@ void vge::Command::CopyBuffer(Buffer* fromBuffer, Buffer* toBuffer)
 void vge::Command::BeginRenderPass(RenderPass* rp, Framebuffer* fb)
 {
 	vk::RenderPassBeginInfo rpbi;
-	std::vector<vk::ClearValue> clearValues;
-	rp->fillClearValues(clearValues);
-	rpbi.clearValueCount = static_cast<uint32_t>(clearValues.size());
-	if (clearValues.size() > 0) {
-		rpbi.pClearValues = clearValues.data();
+	rpbi.clearValueCount = static_cast<uint32_t>(rp->_clearValues.size());
+	if (rpbi.clearValueCount > 0) {
+		rpbi.pClearValues = rp->_clearValues.data();
 	}
 	rpbi.framebuffer = fb->get_framebuffer();
 	rpbi.renderPass = rp->_renderPass;
@@ -280,11 +278,9 @@ void vge::Command::drawOne(DrawItem &draw, Pipeline *&pipeline)
 		}
 	}
 
-	SuppressValidation sv;
 	if (draw.indexed) {
 		_cmd.drawIndexed(draw.count, draw.instances, draw.from, 0, draw.fromInstance, _dev->get_dispatch());
 	} else {
-
 		_cmd.draw(draw.count, draw.instances, draw.from, draw.fromInstance, _dev->get_dispatch());
 	}
 }
@@ -325,6 +321,7 @@ void vge::QueryPool::init() {
 	cqi.queryCount = _size;
 	cqi.queryType = _queryType;
 	_handle = _dev->get_device().createQueryPool(cqi, allocator, _dev->get_dispatch());
+	Reset();
 }
 
 void vge::QueryPool::Get(uint64_t* values, size_t values_len, float &timestampPeriod)
@@ -332,6 +329,13 @@ void vge::QueryPool::Get(uint64_t* values, size_t values_len, float &timestampPe
 	auto result =_dev->get_device().getQueryPoolResults(_handle, 0, static_cast<uint32_t>(values_len), 8 * values_len, static_cast<void*>(values), 8,
 		vk::QueryResultFlagBits::e64, _dev->get_dispatch());
 	timestampPeriod = _dev->get_pdProperties().limits.timestampPeriod;
+	Reset();
+}
+
+void vge::QueryPool::Reset()
+{
+	// Not enabled by default
+	// _dev->get_device().resetQueryPool(_handle, 0, _size, _dev->get_dispatch());
 }
 
 void vge::QueryPool::Dispose()

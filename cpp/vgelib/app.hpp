@@ -215,16 +215,13 @@ namespace vge {
 		static void NewApplication(char* name, size_t name_len, Application*& app);
 		static void NewDesktop(Application* app, Desktop*& desktop);
 		static void AddValidation(Application *app);
-		static void NewForwardRenderPass(Device* dev, vk::ImageLayout finalLayout, vk::Format mainImageFormat, vk::Format depthImageFormat, RenderPass*& rp);
-		static void NewDepthRenderPass(Device* dev, vk::ImageLayout finalLayout, vk::Format depthImageFormat, RenderPass*& rp);
+		// static void NewForwardRenderPass(Device* dev, vk::ImageLayout finalLayout, vk::Format mainImageFormat, vk::Format depthImageFormat, RenderPass*& rp);
+		// static void NewDepthRenderPass(Device* dev, vk::ImageLayout finalLayout, vk::Format depthImageFormat, RenderPass*& rp);
+		static void NewRenderPass(Device* dev, RenderPass*& rp, bool depthAttachment, AttachmentInfo* attachments, size_t attachments_len);
 		static void NewImageLoader(ImageLoader*& loader);
 		static void DebugPoint(const char* point, size_t len_point);
 		static void AddDynamicDescriptors(Application* app);
-	};
-
-	class SuppressValidation {
-	public:
-		SuppressValidation();
-		~SuppressValidation();
+		static void AddValidationException(int32_t msgId);
+		
 	};
 }

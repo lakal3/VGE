@@ -91,6 +91,13 @@ type DrawItem struct {
 	_padding     uint32
 }
 
+type AttachmentInfo struct {
+	InitialLayout ImageLayout
+	FinalLayout   ImageLayout
+	Format        Format
+	ClearColor    [4]float32
+}
+
 type RawEvent struct {
 	// See vapp/win.go for list of raw event codes
 	EventType uint32

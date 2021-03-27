@@ -71,7 +71,10 @@ func testRender(tc *testContext, d *Device, ld ImageLoader) {
 	}
 	var testImageDesc ImageDescription
 	ld.DescribeImage(tc, "png", &testImageDesc, testPattern)
-	fp := NewForwardRenderPass(tc, d, FORMATR8g8b8a8Unorm, IMAGELayoutTransferSrcOptimal, FORMATUndefined)
+	fp := NewGeneralRenderPass(tc, d, false, []AttachmentInfo{
+		AttachmentInfo{FinalLayout: IMAGELayoutTransferSrcOptimal, Format: FORMATR8g8b8a8Unorm, ClearColor: [4]float32{0.1, 0.1, 0.1, 1}},
+		AttachmentInfo{FinalLayout: IMAGELayoutTransferSrcOptimal, Format: FORMATR8g8b8a8Unorm, ClearColor: [4]float32{0.8, 0.8, 0.8, 1}},
+	})
 	if fp == nil {
 		return
 	}
@@ -87,9 +90,11 @@ func testRender(tc *testContext, d *Device, ld ImageLoader) {
 		MipLevels: 1,
 	}
 	mainImage := mp.ReserveImage(tc, mi, IMAGEUsageColorAttachmentBit|IMAGEUsageTransferSrcBit)
+	grayImage := mp.ReserveImage(tc, mi, IMAGEUsageColorAttachmentBit|IMAGEUsageTransferSrcBit)
 	testImage := mp.ReserveImage(tc, mi, IMAGEUsageTransferDstBit|IMAGEUsageSampledBit)
 	bImage := mp.ReserveBuffer(tc, testImageDesc.ImageSize(), true, BUFFERUsageTransferSrcBit)
 	ib := mp.ReserveBuffer(tc, mi.ImageSize(), true, BUFFERUsageTransferDstBit)
+	ibGray := mp.ReserveBuffer(tc, mi.ImageSize(), true, BUFFERUsageTransferDstBit)
 	vb := mp.ReserveBuffer(tc, 3*2*4, true, BUFFERUsageVertexBufferBit)
 	ubColor := mp.ReserveBuffer(tc, 4*4, true, BUFFERUsageUniformBufferBit)
 	ubWorld := mp.ReserveBuffer(tc, MinUniformBufferOffsetAlignment*triangleCount, true, BUFFERUsageUniformBufferBit)
@@ -105,7 +110,8 @@ func testRender(tc *testContext, d *Device, ld ImageLoader) {
 	}
 
 	mainView := mainImage.DefaultView(tc)
-	fb := NewFramebuffer(tc, fp, []*ImageView{mainView})
+	grayView := grayImage.DefaultView(tc)
+	fb := NewFramebuffer(tc, fp, []*ImageView{mainView, grayView})
 	defer fb.Dispose()
 	tp := &testPipeline{rp: fp, testImage: testImage, ubWorld: ubWorld}
 	tp.copyImage(tc, d, bImage, testImage)
@@ -134,6 +140,7 @@ func testRender(tc *testContext, d *Device, ld ImageLoader) {
 	r := mainImage.FullRange()
 	r.Layout = IMAGELayoutTransferSrcOptimal
 	cmd.CopyImageToBuffer(ib, mainImage, &r)
+	cmd.CopyImageToBuffer(ibGray, grayImage, &r)
 	cmd.Submit()
 	cmd.Wait()
 	times := timer.Get(tc)
@@ -142,6 +149,8 @@ func testRender(tc *testContext, d *Device, ld ImageLoader) {
 	defer tp.pl.Dispose()
 	im := image.NewRGBA(image.Rect(0, 0, int(mainImage.Description.Width), int(mainImage.Description.Height)))
 	copy(im.Pix, ib.Bytes(tc))
+	imGray := image.NewRGBA(image.Rect(0, 0, int(mainImage.Description.Width), int(mainImage.Description.Height)))
+	copy(imGray.Pix, ibGray.Bytes(tc))
 	testDir := os.Getenv("VGE_TEST_DIR")
 	if len(testDir) == 0 {
 		tc.t.Log("Unable to save test image, missing environment variable VGE_TEST_DIR")
@@ -151,7 +160,17 @@ func testRender(tc *testContext, d *Device, ld ImageLoader) {
 	if err != nil {
 		tc.SetError(err)
 	}
+	defer fOut.Close()
 	err = png.Encode(fOut, im)
+	if err != nil {
+		tc.SetError(err)
+	}
+	fOut2, err := os.Create(filepath.Join(testDir, "vk_gray.png"))
+	if err != nil {
+		tc.SetError(err)
+	}
+	defer fOut2.Close()
+	err = png.Encode(fOut2, imGray)
 	if err != nil {
 		tc.SetError(err)
 	}

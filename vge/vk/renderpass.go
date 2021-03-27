@@ -26,21 +26,21 @@ type RenderPass interface {
 	Get(ctx APIContext, key Key, cons Constructor) interface{}
 }
 
-type ForwardRenderPass struct {
+type GeneralRenderPass struct {
 	owner Owner
 	dev   *Device
 	hRp   hRenderPass
 }
 
-func (f *ForwardRenderPass) Get(ctx APIContext, key Key, cons Constructor) interface{} {
+func (f *GeneralRenderPass) Get(ctx APIContext, key Key, cons Constructor) interface{} {
 	return f.owner.Get(ctx, key, cons)
 }
 
-func (f *ForwardRenderPass) GetRenderPass() uintptr {
+func (f *GeneralRenderPass) GetRenderPass() uintptr {
 	return uintptr(f.hRp)
 }
 
-func (f *ForwardRenderPass) Dispose() {
+func (f *GeneralRenderPass) Dispose() {
 	if f.hRp != 0 {
 		f.owner.Dispose()
 		call_Disposable_Dispose(hDisposable(f.hRp))
@@ -48,18 +48,7 @@ func (f *ForwardRenderPass) Dispose() {
 	}
 }
 
-// NewForwardRenderPass created a new single phase pass that supports main image and optionally a depth image (Z-buffer).
-func NewForwardRenderPass(ctx APIContext, dev *Device, mainImageFormat Format, finalLayout ImageLayout, depthImageFormat Format) *ForwardRenderPass {
-	if !dev.IsValid(ctx) {
-		return nil
-	}
-	fr := &ForwardRenderPass{dev: dev}
-	call_NewForwardRenderPass(ctx, dev.hDev, finalLayout, mainImageFormat, depthImageFormat, &fr.hRp)
-	call_RenderPass_Init(ctx, fr.hRp)
-	return fr
-}
-
-func (f *ForwardRenderPass) IsValid(ctx APIContext) bool {
+func (f *GeneralRenderPass) IsValid(ctx APIContext) bool {
 	if f.hRp == 0 {
 		ctx.SetError(ErrDisposed)
 		return false
@@ -67,33 +56,37 @@ func (f *ForwardRenderPass) IsValid(ctx APIContext) bool {
 	return true
 }
 
-type DepthRenderPass struct {
-	owner Owner
-	dev   *Device
-	hRp   hRenderPass
+// Type alias to migrate old render pass definition
+type ForwardRenderPass = GeneralRenderPass
+type DepthRenderPass = GeneralRenderPass
+
+// NewGeneralRenderPass creates a new render pass with one or many color attachments.
+// If hasDepth is set, last attachment is depth or depth stencil attachment, otherwise there is no depth attachment for render pass
+func NewGeneralRenderPass(ctx APIContext, dev *Device, hasDepth bool, attachments []AttachmentInfo) *GeneralRenderPass {
+	gr := &GeneralRenderPass{dev: dev}
+	call_NewRenderPass(ctx, dev.hDev, &gr.hRp, hasDepth, attachments)
+	return gr
 }
 
-func (dp *DepthRenderPass) Get(ctx APIContext, key Key, cons Constructor) interface{} {
-	return dp.owner.Get(ctx, key, cons)
-}
-
-func (dp *DepthRenderPass) GetRenderPass() uintptr {
-	return uintptr(dp.hRp)
-}
-
-func (dp *DepthRenderPass) Dispose() {
-	if dp.hRp != 0 {
-		dp.owner.Dispose()
-		call_Disposable_Dispose(hDisposable(dp.hRp))
-		dp.hRp = 0
+// NewForwardRenderPass created a new single phase pass that supports main image and optionally a depth image (Z-buffer).
+// NewForwardRenderPass is badly named due to historical reason.
+// ForwardRenderPass can be used to render anything with one color attachment and 0 - 1 depth attachments
+func NewForwardRenderPass(ctx APIContext, dev *Device, mainImageFormat Format, finalLayout ImageLayout, depthImageFormat Format) *ForwardRenderPass {
+	if !dev.IsValid(ctx) {
+		return nil
 	}
-}
-func (dp *DepthRenderPass) IsValid(ctx APIContext) bool {
-	if dp.hRp == 0 {
-		ctx.SetError(ErrDisposed)
-		return false
+	fr := &ForwardRenderPass{dev: dev}
+	var ai []AttachmentInfo
+	ai = append(ai, AttachmentInfo{Format: mainImageFormat, FinalLayout: finalLayout, InitialLayout: IMAGELayoutUndefined,
+		ClearColor: [4]float32{0.2, 0.2, 0.2, 1}})
+	hasDepth := false
+	if depthImageFormat != FORMATUndefined {
+		hasDepth = true
+		ai = append(ai, AttachmentInfo{Format: depthImageFormat, InitialLayout: IMAGELayoutUndefined, FinalLayout: IMAGELayoutUndefined,
+			ClearColor: [4]float32{1, 0, 0, 0}})
 	}
-	return true
+	call_NewRenderPass(ctx, dev.hDev, &fr.hRp, hasDepth, ai)
+	return fr
 }
 
 // NewDepthRenderPass creates are single phase render pass that only supports depth image.
@@ -103,8 +96,8 @@ func NewDepthRenderPass(ctx APIContext, dev *Device, finalLayout ImageLayout, de
 		return nil
 	}
 	fr := &DepthRenderPass{dev: dev}
-	call_NewDepthRenderPass(ctx, dev.hDev, finalLayout, depthImageFormat, &fr.hRp)
-	call_RenderPass_Init(ctx, fr.hRp)
+	ai := []AttachmentInfo{{Format: depthImageFormat, FinalLayout: finalLayout, ClearColor: [4]float32{1, 0, 0, 0}}}
+	call_NewRenderPass(ctx, dev.hDev, &fr.hRp, true, ai)
 	return fr
 }
 

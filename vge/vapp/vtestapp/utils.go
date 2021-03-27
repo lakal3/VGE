@@ -64,6 +64,7 @@ func (m *MainImage) ForwardRender(depth bool, render func(cmd *vk.Command, dc *v
 	defer cmd.Dispose()
 	cmd.Begin()
 	fb := vk.NewFramebuffer(TestApp.Ctx, fp, att)
+	defer fb.Dispose()
 	cmd.BeginRenderPass(fp, fb)
 	render(cmd, dc)
 	if dc.List != nil {
@@ -72,6 +73,7 @@ func (m *MainImage) ForwardRender(depth bool, render func(cmd *vk.Command, dc *v
 	cmd.EndRenderPass()
 	cmd.Submit()
 	cmd.Wait()
+
 }
 
 var kFpTest = vk.NewKey()
@@ -107,7 +109,8 @@ func (m *MainImage) RenderScene(time float64, depth bool) {
 		cmd.EndRenderPass()
 	})
 	frame := vscene.GetFrame(rc)
-	m.Root.Process(time, &vscene.AnimatePhase{}, &vscene.PredrawPhase{F: frame, Scene: &m.Root, Cache: rc, Cmd: cmd}, bg, dp, ui)
+	m.Root.Process(time, &vscene.AnimatePhase{}, &vscene.FrameLightPhase{F: frame, Cache: rc},
+		&vscene.PredrawPhase{Scene: &m.Root, Cache: rc, Cmd: cmd}, bg, dp, ui)
 	cmd.Submit()
 	cmd.Wait()
 }

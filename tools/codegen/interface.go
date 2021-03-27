@@ -70,6 +70,7 @@ type MainLib interface {
 		app  *hApplication
 	})
 	AddValidation(struct{ app hApplication })
+	AddValidationException(struct{ msgId int32 })
 	AddDynamicDescriptors(struct {
 		app hApplication
 	})
@@ -263,25 +264,33 @@ type MainLib interface {
 		imageView *hImageView
 		cube      bool
 	})
-	NewForwardRenderPass(struct {
-		dev              hDevice
-		finalLayout      vk.ImageLayout
-		mainImageFormat  vk.Format
-		depthImageFormat vk.Format
-		rp               *hRenderPass
+	/*
+		NewForwardRenderPass(struct {
+			dev              hDevice
+			finalLayout      vk.ImageLayout
+			mainImageFormat  vk.Format
+			depthImageFormat vk.Format
+			rp               *hRenderPass
+		})
+		NewDepthRenderPass(struct {
+			dev              hDevice
+			finalLayout      vk.ImageLayout
+			depthImageFormat vk.Format
+			rp               *hRenderPass
+		})
+	*/
+	NewRenderPass(struct {
+		dev             hDevice
+		rp              *hRenderPass
+		depthAttachment bool
+		attachments     []vk.AttachmentInfo
 	})
-	NewDepthRenderPass(struct {
-		dev              hDevice
-		finalLayout      vk.ImageLayout
-		depthImageFormat vk.Format
-		rp               *hRenderPass
-	})
+
 	RenderPass_NewFrameBuffer(struct {
 		rp          hRenderPass
 		attachments []hImageView
 		fb          *hFramebuffer
 	})
-	RenderPass_Init(struct{ rp hRenderPass })
 	Device_NewSampler(struct {
 		dev        hDevice
 		repeatMode vk.SamplerAddressMode

@@ -29,6 +29,7 @@ type shadowResources struct {
 	fb          *vk.Framebuffer
 	cubeView    *vk.ImageView
 	cmd         *vk.Command
+	sampler     *vk.Sampler
 }
 
 const maxInstances = 100
@@ -165,23 +166,30 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 			pl.MaxShadowDistance = pl.MaxDistance * 2
 		}
 		pos := pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1})
-		if pd.F.EyePos.Vec3().Sub(pos.Vec3()).Len() > pl.MaxShadowDistance {
+		eyePos := vscene.GetFrame(pd.Cache).EyePos.Vec3()
+		if eyePos.Sub(pos.Vec3()).Len() > pl.MaxShadowDistance {
 			// Skip shadow pass for light too long aways
-			pd.F.AddLight(vscene.Light{Intensity: pl.Intensity.Vec4(1),
-				Position: pos, Attenuation: pl.Attenuation.Vec4(pl.MaxDistance)})
 			return
 		}
-		sr := pl.renderShadowMap(pd, pi)
-		sampler := getShadowSampler(pd.Cache.Ctx, pd.Cache.Device)
-		idx := vscene.SetFrameImage(pd.Cache, sr.cubeView, sampler)
-		if idx < 0 {
-			pd.F.AddLight(vscene.Light{Intensity: pl.Intensity.Vec4(1),
-				Position: pos, Attenuation: pl.Attenuation.Vec4(pl.MaxDistance)})
-			return
+		pl.renderShadowMap(pd, pi)
+	}
+
+	lp, ok := pi.Phase.(vscene.LightPhase)
+	if ok {
+		hasShadowmap := lp.GetCache().GetPerFrame(pl.key, func(ctx vk.APIContext) interface{} {
+			return false
+		}).(bool)
+		pos := pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1})
+		if !hasShadowmap {
+			lp.AddLight(vscene.Light{Intensity: pl.Intensity.Vec4(1),
+				Position: pos, Attenuation: pl.Attenuation.Vec4(pl.MaxDistance)}, nil, nil)
+		} else {
+			sr := lp.GetCache().Get(pl.key, func(ctx vk.APIContext) interface{} {
+				return nil
+			}).(*shadowResources)
+			lp.AddLight(vscene.Light{Intensity: pl.Intensity.Vec4(1),
+				Position: pos, Attenuation: pl.Attenuation.Vec4(pl.MaxDistance)}, sr.cubeView, sr.sampler)
 		}
-		pd.F.AddLight(vscene.Light{Intensity: pl.Intensity.Vec4(1),
-			Direction: mgl32.Vec4{0, 0, 0, float32(idx)},
-			Position:  pos, Attenuation: pl.Attenuation.Vec4(pl.MaxDistance)})
 	}
 }
 
@@ -213,6 +221,8 @@ func (pl *PointLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.Proces
 		pd.Needeed = append(pd.Needeed, waitFor)
 		cmd.Wait()
 	})
+	sr.sampler = getShadowSampler(pd.Cache.Ctx, pd.Cache.Device)
+	pd.Cache.SetPerFrame(pl.key, true)
 	return sr
 }
 

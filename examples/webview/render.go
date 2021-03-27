@@ -134,8 +134,8 @@ func renderImage(ctx vk.APIContext, angle float64, imageSize image.Point) (pngIm
 	pc.SetupFrame(frame, imageSize)
 
 	// Predraw phase draws shadow maps etc.
-	ppPhase := &vscene.PredrawPhase{Scene: &sc, F: frame, Cache: rc, Cmd: cmd}
-	sc.Process(sc.Time, &vscene.AnimatePhase{}, ppPhase, bg, dp)
+	ppPhase := &vscene.PredrawPhase{Scene: &sc, Cache: rc, Cmd: cmd}
+	sc.Process(sc.Time, &vscene.AnimatePhase{}, ppPhase, &vscene.FrameLightPhase{F: frame, Cache: rc}, bg, dp)
 
 	// Process pending request from predraw phase
 	for _, pd := range ppPhase.Pending {

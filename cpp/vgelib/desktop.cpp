@@ -311,10 +311,7 @@ void vge::Window::createSwapchain(Device *dev)
 	_crInfo.imageExtent.height = static_cast<uint32_t>(sfCap.currentExtent.height);
 	_crInfo.imageExtent.width = static_cast<uint32_t>(sfCap.currentExtent.width);
 	_crInfo.imageSharingMode = vk::SharingMode::eExclusive;
-	{
-		SuppressValidation sv;
-		_swapChain = dev->get_device().createSwapchainKHR(_crInfo, allocator, dev->get_dispatch());
-	}
+	_swapChain = dev->get_device().createSwapchainKHR(_crInfo, allocator, dev->get_dispatch());
 	uint32_t imCount = 0;
 	dev->get_device().getSwapchainImagesKHR(_swapChain, &imCount, nullptr, dev->get_dispatch());
 	std::vector<vk::Image> images(imCount);

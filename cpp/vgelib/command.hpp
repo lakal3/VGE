@@ -82,6 +82,7 @@ namespace vge {
 		friend class Device;
 	public:
 		void Get(uint64_t* values, size_t values_len, float& timestampPeriod);
+		void Reset();
 	private:
 		QueryPool(Device* dev, vk::QueryType queryType, uint32_t size) : _dev(dev), _queryType(queryType), _size(size) {
 

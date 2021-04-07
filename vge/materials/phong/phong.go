@@ -3,6 +3,7 @@
 package phong
 
 import (
+	"github.com/lakal3/vge/vge/forward"
 	"unsafe"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -49,7 +50,7 @@ func (u *PhongMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, wo
 		return u.NewPipeline(ctx, dc)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := vscene.BindFrame(rc)
+	dsFrame := forward.BindFrame(rc)
 	uli := rc.GetPerFrame(kPhongInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &phongInstance{ds: ds, sl: sl}
@@ -76,7 +77,7 @@ func (u *PhongMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl
 		return u.NewPipeline(ctx, dc)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := vscene.BindFrame(rc)
+	dsFrame := forward.BindFrame(rc)
 	uli := rc.GetPerFrame(kPhongInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &phongInstance{ds: ds, sl: sl}
@@ -96,7 +97,7 @@ func (u *PhongMaterial) NewPipeline(ctx vk.APIContext, dc *vmodel.DrawContext) *
 	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
 	vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
 	la := vscene.GetUniformLayout(ctx, rc.Device)
-	laFrame := vscene.GetFrameLayout(ctx, rc.Device)
+	laFrame := forward.GetFrameLayout(ctx, rc.Device)
 	la2 := getPhongLayout(ctx, rc.Device)
 	gp.AddLayout(ctx, laFrame)
 	gp.AddLayout(ctx, la)

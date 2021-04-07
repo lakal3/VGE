@@ -11,7 +11,7 @@ https://github.com/Nadrin/PBR/blob/master/data/shaders/glsl/pbr_fs.glsl
 
 #define DYNAMIC_DESCRIPTORS 1
 
-#include "../../vscene/frame.glsl"
+#include "../../forward/frame.glsl"
 
 layout(location = 0) out vec4 o_Color;
 

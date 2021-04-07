@@ -27,8 +27,8 @@ type OrbitControl struct {
 	pc        *vscene.PerspectiveCamera
 }
 
-func (c *OrbitControl) SetupFrame(f *vscene.Frame, size image.Point) {
-	c.pc.SetupFrame(f, size)
+func (c *OrbitControl) CameraProjection(size image.Point) (projection, view mgl32.Mat4) {
+	return c.pc.CameraProjection(size)
 }
 
 func (c *OrbitControl) eventHandler(ctx vk.APIContext, ev Event) (unregister bool) {

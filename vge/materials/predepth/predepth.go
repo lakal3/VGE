@@ -10,9 +10,10 @@ import (
 )
 
 type PreDepthPass struct {
-	DC      vmodel.DrawContext
-	Cmd     *vk.Command
-	OnBegin func()
+	DC        vmodel.DrawContext
+	Cmd       *vk.Command
+	BindFrame func() *vk.DescriptorSet
+	OnBegin   func()
 }
 
 func (p *PreDepthPass) Begin() (atEnd func()) {
@@ -32,12 +33,7 @@ func (p *PreDepthPass) DrawShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoText
 		return p.newPipeline(ctx, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsWorld := rc.GetPerFrame(kPreDepthWorld, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
-		f := vscene.GetFrame(rc)
-		f.CopyTo(sl)
-		return ds
-	}).(*vk.DescriptorSet)
+	dsWorld := p.BindFrame()
 	uli := rc.GetPerFrame(kPreDepthInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &preDepthInstances{ds: ds, sl: sl}
@@ -57,12 +53,7 @@ func (p *PreDepthPass) DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, alb
 		return p.newPipeline(ctx, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsWorld := rc.GetPerFrame(kPreDepthWorld, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
-		f := vscene.GetFrame(rc)
-		f.CopyTo(sl)
-		return ds
-	}).(*vk.DescriptorSet)
+	dsWorld := p.BindFrame()
 	uli := rc.GetPerFrame(kPreDepthInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &preDepthInstances{ds: ds, sl: sl}

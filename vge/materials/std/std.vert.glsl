@@ -7,7 +7,7 @@
 #define MAX_INSTANCES 200
 
 #include "../../vscene/input.glsl"
-#include "../../vscene/frame.glsl"
+#include "../../forward/frame.glsl"
 
 struct INSTANCE {
     mat4 world;

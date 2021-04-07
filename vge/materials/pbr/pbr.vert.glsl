@@ -2,7 +2,7 @@
 #extension GL_GOOGLE_include_directive : require
 
 #include "../../vscene/input.glsl"
-#include "../../vscene/frame.glsl"
+#include "../../forward/frame.glsl"
 
 layout(set = 1, binding = 0) uniform INSTANCE {
     mat4 world[256];

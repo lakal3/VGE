@@ -3,6 +3,7 @@
 package pbr
 
 import (
+	"github.com/lakal3/vge/vge/forward"
 	"unsafe"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -57,7 +58,7 @@ func (u *PbrMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, worl
 		return u.NewPipeline(ctx, dc, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := vscene.BindFrame(rc)
+	dsFrame := forward.BindFrame(rc)
 	uli := rc.GetPerFrame(kPbrSkinnedInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &pbrInstance{ds: ds, sl: sl}
@@ -79,7 +80,7 @@ func (u *PbrMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32
 		return u.NewPipeline(ctx, dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := vscene.BindFrame(rc)
+	dsFrame := forward.BindFrame(rc)
 	uli := rc.GetPerFrame(kPbrInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &pbrInstance{ds: ds, sl: sl}
@@ -104,7 +105,7 @@ func (u *PbrMaterial) NewPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, ski
 		vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
 		gp.AddShader(ctx, vk.SHADERStageVertexBit, pbr_vert_spv)
 	}
-	laFrame := vscene.GetFrameLayout(ctx, rc.Device)
+	laFrame := forward.GetFrameLayout(ctx, rc.Device)
 	la := vscene.GetUniformLayout(ctx, rc.Device)
 	la2 := getPbrLayout(ctx, rc.Device)
 	laUBF := vscene.GetUniformLayout(ctx, rc.Device)

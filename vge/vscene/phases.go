@@ -69,6 +69,7 @@ type PredrawPhase struct {
 	Scene   *Scene
 	Cmd     *vk.Command
 	Cache   *vk.RenderCache
+	Frame   Frame
 	Needeed []vk.SubmitInfo
 	Pending []func()
 }
@@ -119,36 +120,4 @@ type LightPhase interface {
 
 	// Get render cache
 	GetCache() *vk.RenderCache
-}
-
-type FrameLightPhase struct {
-	F     *Frame
-	Cache *vk.RenderCache
-}
-
-func (f FrameLightPhase) GetCache() *vk.RenderCache {
-	return f.Cache
-}
-
-func (f FrameLightPhase) Begin() (atEnd func()) {
-	return nil
-}
-
-func (f FrameLightPhase) SetSPH(sph [9]mgl32.Vec4) {
-	f.F.SPH = sph
-}
-
-func (f FrameLightPhase) AddLight(standard Light, shadowMap *vk.ImageView, sampler *vk.Sampler) {
-	idx := vmodel.ImageIndex(-1)
-	if shadowMap != nil {
-		idx = SetFrameImage(f.Cache, shadowMap, sampler)
-	}
-	if idx >= 0 {
-		standard.Direction = standard.Direction.Vec3().Vec4(float32(idx))
-	}
-	f.F.AddLight(standard)
-}
-
-func (f FrameLightPhase) AddSpecialLight(special interface{}, shadowMap *vk.ImageView, samples *vk.Sampler) bool {
-	return false
 }

@@ -2,6 +2,13 @@ package vscene
 
 import "github.com/go-gl/mathgl/mgl32"
 
+type Light struct {
+	Intensity   mgl32.Vec4
+	Position    mgl32.Vec4 // w = 0 for directional light and this is shadowmap position
+	Direction   mgl32.Vec4 // if w > 0, shadowmap index = w - 1
+	Attenuation mgl32.Vec4 // 0, 1st and 2nd order, w is shadowmap index
+}
+
 type DirectionalLight struct {
 	Intensity mgl32.Vec3
 	Direction mgl32.Vec3

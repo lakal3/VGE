@@ -2,6 +2,7 @@ package env
 
 import (
 	"fmt"
+	"github.com/lakal3/vge/vge/forward"
 	"image"
 	"io/ioutil"
 	"math"
@@ -61,12 +62,12 @@ func (p *Probe) Process(pi *vscene.ProcessInfo) {
 			// p.saveImg(pre.Cache, "d:/temp/prope.dds")
 		}
 		sampler := getEnvSampler(pre.Cache.Ctx, pre.Cache.Device)
-		idx := vscene.SetFrameImage(pre.Cache, p.imgs[p.currentImg].NewCubeView(pre.Cache.Ctx, -1), sampler)
-		f := vscene.GetFrame(pre.Cache)
+		ff := forward.MustGetForwardFrame(pre.Cache.Ctx, pre.Frame)
+		idx := ff.SetFrameImage(pre.Cache, p.imgs[p.currentImg].NewCubeView(pre.Cache.Ctx, -1), sampler)
 		if idx >= 0 {
-			f.EnvMap, f.EnvLods = float32(idx), float32(p.desc.MipLevels)
+			ff.EnvMap, ff.EnvLods = float32(idx), float32(p.desc.MipLevels)
 		}
-		f.SPH = p.SPH
+		ff.SPH = p.SPH
 	}
 	dp, ok := pi.Phase.(*drawProbe)
 	if ok && dp.p == p {
@@ -213,8 +214,10 @@ func (p *Probe) renderMainLayer(rc *vk.RenderCache, layer int32, sc *vscene.Scen
 	dc1 := &drawProbe{DrawContext: vmodel.DrawContext{Cache: rc, Pass: p.frp}, cmd: cmd,
 		p: p, layer: vscene.LAYERBackground, fb: fb}
 	dc2 := &drawProbe{DrawContext: dc1.DrawContext, cmd: cmd, p: p, layer: vscene.LAYER3D}
-	f := vscene.GetFrame(rc)
-	pc.SetupFrame(f, image.Pt(int(p.desc.Width), int(p.desc.Height)))
+	f := &vscene.SimpleFrame{}
+	size := image.Pt(int(p.desc.Width), int(p.desc.Height))
+	f.Projection, f.View = pc.CameraProjection(size)
+	f.WriteFrame(rc)
 	// Mirror image over x axis
 	f.View = mgl32.Scale3D(-1, 1, 1).Mul4(f.View)
 	sc.Process(0, dc1, dc2)

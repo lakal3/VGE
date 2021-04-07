@@ -3,7 +3,11 @@
 
 vec2 vertices[6] = vec2[]( vec2(-0.5,0), vec2(-0.5, 1), vec2(0.5,1), vec2(-0.5,0), vec2(0.5,1), vec2(0.5, 0));
 
-#include "../../vscene/frame.glsl"
+layout(set=0, binding=0) uniform FRAME {
+    mat4 projection;
+    mat4 view;
+} frame;
+
 #include "fire.glsl"
 
 layout (location = 0) out vec4 o_posHeat;

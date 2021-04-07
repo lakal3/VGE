@@ -4,7 +4,7 @@
 
 #define DYNAMIC_DESCRIPTORS 1
 
-#include "../../vscene/frame.glsl"
+#include "../../forward/frame.glsl"
 layout(location = 0) out vec4 o_Color;
 
 layout(location = 0) in vec3 i_position;

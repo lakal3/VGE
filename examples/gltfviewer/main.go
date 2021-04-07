@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/lakal3/vge/vge/forward"
 	"log"
 	"os"
 
@@ -72,7 +73,7 @@ func main() {
 	}
 
 	// Initialize forward rendered
-	rd := vapp.NewForwardRenderer(true)
+	rd := forward.NewRenderer(true)
 	// Build main window
 	app.rw = vapp.NewRenderWindow("GLTF Viewer", rd)
 

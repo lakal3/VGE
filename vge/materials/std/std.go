@@ -4,6 +4,7 @@ package std
 
 import (
 	"errors"
+	"github.com/lakal3/vge/vge/forward"
 	"unsafe"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -63,7 +64,7 @@ func (u *Material) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world m
 		return u.NewPipeline(ctx, dc, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := vscene.BindDynamicFrame(rc)
+	dsFrame := forward.BindDynamicFrame(rc)
 	if dsFrame == nil {
 		dc.Cache.Ctx.SetError(ErrNoDynamicFrame)
 		return
@@ -92,7 +93,7 @@ func (u *Material) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Ma
 		return u.NewPipeline(ctx, dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := vscene.BindDynamicFrame(rc)
+	dsFrame := forward.BindDynamicFrame(rc)
 	if dsFrame == nil {
 		dc.Cache.Ctx.SetError(ErrNoDynamicFrame)
 		return
@@ -139,7 +140,7 @@ func (u *Material) NewPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, skinne
 		vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
 		gp.AddShader(ctx, vk.SHADERStageVertexBit, std_vert_spv)
 	}
-	laFrame := vscene.GetDynamicFrameLayout(ctx, rc.Device)
+	laFrame := forward.GetDynamicFrameLayout(ctx, rc.Device)
 	if laFrame == nil {
 		ctx.SetError(ErrNoDynamicFrame)
 		return nil

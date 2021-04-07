@@ -39,7 +39,7 @@ func (f *Fire) draw(dc *vmodel.DrawContext, w mgl32.Mat4, time float64) {
 		return f.newPipeline(ctx, dc)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := vscene.BindFrame(rc)
+	dsFrame := vscene.BindSimpleFrame(rc)
 	fis := dc.Cache.GetPerFrame(kFireInstance, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &fireInstances{ds: ds, sl: sl}
@@ -107,7 +107,7 @@ func (f *Fire) newPipeline(ctx vk.APIContext, dc *vmodel.DrawContext) *vk.Graphi
 	rc := dc.Cache
 	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
 	la := vscene.GetUniformLayout(ctx, rc.Device)
-	laFrame := vscene.GetFrameLayout(ctx, rc.Device)
+	laFrame := vscene.GetUniformLayout(ctx, rc.Device)
 	laFire := getFireLayout(ctx, rc.Device)
 	gp.AddLayout(ctx, laFrame)
 	gp.AddLayout(ctx, la)

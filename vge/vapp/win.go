@@ -1,6 +1,7 @@
 package vapp
 
 import (
+	"github.com/lakal3/vge/vge/forward"
 	"image"
 	"sync"
 	"time"
@@ -188,7 +189,7 @@ func (rw *RenderWindow) renderLoop() {
 			rw.caches[imageIndex] = vk.NewRenderCache(Ctx, Dev)
 			if !rw.setup {
 				if rw.renderer == nil {
-					rw.renderer = NewForwardRenderer(true)
+					rw.renderer = forward.NewRenderer(true)
 				}
 				rw.setup = true
 				rw.renderer.Setup(Ctx, Dev, rw.win.WindowDesc, rw.win.GetImageCount())
@@ -196,12 +197,8 @@ func (rw *RenderWindow) renderLoop() {
 		}
 		rc := rw.caches[imageIndex]
 		rc.NewFrame()
-		f := vscene.GetFrame(rc)
-		if rw.Camera != nil {
-			rw.Camera.SetupFrame(f, rw.WindowSize)
-		}
 		rw.Scene.Time = rw.GetSceneTime()
-		rw.renderer.Render(&rw.Scene, rc, im, int(imageIndex), []vk.SubmitInfo{submitInfo})
+		rw.renderer.Render(rw.Camera, &rw.Scene, rc, im, int(imageIndex), []vk.SubmitInfo{submitInfo})
 
 		// Adjust scene time
 		if rw.paused {

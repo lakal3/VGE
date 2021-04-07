@@ -1,6 +1,9 @@
-package vapp
+// Forward package implements standard Forward renderer
+
+package forward
 
 import (
+	"image"
 	"runtime"
 	"time"
 
@@ -10,7 +13,7 @@ import (
 	"github.com/lakal3/vge/vge/vscene"
 )
 
-type ForwardRenderer struct {
+type Renderer struct {
 	// RenderDone is an optional function that is called each time after completing rendering of scene
 	RenderDone func(started time.Time)
 
@@ -19,6 +22,7 @@ type ForwardRenderer struct {
 	// NOTE! First timing if from different submit and maybe different submit queue. See Vulkan documentation for vkCmdWriteTimestamp.
 	GPUTiming func([]float64)
 
+	size         image.Point
 	owner        vk.Owner
 	dev          *vk.Device
 	Ctx          vk.APIContext
@@ -29,15 +33,15 @@ type ForwardRenderer struct {
 	depthPrePass bool
 }
 
-func NewForwardRenderer(depthBuffer bool) *ForwardRenderer {
-	return &ForwardRenderer{depth: depthBuffer}
+func NewRenderer(depthBuffer bool) *Renderer {
+	return &Renderer{depth: depthBuffer}
 }
 
 var kImageViews = vk.NewKeys(10)
 var kFp = vk.NewKey()
 var kCmd = vk.NewKey()
 
-func (f *ForwardRenderer) Dispose() {
+func (f *Renderer) Dispose() {
 	if f.mpDepth != nil {
 		f.mpDepth.Dispose()
 		f.mpDepth = nil
@@ -49,17 +53,18 @@ func (f *ForwardRenderer) Dispose() {
 
 }
 
-func (f *ForwardRenderer) GetRenderPass() vk.RenderPass {
+func (f *Renderer) GetRenderPass() vk.RenderPass {
 	return f.frp
 }
 
-func (f *ForwardRenderer) AddDepthPrePass() *ForwardRenderer {
+func (f *Renderer) AddDepthPrePass() *Renderer {
 	f.depthPrePass = true
 	return f
 }
 
-func (f *ForwardRenderer) Setup(ctx vk.APIContext, dev *vk.Device, mainImage vk.ImageDescription, images int) {
+func (f *Renderer) Setup(ctx vk.APIContext, dev *vk.Device, mainImage vk.ImageDescription, images int) {
 	fDepth := vk.FORMATUndefined
+	f.size.X, f.size.Y = int(mainImage.Width), int(mainImage.Height)
 	if f.depth {
 		fDepth = vk.FORMATD32Sfloat
 	}
@@ -83,7 +88,7 @@ func (f *ForwardRenderer) Setup(ctx vk.APIContext, dev *vk.Device, mainImage vk.
 	}
 }
 
-func (f *ForwardRenderer) Render(sc *vscene.Scene, rc *vk.RenderCache, mainImage *vk.Image, imageIndex int, infos []vk.SubmitInfo) {
+func (f *Renderer) Render(camera vscene.Camera, sc *vscene.Scene, rc *vk.RenderCache, mainImage *vk.Image, imageIndex int, infos []vk.SubmitInfo) {
 	mainView := rc.Get(kImageViews+vk.Key(imageIndex), func(ctx vk.APIContext) interface{} {
 		return mainImage.NewView(ctx, 0, 0)
 	}).(*vk.ImageView)
@@ -91,13 +96,13 @@ func (f *ForwardRenderer) Render(sc *vscene.Scene, rc *vk.RenderCache, mainImage
 	if f.depth {
 		depthView = f.imDepth[imageIndex].DefaultView(rc.Ctx)
 	}
-	f.RenderView(sc, rc, mainView, depthView, infos)
+	f.RenderView(camera, sc, rc, mainView, depthView, infos)
 }
 
 var kTimer = vk.NewKey()
 var kTimerCmd = vk.NewKey()
 
-func (f *ForwardRenderer) RenderView(sc *vscene.Scene, rc *vk.RenderCache, mainView *vk.ImageView, depthView *vk.ImageView, infos []vk.SubmitInfo) {
+func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.RenderCache, mainView *vk.ImageView, depthView *vk.ImageView, infos []vk.SubmitInfo) {
 	fb := rc.Get(kFp, func(ctx vk.APIContext) interface{} {
 		if f.depth {
 			return vk.NewFramebuffer(ctx, f.frp, []*vk.ImageView{mainView, depthView})
@@ -122,9 +127,13 @@ func (f *ForwardRenderer) RenderView(sc *vscene.Scene, rc *vk.RenderCache, mainV
 	if f.GPUTiming != nil {
 		cmd.WriteTimer(tp, 1, vk.PIPELINEStageTopOfPipeBit)
 	}
+	frame := &Frame{}
+	frame.Projection, frame.View = camera.CameraProjection(f.size)
 	bg := vscene.NewDrawPhase(rc, f.frp, vscene.LAYERBackground, cmd, func() {
 		if !f.depthPrePass {
 			cmd.BeginRenderPass(f.frp, fb)
+			frame.writeFrame(rc)
+			frame.writeDynamicFrame(rc)
 		}
 	}, nil)
 	dp := vscene.NewDrawPhase(rc, f.frp, vscene.LAYER3D, cmd, nil, nil)
@@ -132,15 +141,19 @@ func (f *ForwardRenderer) RenderView(sc *vscene.Scene, rc *vk.RenderCache, mainV
 	ui := vscene.NewDrawPhase(rc, f.frp, vscene.LAYERUI, cmd, nil, func() {
 		cmd.EndRenderPass()
 	})
-	frame := vscene.GetFrame(rc)
-	ppPhase := &vscene.PredrawPhase{Scene: sc, Cache: rc, Cmd: cmd}
-	lightPhase := vscene.FrameLightPhase{F: frame, Cache: rc}
+	ppPhase := &vscene.PredrawPhase{Scene: sc, Cache: rc, Cmd: cmd, Frame: frame}
+	lightPhase := FrameLightPhase{F: frame, Cache: rc}
 	if f.depthPrePass {
 		pdp := &predepth.PreDepthPass{Cmd: cmd, DC: vmodel.DrawContext{Cache: rc, Pass: f.frp}}
+		pdp.BindFrame = func() *vk.DescriptorSet {
+			return BindFrame(rc)
+		}
 		pdp.OnBegin = func() {
 			cmd.BeginRenderPass(f.frp, fb)
+			frame.writeFrame(rc)
+			frame.writeDynamicFrame(rc)
 		}
-		sc.Process(sc.Time, &vscene.AnimatePhase{}, ppPhase, pdp, lightPhase, bg, dp, dt, ui)
+		sc.Process(sc.Time, &vscene.AnimatePhase{}, ppPhase, lightPhase, pdp, bg, dp, dt, ui)
 	} else {
 		sc.Process(sc.Time, &vscene.AnimatePhase{}, ppPhase, lightPhase, bg, dp, dt, ui)
 	}

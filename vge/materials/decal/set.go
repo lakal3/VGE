@@ -2,9 +2,9 @@ package decal
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/lakal3/vge/vge/forward"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
-	"github.com/lakal3/vge/vge/vscene"
 )
 
 type Decal struct {
@@ -46,13 +46,13 @@ func (s *Set) NewInstance(name string, at mgl32.Mat4) *Decal {
 	return nil
 }
 
-func (s *Set) addImage(rc *vk.RenderCache, setIndex vmodel.ImageIndex) (frameIndex vmodel.ImageIndex) {
+func (s *Set) addImage(f *forward.Frame, rc *vk.RenderCache, setIndex vmodel.ImageIndex) (frameIndex vmodel.ImageIndex) {
 	if setIndex == 0 {
 		return 0
 	}
 	sampler := vmodel.GetDefaultSampler(rc.Ctx, rc.Device)
 	frameIndex = rc.GetPerFrame(s.imageKey+vk.Key(setIndex), func(ctx vk.APIContext) interface{} {
-		return vscene.SetFrameImage(rc, s.images[setIndex].DefaultView(rc.Ctx), sampler)
+		return f.SetFrameImage(rc, s.images[setIndex].DefaultView(rc.Ctx), sampler)
 	}).(vmodel.ImageIndex)
 	return
 }

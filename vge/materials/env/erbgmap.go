@@ -45,7 +45,7 @@ func (eq *EquiRectBGNode) Draw(dc *vmodel.DrawContext) {
 	pl := dc.Pass.Get(dc.Cache.Ctx, kEqPipeline, func(ctx vk.APIContext) interface{} {
 		return eq.newPipeline(dc)
 	}).(vk.Pipeline)
-	dsFrame := vscene.BindFrame(dc.Cache)
+	dsFrame := vscene.BindSimpleFrame(dc.Cache)
 	cb := getCube(dc.Cache.Ctx, dc.Cache.Device)
 	dc.Draw(pl, 0, 36).AddInputs(cb.bVtx).AddDescriptors(dsFrame, eq.ds)
 }
@@ -55,7 +55,7 @@ func (eq *EquiRectBGNode) newPipeline(dc *vmodel.DrawContext) *vk.GraphicsPipeli
 	gp := vk.NewGraphicsPipeline(ctx, dc.Cache.Device)
 	gp.AddVextexInput(ctx, vk.VERTEXInputRateVertex, vk.FORMATR32g32b32Sfloat)
 	la := getLayout(ctx, dc.Cache.Device)
-	laFrame := vscene.GetFrameLayout(ctx, dc.Cache.Device)
+	laFrame := vscene.GetUniformLayout(ctx, dc.Cache.Device)
 	gp.AddLayout(ctx, laFrame)
 	gp.AddLayout(ctx, la)
 	gp.AddShader(ctx, vk.SHADERStageVertexBit, eqrect_vert_spv)

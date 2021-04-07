@@ -2,6 +2,7 @@ package decal
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/lakal3/vge/vge/forward"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
 	"github.com/lakal3/vge/vge/vscene"
@@ -10,9 +11,10 @@ import (
 func (d *Decal) Process(pi *vscene.ProcessInfo) {
 	pre, ok := pi.Phase.(*vscene.PredrawPhase)
 	if ok {
-		d.set.addImage(pre.Cache, d.txAlbedo)
-		d.set.addImage(pre.Cache, d.txMetalRoughness)
-		d.set.addImage(pre.Cache, d.txNormal)
+		f := forward.MustGetForwardFrame(pre.Cache.Ctx, pre.Frame)
+		d.set.addImage(f, pre.Cache, d.txAlbedo)
+		d.set.addImage(f, pre.Cache, d.txMetalRoughness)
+		d.set.addImage(f, pre.Cache, d.txNormal)
 		return
 	}
 	dp, ok := pi.Phase.(vscene.DrawPhase)

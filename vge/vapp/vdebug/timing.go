@@ -2,6 +2,7 @@ package vdebug
 
 import (
 	"fmt"
+	"github.com/lakal3/vge/vge/forward"
 	"image"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 // FPS times is attached to end of current scenes UI nodes.
 func NewFPSTimer(rw *vapp.RenderWindow, theme vui.Theme) *FPSTimer {
 	fp := &FPSTimer{rw: rw}
-	fr, ok := rw.GetRenderer().(*vapp.ForwardRenderer)
+	fr, ok := rw.GetRenderer().(*forward.Renderer)
 	if ok {
 		fr.RenderDone = fp.renderDone
 		fp.UIView = vui.NewUIView(theme, fp.getArea(), rw)
@@ -31,7 +32,7 @@ func NewFPSTimer(rw *vapp.RenderWindow, theme vui.Theme) *FPSTimer {
 // AddGPUTiming adds support for timing from start of first submit in render phase to end of main command submit.
 // GPU time should include all time used in rendering but not time used to manage swap chain
 func (fp *FPSTimer) AddGPUTiming() {
-	fr, ok := fp.rw.GetRenderer().(*vapp.ForwardRenderer)
+	fr, ok := fp.rw.GetRenderer().(*forward.Renderer)
 	if ok {
 		fr.GPUTiming = func(times []float64) {
 			var delta = (times[2] - times[0]) / 1e9

@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"image"
+	"github.com/lakal3/vge/vge/forward"
 	"io/ioutil"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -27,18 +27,17 @@ func (v *viewerApp) renderToFile() {
 	v.owner.AddChild(memPool)
 	mainImage := memPool.ReserveImage(v, mainImageDesc, vk.IMAGEUsageColorAttachmentBit|vk.IMAGEUsageTransferSrcBit)
 	memPool.Allocate(v)
-	frp := vapp.NewForwardRenderer(true)
+	frp := forward.NewRenderer(true)
 	v.owner.AddChild(frp)
 	frp.Setup(v, vapp.Dev, mainImageDesc, 1)
 	rc := vk.NewRenderCache(v, vapp.Dev)
 	v.owner.AddChild(rc)
 	rc.Ctx = v
 	pc := v.initCamera(mainImageDesc)
-	pc.SetupFrame(vscene.GetFrame(rc), image.Pt(int(mainImageDesc.Width), int(mainImageDesc.Height)))
 	var sc vscene.Scene
 	sc.Root.Children = append(sc.Root.Children, v.nLights, v.nModel)
 	sc.Init()
-	frp.Render(&sc, rc, mainImage, 0, nil)
+	frp.Render(pc, &sc, rc, mainImage, 0, nil)
 	cp := vmodel.NewCopier(v, vapp.Dev)
 	defer cp.Dispose()
 	content := cp.CopyFromImage(mainImage, mainImage.FullRange(), "dds", vk.IMAGELayoutUndefined)

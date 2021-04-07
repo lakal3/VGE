@@ -129,6 +129,7 @@ func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.Ren
 	}
 	frame := &Frame{}
 	frame.Projection, frame.View = camera.CameraProjection(f.size)
+	frame.EyePos = frame.View.Inv().Col(3)
 	bg := vscene.NewDrawPhase(rc, f.frp, vscene.LAYERBackground, cmd, func() {
 		if !f.depthPrePass {
 			cmd.BeginRenderPass(f.frp, fb)

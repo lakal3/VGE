@@ -142,6 +142,7 @@ void main() {
     if (m == 5 && em > 0) {
         vec3 iDir = i_position - vec3(frame.cameraPos);
         o_Color = texture(frameImagesCube[em],reflect(iDir, normal)) * vec4(i_modes.xyz,1);
+        // o_Color = texture(frameImagesCube[em],normal) * vec4(i_modes.xyz,1);
         return;
     }
     if (m == 6) {

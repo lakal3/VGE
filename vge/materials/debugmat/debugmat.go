@@ -1,12 +1,9 @@
 //
 
-//go:generate glslangValidator -V debugmat.vert.glsl -o debugmat.vert.spv
-//go:generate glslangValidator -V -DSKINNED=1 debugmat.vert.glsl -o debugmat.vert_skinned.spv
-//go:generate glslangValidator -V debugmat.frag.glsl -o debugmat.frag.spv
-
 package debugmat
 
 import (
+	"github.com/lakal3/vge/vge/forward"
 	"unsafe"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -54,7 +51,7 @@ type DebugMaterial struct {
 func (u *DebugMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, aniMatrix []mgl32.Mat4,
 	extra vmodel.ShaderExtra) {
 	rc := dc.Cache
-	dsFrame := vscene.BindDynamicFrame(rc)
+	dsFrame := forward.BindDynamicFrame(rc)
 	if dsFrame == nil {
 		return
 	}
@@ -87,7 +84,7 @@ func (u *DebugMaterial) SetDescriptor(dsMat *vk.DescriptorSet) {
 
 func (u *DebugMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, extra vmodel.ShaderExtra) {
 	rc := dc.Cache
-	dsFrame := vscene.BindDynamicFrame(rc)
+	dsFrame := forward.BindDynamicFrame(rc)
 	if dsFrame == nil {
 		return
 	}
@@ -139,7 +136,7 @@ func (u *DebugMaterial) NewPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, s
 		vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
 		gp.AddShader(ctx, vk.SHADERStageVertexBit, debugmat_vert_spv)
 	}
-	laFrame := vscene.GetDynamicFrameLayout(ctx, rc.Device)
+	laFrame := forward.GetDynamicFrameLayout(ctx, rc.Device)
 	laUBF := vscene.GetUniformLayout(ctx, rc.Device)
 
 	la2 := getDebugLayout(ctx, rc.Device)

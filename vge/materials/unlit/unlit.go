@@ -38,12 +38,7 @@ func (u *UnlitMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl
 		return u.NewPipeline(ctx, dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsWorld := rc.GetPerFrame(kUnlitWorld, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
-		f := vscene.GetFrame(rc)
-		f.CopyTo(sl)
-		return ds
-	}).(*vk.DescriptorSet)
+	dsWorld := vscene.BindSimpleFrame(rc)
 	uli := rc.GetPerFrame(kUnlitInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &unlitInstances{ds: ds, sl: sl}
@@ -64,12 +59,7 @@ func (u *UnlitMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, wo
 		return u.NewPipeline(ctx, dc, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsWorld := rc.GetPerFrame(kUnlitWorld, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
-		f := vscene.GetFrame(rc)
-		f.CopyTo(sl)
-		return ds
-	}).(*vk.DescriptorSet)
+	dsWorld := vscene.BindSimpleFrame(rc)
 	uli := rc.GetPerFrame(kUnlitInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &unlitInstances{ds: ds, sl: sl}

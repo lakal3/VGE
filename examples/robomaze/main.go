@@ -9,6 +9,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/lakal3/vge/vge/forward"
 	"log"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -64,7 +65,7 @@ func main() {
 	}
 	vasset.DefaultLoader = vasset.DirectoryLoader{Directory: "../../assets"}
 
-	rd := vapp.NewForwardRenderer(true)
+	rd := forward.NewRenderer(true)
 	if app.predepth {
 		rd.AddDepthPrePass()
 	}

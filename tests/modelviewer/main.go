@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/lakal3/vge/vge/forward"
 	"io/ioutil"
 	"log"
 	"os"
@@ -94,7 +95,7 @@ func main() {
 		app.renderToFile()
 	} else {
 		vapp.RegisterHandler(1000, app.keyHandler)
-		win = vapp.NewRenderWindow("Model viewer", vapp.NewForwardRenderer(true))
+		win = vapp.NewRenderWindow("Model viewer", forward.NewRenderer(true))
 		oc := vapp.NewOrbitControl(200, win)
 		if app.nEnv != nil {
 			win.Scene.Root.Children = append(win.Scene.Root.Children, app.nEnv)
@@ -186,6 +187,7 @@ func (v *viewerApp) loadModel() {
 		v.owner.AddChild(eq)
 		v.nEnv = &vscene.Node{Ctrl: eq}
 	}
+	return
 	// Add decals
 	b := &decal.Builder{}
 	stAlbedo := v.loadImage(b, "assets/decals/stain_albedo.png")

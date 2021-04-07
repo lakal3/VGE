@@ -2,15 +2,14 @@ package env
 
 import (
 	"fmt"
-	"github.com/lakal3/vge/vge/forward"
-	"image"
-	"io/ioutil"
-	"math"
-
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/lakal3/vge/vge/forward"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
 	"github.com/lakal3/vge/vge/vscene"
+	"image"
+	"io/ioutil"
+	"math"
 )
 
 type Probe struct {
@@ -181,11 +180,12 @@ func (p *Probe) renderProbe(ctx vk.APIContext, dev *vk.Device, sc *vscene.Scene,
 func (p *Probe) getCamera(layer int32, pos mgl32.Vec3) *vscene.PerspectiveCamera {
 	pc := vscene.NewPerspectiveCamera(1000)
 	pc.FoV = math.Pi / 2
+
 	switch layer {
 	case 0:
-		pc.Target = pc.Position.Add(mgl32.Vec3{1, 0, 0})
-	case 1:
 		pc.Target = pc.Position.Add(mgl32.Vec3{-1, 0, 0})
+	case 1:
+		pc.Target = pc.Position.Add(mgl32.Vec3{1, 0, 0})
 	case 2:
 		pc.Target = pc.Position.Add(mgl32.Vec3{0, 1, 0})
 		pc.Up = mgl32.Vec3{0, 0, -1}
@@ -217,9 +217,8 @@ func (p *Probe) renderMainLayer(rc *vk.RenderCache, layer int32, sc *vscene.Scen
 	f := &vscene.SimpleFrame{}
 	size := image.Pt(int(p.desc.Width), int(p.desc.Height))
 	f.Projection, f.View = pc.CameraProjection(size)
-	f.WriteFrame(rc)
 	// Mirror image over x axis
-	f.View = mgl32.Scale3D(-1, 1, 1).Mul4(f.View)
+	f.WriteFrame(rc)
 	sc.Process(0, dc1, dc2)
 	cmd.Submit()
 	cmd.Wait()

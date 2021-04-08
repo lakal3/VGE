@@ -27,6 +27,8 @@ void vge::DescriptorLayout::init()
 		addFlags.pBindingFlags = allFlags.data();
 		addFlags.bindingCount = static_cast<uint32_t>(allFlags.size());
 		dsci.pNext = &addFlags;
+		dsci.flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPoolEXT;
+		_updateAfterBind = true;
 	}
 	_dsLayout = _dev->get_device().createDescriptorSetLayout(dsci, allocator, _dev->get_dispatch());
 }
@@ -81,6 +83,9 @@ void vge::DescriptorPool::init()
 	fillSizes(poolSizes, _dsLayout);
 	dpci.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	dpci.pPoolSizes = poolSizes.data();
+	if (_dsLayout->get_updateAfterBind()) {
+		dpci.flags = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBindEXT;
+	}
 	_pool =_dev->get_device().createDescriptorPool(dpci, allocator, _dev->get_dispatch());
 }
 

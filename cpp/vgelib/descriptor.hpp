@@ -38,9 +38,12 @@ namespace vge {
 		uint32_t get_binding() const {
 			return _binding;
 		}
+		bool get_updateAfterBind() const {
+			return _updateAfterBind;
+		}
 	protected:
 		DescriptorLayout(Device *dev, vk::DescriptorType type_, vk::ShaderStageFlags stages_, uint32_t count_, vk::DescriptorBindingFlagsEXT flags_, DescriptorLayout *prevLayout_) :
-			_dev(dev), type(type_), stages(stages_), count(count_), prevLayout(prevLayout_), flags(flags_) {
+			_dev(dev), type(type_), stages(stages_), count(count_), prevLayout(prevLayout_), flags(flags_), _updateAfterBind(false) {
 			if (prevLayout == nullptr) {
 				_binding = 0;
 			} else {
@@ -52,6 +55,7 @@ namespace vge {
 			std::vector<vk::DescriptorBindingFlagsEXT> &flags) const;
 		vk::DescriptorSetLayout _dsLayout;
 		const Device* const _dev;
+		bool _updateAfterBind;
 	private:
 		uint32_t _binding;
 	};

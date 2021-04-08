@@ -12,9 +12,9 @@ import (
 const MAX_LIGHTS = 64
 const MAX_IMAGES = 48
 
-// Maximum dynamics samplers per frame instance. You must add dynamics descriptors support to application before using
-// dynamics samplers in frame. Also, check device.Props for MaxSamplersPerStage. This value combined with other samplers used in
-// material descriptors may not exceed this limit.
+// Maximum dynamics samplers (=sampled images) per frame instance. You must add dynamics descriptors support to application before using
+// dynamics samplers in frame. Dynamic descriptor sets and pool are allocated with BINDING_UPDATE_AFTER_BIND that should allow
+// relatively large values on all Windows / Linux cards that support dynamic descriptors
 var FrameMaxDynamicSamplers = uint32(0)
 
 type Frame struct {

@@ -54,8 +54,13 @@ func NewDescriptorLayout(ctx APIContext, dev *Device, descriptorType DescriptorT
 // or this api call will fail. Some older drivers may not support dynamics descriptors
 func NewDynamicDescriptorLayout(ctx APIContext, dev *Device, descriptorType DescriptorType, stages ShaderStageFlags,
 	elements uint32, flags DescriptorBindingFlagBitsEXT) *DescriptorLayout {
+	if !dev.app.dynamicIndexing {
+		ctx.SetError(errors.New("You must enable dynamic descriptors with AddDynamicDescriptors before initializing application"))
+		return nil
+	}
+
 	dl := &DescriptorLayout{descriptorType: descriptorType, elements: elements, dev: dev, dynamic: true}
-	call_Device_NewDescriptorLayout(ctx, dev.hDev, descriptorType, stages, elements, flags, 0, &dl.hLayout)
+	call_Device_NewDescriptorLayout(ctx, dev.hDev, descriptorType, stages, elements, flags|DESCRIPTORBindingUpdateAfterBindBitExt, 0, &dl.hLayout)
 	return dl
 }
 
@@ -68,14 +73,18 @@ func (dl *DescriptorLayout) AddBinding(ctx APIContext, descriptorType Descriptor
 	return dlChild
 }
 
-// AddBinding creates a NEW descriptor binding that adds new descriptor to existing ones.
+// AddDynamicBinding creates a NEW descriptor binding that adds new descriptor to existing ones.
 // Binding number will be automatically incremented
 // You must add dynamics descriptor support using AddDynamicDescriptors
 // or this api call will fail. Some older drivers may not support dynamics descriptors
 func (dl *DescriptorLayout) AddDynamicBinding(ctx APIContext, descriptorType DescriptorType, stages ShaderStageFlags,
 	elements uint32, flags DescriptorBindingFlagBitsEXT) *DescriptorLayout {
+	if !dl.dev.app.dynamicIndexing {
+		ctx.SetError(errors.New("You must enable dynamic descriptors with AddDynamicDescriptors before initializing application"))
+		return nil
+	}
 	dlChild := &DescriptorLayout{descriptorType: descriptorType, elements: elements, dev: dl.dev, parent: dl}
-	call_Device_NewDescriptorLayout(ctx, dl.dev.hDev, descriptorType, stages, elements, flags, dl.hLayout, &dlChild.hLayout)
+	call_Device_NewDescriptorLayout(ctx, dl.dev.hDev, descriptorType, stages, elements, flags|DESCRIPTORBindingUpdateAfterBindBitExt, dl.hLayout, &dlChild.hLayout)
 	dl.owner.AddChild(dlChild)
 	return dlChild
 }

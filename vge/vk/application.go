@@ -52,6 +52,9 @@ func NewApplication(ctx APIContext, name string) *Application {
 // This call must be before actual application is initialized
 // You must have Vulkan SDK installed on your machine because validation layers are part of Vulkan SDK, not driver API:s.
 // See https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Validation_layers for more info
+//
+// Validation layer can be also configured with Vulkan Configurator from Vulkan SDK. If you use Vulkan Configurator to validate application,
+// you should not add validation layer to application.
 func (a *Application) AddValidation(ctx APIContext) {
 	if a.hInst != 0 {
 		ctx.SetError(errors.New("Already initialized"))

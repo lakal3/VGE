@@ -223,6 +223,8 @@ void vge::DynamicDescriptorOption::prepare(vk::DeviceCreateInfo& dci, std::vecto
 	_extOptions.descriptorBindingPartiallyBound = 1;
 	_extOptions.descriptorBindingUpdateUnusedWhilePending = 1;
 	_extOptions.descriptorBindingVariableDescriptorCount = 1;
+	_extOptions.descriptorBindingSampledImageUpdateAfterBind = 1;
+	_extOptions.descriptorBindingStorageImageUpdateAfterBind = 1;
 	_extOptions.runtimeDescriptorArray = 1;
 	dci.pNext = &_extOptions;
 	extensions.push_back(EXT_descriptor_indexing);

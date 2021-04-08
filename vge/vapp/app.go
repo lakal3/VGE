@@ -139,10 +139,6 @@ type DynamicDescriptors struct {
 
 func (d DynamicDescriptors) DeviceReady() {
 	m := d.MaxDescriptors
-	// Leave 8 samplers for materials
-	if m+8 > Dev.Props.MaxSamplersPerStage {
-		m = Dev.Props.MaxSamplersPerStage - 8
-	}
 	vscene.FrameMaxDynamicSamplers = m
 }
 

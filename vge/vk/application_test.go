@@ -22,7 +22,7 @@ func (t *testContext) Begin(callName string) (atEnd func()) {
 }
 
 func TestNewApplication(t *testing.T) {
-	VGEDllPath = "VGELibd.dll"
+	// VGEDllPath = "VGELibd.dll"
 	tc := &testContext{t: t}
 	a := NewApplication(tc, "Test")
 	a.AddValidation(tc)

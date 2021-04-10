@@ -104,21 +104,21 @@ func (f *Frame) SetFrameImage(rc *vk.RenderCache, view *vk.ImageView, sampler *v
 	fi := rc.GetPerFrame(kFrameInfo, func(ctx vk.APIContext) interface{} {
 		return &frameInfo{idx: 1}
 	}).(*frameInfo)
-	if fdDyn != nil {
-		if fi.idx < vmodel.ImageIndex(fdDyn.maxSize) {
-			fdDyn.ds.WriteImage(rc.Ctx, 1, uint32(fi.idx), view, sampler)
-			if fi.idx < MAX_IMAGES {
-				fd.ds.WriteImage(rc.Ctx, 1, uint32(fi.idx), view, sampler)
-			}
-			ii = fi.idx
-			fi.idx++
-		} else {
-			ii = -1
-		}
-		return
-	}
 	if fi.idx < MAX_IMAGES {
 		fd.ds.WriteImage(rc.Ctx, 1, uint32(fi.idx), view, sampler)
+		ii = fi.idx
+		fi.idx++
+	} else {
+		ii = -1
+	}
+	if fdDyn == nil {
+		return ii
+	}
+	if fi.idx < vmodel.ImageIndex(fdDyn.maxSize) {
+		fdDyn.ds.WriteImage(rc.Ctx, 1, uint32(fi.idx), view, sampler)
+		if fi.idx < MAX_IMAGES {
+			fd.ds.WriteImage(rc.Ctx, 1, uint32(fi.idx), view, sampler)
+		}
 		ii = fi.idx
 		fi.idx++
 	} else {

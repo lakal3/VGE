@@ -25,12 +25,7 @@ func (e *EmissiveMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world 
 		return e.newPipeline(ctx, dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsWorld := rc.GetPerFrame(kEmissiveWorld, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
-		f := vscene.GetFrame(rc)
-		f.CopyTo(sl)
-		return ds
-	}).(*vk.DescriptorSet)
+	dsWorld := vscene.BindSimpleFrame(rc)
 	uli := rc.GetPerFrame(kEmissiveInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &emissiveInstances{ds: ds, sl: sl}
@@ -51,12 +46,7 @@ func (e *EmissiveMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh,
 		return e.newPipeline(ctx, dc, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsWorld := rc.GetPerFrame(kEmissiveWorld, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
-		f := vscene.GetFrame(rc)
-		f.CopyTo(sl)
-		return ds
-	}).(*vk.DescriptorSet)
+	dsWorld := vscene.BindSimpleFrame(rc)
 	uli := rc.GetPerFrame(kEmissiveInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &emissiveInstances{ds: ds, sl: sl}

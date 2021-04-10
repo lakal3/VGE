@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/lakal3/vge/vge/forward"
 	"io/ioutil"
 	"log"
 	"os"
@@ -60,7 +61,7 @@ func main() {
 	vapp.RegisterHandler(1000, app.keyHandler)
 
 	// Initialize new window with forward render pass that support depth buffer
-	w := vapp.NewRenderWindow("Model viewer", vapp.NewForwardRenderer(true))
+	w := vapp.NewRenderWindow("Model viewer", forward.NewRenderer(true))
 	// Orbit control for camera. NewRenderWindow will create default perspective camera that orbit control can manipulate
 	oc := vapp.NewOrbitControl(200, w)
 	if app.nEnv != nil {

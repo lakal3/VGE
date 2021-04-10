@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/lakal3/vge/vge/forward"
 	"image"
 	"io/ioutil"
 	"log"
@@ -70,7 +71,7 @@ func main() {
 	defer app.Dispose()
 
 	vapp.RegisterHandler(1000, app.keyHandler)
-	app.win = vapp.NewRenderWindow("Model viewer", vapp.NewForwardRenderer(true))
+	app.win = vapp.NewRenderWindow("Model viewer", forward.NewRenderer(true))
 	_ = vapp.NewOrbitControl(-50, app.win)
 	// Load themes
 	app.loadThemes()
@@ -215,7 +216,7 @@ func (v *viewerApp) openWindow() {
 	w := ms.Width / 4
 	h := ms.Height / 4
 	wp := vk.WindowPos{Left: ms.Left + w, Top: ms.Top + h, Width: 2 * w, Height: 2 * h, State: vk.WINDOWStateBorderless}
-	v.chWin = vapp.NewRenderWindowAt("Open file", wp, vapp.NewForwardRenderer(false))
+	v.chWin = vapp.NewRenderWindowAt("Open file", wp, forward.NewRenderer(true))
 	r := image.Rect(100, 100, int(2*w-100), int(2*h-100))
 	uv := vui.NewUIView(v.theme, r, v.chWin)
 	uv.DefaultFrame(v.buildFileCanvas())

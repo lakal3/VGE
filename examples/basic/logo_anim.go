@@ -43,7 +43,7 @@ func main() {
 	vapp.Init("hello", vapp.Validate{}, vapp.Desktop{})
 
 	// Create a new window. Window will has it's own scene that will be rendered using ForwardRenderer.
-	rw := vapp.NewRenderWindow("hello", vapp.NewForwardRenderer(true))
+	rw := vapp.NewRenderWindow("hello", forward.NewRenderer(true))
 	// Build scene
 	buildScene(rw)
 	// Wait until application is shut down (event Queue is stopped)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/lakal3/vge/vge/forward"
 	"image"
 	"log"
 	"math"
@@ -83,7 +84,7 @@ func renderImage(ctx vk.APIContext, angle float64, imageSize image.Point) (pngIm
 	ddDepth := ddMain
 	ddDepth.Format = vk.FORMATD32Sfloat
 	// Main image is used for rendering (IMAGEUsageInputAttachmentBit) and then we copy image (IMAGEUsageTransferSrcBit)
-	mainImg := pool.ReserveImage(ctx, ddMain, vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageInputAttachmentBit)
+	mainImg := pool.ReserveImage(ctx, ddMain, vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageColorAttachmentBit)
 	depthImg := pool.ReserveImage(ctx, ddDepth, vk.IMAGEUsageDepthStencilAttachmentBit)
 	// Copy buffer where we can copy final image
 	imLen := imageSize.Y * imageSize.X * 4
@@ -126,16 +127,16 @@ func renderImage(ctx vk.APIContext, angle float64, imageSize image.Point) (pngIm
 	dp := vscene.NewDrawPhase(rc, wwApp.rp, vscene.LAYER3D, cmd, nil, func() {
 		cmd.EndRenderPass()
 	})
-	frame := vscene.GetFrame(rc)
 	pc := vscene.NewPerspectiveCamera(1000)
 	pc.Target = mgl32.Vec3{0, cameraOrbit / 2, 0}
 	pc.Position = mgl32.Vec3{float32(math.Sin(angle) * cameraOrbit), cameraOrbit / 2, float32(cameraOrbit * math.Cos(angle))}
 	// Update camera projection and view matrix to current frame
-	pc.SetupFrame(frame, imageSize)
 
+	frame := &forward.Frame{}
+	frame.Projection, frame.View = pc.CameraProjection(imageSize)
 	// Predraw phase draws shadow maps etc.
-	ppPhase := &vscene.PredrawPhase{Scene: &sc, Cache: rc, Cmd: cmd}
-	sc.Process(sc.Time, &vscene.AnimatePhase{}, ppPhase, &vscene.FrameLightPhase{F: frame, Cache: rc}, bg, dp)
+	ppPhase := &vscene.PredrawPhase{Scene: &sc, Cache: rc, Cmd: cmd, Frame: frame}
+	sc.Process(sc.Time, &vscene.AnimatePhase{}, ppPhase, &forward.FrameLightPhase{F: frame, Cache: rc}, bg, dp)
 
 	// Process pending request from predraw phase
 	for _, pd := range ppPhase.Pending {

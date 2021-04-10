@@ -1,8 +1,9 @@
 package vscene
 
 import (
-	"image"
 	"errors"
+	"github.com/lakal3/vge/vge/vmodel"
+	"image"
 	"unsafe"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -16,6 +17,10 @@ var FrameMaxDynamicSamplers = uint32(0)
 
 type Frame interface {
 	ViewProjection() (projection, view mgl32.Mat4)
+	// Add image bound with frame descriptor set. If imageIndex < 0, there where no more slots left
+	AddFrameImage(rc *vk.RenderCache, view *vk.ImageView, sampler *vk.Sampler) (imageIndex vmodel.ImageIndex)
+	// Add probe to frame
+	AddProbe(SPH [9]mgl32.Vec4, ubfImage vmodel.ImageIndex) (probeIndex int)
 }
 
 type Camera interface {

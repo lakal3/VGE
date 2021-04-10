@@ -56,6 +56,10 @@ type shadowPass struct {
 	siCount     int
 }
 
+func (s *shadowPass) GetCache() *vk.RenderCache {
+	return s.rc
+}
+
 // Objects under this node will not cast shadow!
 type NoShadow struct {
 }

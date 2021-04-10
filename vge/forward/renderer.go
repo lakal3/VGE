@@ -133,8 +133,6 @@ func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.Ren
 	bg := vscene.NewDrawPhase(rc, f.frp, vscene.LAYERBackground, cmd, func() {
 		if !f.depthPrePass {
 			cmd.BeginRenderPass(f.frp, fb)
-			frame.writeFrame(rc)
-			frame.writeDynamicFrame(rc)
 		}
 	}, nil)
 	dp := vscene.NewDrawPhase(rc, f.frp, vscene.LAYER3D, cmd, nil, nil)
@@ -151,8 +149,6 @@ func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.Ren
 		}
 		pdp.OnBegin = func() {
 			cmd.BeginRenderPass(f.frp, fb)
-			frame.writeFrame(rc)
-			frame.writeDynamicFrame(rc)
 		}
 		sc.Process(sc.Time, &vscene.AnimatePhase{}, ppPhase, lightPhase, pdp, bg, dp, dt, ui)
 	} else {

@@ -24,6 +24,19 @@ type Frame struct {
 	Lights     [MAX_LIGHTS]vscene.Light
 }
 
+func (f *Frame) AddFrameImage(rc *vk.RenderCache, view *vk.ImageView, sampler *vk.Sampler) (imageIndex vmodel.ImageIndex) {
+	return f.SetFrameImage(rc, view, sampler)
+}
+
+func (f *Frame) AddProbe(SPH [9]mgl32.Vec4, ubfImage vmodel.ImageIndex) (probeIndex int) {
+	if f.EnvLods > 0 {
+		return 0 // Currently only one probe
+	}
+	f.EnvMap, f.EnvLods = float32(ubfImage), 6
+	f.SPH = SPH
+	return 0
+}
+
 func (f *Frame) ViewProjection() (projection, view mgl32.Mat4) {
 	return f.Projection, f.View
 }

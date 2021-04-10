@@ -2,6 +2,7 @@ package vtestapp
 
 import (
 	"errors"
+	"github.com/lakal3/vge/vge/forward"
 	"io"
 	"io/ioutil"
 	"os"
@@ -108,9 +109,11 @@ func (m *MainImage) RenderScene(time float64, depth bool) {
 	ui := vscene.NewDrawPhase(rc, fp, vscene.LAYERUI, cmd, nil, func() {
 		cmd.EndRenderPass()
 	})
-	frame := vscene.GetFrame(rc)
-	m.Root.Process(time, &vscene.AnimatePhase{}, &vscene.FrameLightPhase{F: frame, Cache: rc},
-		&vscene.PredrawPhase{Scene: &m.Root, Cache: rc, Cmd: cmd}, bg, dp, ui)
+	frame := &forward.Frame{}
+	m.Root.Process(time, &vscene.AnimatePhase{},
+		&vscene.PredrawPhase{Scene: &m.Root, Cache: rc, Cmd: cmd, Frame: frame},
+		&forward.FrameLightPhase{F: frame, Cache: rc},
+		bg, dp, ui)
 	cmd.Submit()
 	cmd.Wait()
 }

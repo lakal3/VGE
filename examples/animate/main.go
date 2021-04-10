@@ -9,6 +9,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/lakal3/vge/vge/forward"
 	"log"
 
 	"github.com/lakal3/vge/vge/materials/env"
@@ -53,7 +54,7 @@ func main() {
 	vasset.DefaultLoader = vasset.DirectoryLoader{Directory: "../../assets"}
 
 	// Use standard forward renderer
-	rd := vapp.NewForwardRenderer(true)
+	rd := forward.NewRenderer(true)
 	vapp.Init("Elf", vapp.Desktop{})
 	app.mainWnd = vapp.NewRenderWindow("Animation demo", rd)
 	err := loadModels()

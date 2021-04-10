@@ -27,11 +27,11 @@ type AmbientLight struct {
 }
 
 func (al *AmbientLight) Process(pi *ProcessInfo) {
-	bf, ok := pi.Phase.(LightPhase)
+	bf, ok := pi.Phase.(*PredrawPhase)
 	if ok {
 		var sph [9]mgl32.Vec4
 		sph[0] = al.Intensity.Vec4(1)
-		bf.SetSPH(sph)
+		bf.Frame.AddProbe(sph, 0)
 	}
 }
 

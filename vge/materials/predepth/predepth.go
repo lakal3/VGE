@@ -16,6 +16,10 @@ type PreDepthPass struct {
 	OnBegin   func()
 }
 
+func (p *PreDepthPass) GetCache() *vk.RenderCache {
+	return p.DC.Cache
+}
+
 func (p *PreDepthPass) Begin() (atEnd func()) {
 	if p.OnBegin != nil {
 		p.OnBegin()

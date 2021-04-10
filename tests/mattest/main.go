@@ -6,6 +6,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/lakal3/vge/vge/forward"
 	"log"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -65,7 +66,7 @@ func main() {
 	}
 
 	// Initialize forward rendered
-	rd := vapp.NewForwardRenderer(true)
+	rd := forward.NewRenderer(true)
 	// Build main window
 	app.rw = vapp.NewRenderWindow("Material tester", rd)
 

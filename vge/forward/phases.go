@@ -1,7 +1,6 @@
 package forward
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
 	"github.com/lakal3/vge/vge/vscene"
@@ -17,11 +16,10 @@ func (f FrameLightPhase) GetCache() *vk.RenderCache {
 }
 
 func (f FrameLightPhase) Begin() (atEnd func()) {
-	return nil
-}
-
-func (f FrameLightPhase) SetSPH(sph [9]mgl32.Vec4) {
-	f.F.SPH = sph
+	return func() {
+		f.F.writeDynamicFrame(f.Cache)
+		f.F.writeFrame(f.Cache)
+	}
 }
 
 func (f FrameLightPhase) AddLight(standard vscene.Light, shadowMap *vk.ImageView, sampler *vk.Sampler) {

@@ -77,6 +77,7 @@ type reqContext struct {
 }
 
 func (r reqContext) SetError(err error) {
+	fmt.Println("Failed with error ", err.Error())
 	r.writer.WriteHeader(500)
 	r.writer.Write([]byte(err.Error()))
 	panic("Failed")

@@ -283,16 +283,17 @@ var VulkanProj = mgl32.Mat4{1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0.5, 0.5, 0, 0, 0, 1}
 func (v *cubeApp) setCamera(rc *vk.RenderCache, mainImage vk.ImageDescription) {
 	// Frame object is stored in render cache. VGE Shaders can access this information from cache.
 	// Frame must be typically at start of rendering. See unlit implementation for more details
-	f := vscene.GetFrame(rc)
+	f := &vscene.SimpleFrame{}
 	// Calculate camera view and projection. Math left as an exercise to reader
 	aspect := float32(mainImage.Width) / float32(mainImage.Height)
-	f.EyePos = mgl32.Vec3{
+	eyePos := mgl32.Vec3{
 		float32(app.scale * math.Sin(v.yaw) * math.Cos(v.pitch)),
 		float32(app.scale * math.Cos(v.yaw) * math.Cos(v.pitch)),
 		float32(app.scale * math.Sin(v.pitch)),
 	}.Vec4(1)
 	proj := mgl32.Perspective(1, aspect, 0.01, 100)
 	f.Projection = VulkanProj.Mul4(proj)
-	f.View = mgl32.LookAtV(f.EyePos.Vec3(), mgl32.Vec3{}, mgl32.Vec3{0, 1, 0})
-	f.Far = 100
+	f.View = mgl32.LookAtV(eyePos.Vec3(), mgl32.Vec3{}, mgl32.Vec3{0, 1, 0})
+	// f.Far = 100
+	f.WriteFrame(rc)
 }

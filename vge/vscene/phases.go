@@ -9,14 +9,17 @@ import (
 type Layer uint32
 
 const (
-	LAYERBackground  Layer = 1000
-	LAYER3D          Layer = 2000
+	LAYERBackground Layer = 1000
+	LAYER3D         Layer = 2000
+	// Render 3D shaders for probe. There will be only simple frame
+	LAYER3DProbe     Layer = 2050
 	LAYERTransparent Layer = 3000
 	LAYERUI          Layer = 4000
 )
 
 type Phase interface {
 	Begin() (atEnd func())
+	GetCache() *vk.RenderCache
 }
 
 type DrawPhase interface {
@@ -41,6 +44,10 @@ type BasicDrawPhase struct {
 	begin  func()
 	commit func()
 	// FP  *vk.Framebuffer
+}
+
+func (d *BasicDrawPhase) GetCache() *vk.RenderCache {
+	return d.DrawContext.Cache
 }
 
 func (d *BasicDrawPhase) GetDC(layer Layer) *vmodel.DrawContext {
@@ -74,11 +81,20 @@ type PredrawPhase struct {
 	Pending []func()
 }
 
+func (p *PredrawPhase) GetCache() *vk.RenderCache {
+	return p.Cache
+}
+
 func (p *PredrawPhase) Begin() (atEnd func()) {
 	return nil
 }
 
 type AnimatePhase struct {
+	Cache *vk.RenderCache
+}
+
+func (a *AnimatePhase) GetCache() *vk.RenderCache {
+	return nil
 }
 
 func (a *AnimatePhase) Begin() (atEnd func()) {
@@ -88,6 +104,10 @@ func (a *AnimatePhase) Begin() (atEnd func()) {
 type BoudingBox struct {
 	box   vmodel.AABB
 	first bool
+}
+
+func (b *BoudingBox) GetCache() *vk.RenderCache {
+	return nil
 }
 
 func (b *BoudingBox) Begin() (atEnd func()) {
@@ -114,9 +134,6 @@ type LightPhase interface {
 
 	// Add Special light. Light phase return true if it can handle given special light
 	AddSpecialLight(special interface{}, shadowMap *vk.ImageView, samples *vk.Sampler) bool
-
-	// Set ambient light
-	SetSPH(sph [9]mgl32.Vec4)
 
 	// Get render cache
 	GetCache() *vk.RenderCache

@@ -12,33 +12,34 @@ var kSPHPipeline = vk.NewKey()
 
 const SPHUnits = 32
 
-func (p *Probe) calcSPH(rc *vk.RenderCache, cmd *vk.Command) {
-	plSPH := p.getSPHPipeline(rc.Ctx, rc.Device)
-	mip := p.desc.MipLevels - 1
-	w := p.desc.Width >> mip
-	h := p.desc.Height >> mip
+func (p *probeRender) calcSPH(cmd *vk.Command) {
+	rc := p.rcParent
+	plSPH := p.p.getSPHPipeline(rc.Ctx, rc.Device)
+	mip := p.p.desc.MipLevels - 1
+	w := p.p.desc.Width >> mip
+	h := p.p.desc.Height >> mip
 	fls := []float32{float32(2.2), float32(1.0), float32(w * 4), float32(h * 2)}
-	copy(p.slUbf.Content, vk.Float32ToBytes(fls))
+	copy(p.sphBuf2.Bytes(rc.Ctx), vk.Float32ToBytes(fls))
 	sampler := getEnvSampler(rc.Ctx, rc.Device)
 	rInput := vk.ImageRange{LevelCount: 1, LayerCount: 6, FirstMipLevel: mip, FirstLayer: 0, Layout: vk.IMAGELayoutGeneral}
 	// rInput.FirstMipLevel = 0
-	im := p.imgs[p.currentImg]
+	im := p.p.imgs[p.p.currentImg]
 	vInput := vk.NewCubeView(rc.Ctx, im, &rInput)
-	defer vInput.Dispose()
+	p.views = append(p.views, vInput)
 	p.dsSPH.WriteImage(rc.Ctx, 1, 0, vInput, sampler)
-	cmd.Begin()
 	cmd.Compute(plSPH, 1, 1, 1, p.dsSPH)
-	cmd.Submit()
-	cmd.Wait()
-	sphRaw := vk.BytesToFloat32(p.sphBuf.Bytes(rc.Ctx))
+}
+
+func (p *probeRender) accumulateSPH() {
+	sphRaw := vk.BytesToFloat32(p.sphBuf.Bytes(p.rcParent.Ctx))
 	for n := 0; n < 9; n++ {
-		p.SPH[0] = mgl32.Vec4{}
+		p.p.SPH[0] = mgl32.Vec4{}
 	}
 	var weight float32
 	for idx := 0; idx < SPHUnits; idx++ {
 		for n := 0; n < 9; n++ {
 			pos := n*4 + idx*9*4
-			p.SPH[n] = p.SPH[n].Add(mgl32.Vec4{sphRaw[pos], sphRaw[pos+1], sphRaw[pos+2], 0}.Mul(1 / math.Pi))
+			p.p.SPH[n] = p.p.SPH[n].Add(mgl32.Vec4{sphRaw[pos], sphRaw[pos+1], sphRaw[pos+2], 0}.Mul(1 / math.Pi))
 			weight += sphRaw[pos+3]
 		}
 	}

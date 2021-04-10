@@ -21,6 +21,22 @@ func (t *testContext) Begin(callName string) (atEnd func()) {
 	return nil
 }
 
+func TestAddDynamicDescriptors(t *testing.T) {
+	tc := &testContext{t: t}
+	a := NewApplication(tc, "IndexTest")
+	a.AddDynamicDescriptors(tc)
+	a.Init(tc)
+	devices := a.GetDevices(tc)
+	for idx, dev := range devices {
+		t.Logf("%d. %s", idx+1, string(dev.Name[:dev.NameLen]))
+		if dev.ReasonLen > 0 {
+			t.Logf("Incompatible %s", string(dev.Reason[:dev.ReasonLen]))
+		}
+
+	}
+	a.Dispose()
+}
+
 func TestNewApplication(t *testing.T) {
 	// VGEDllPath = "VGELibd.dll"
 	tc := &testContext{t: t}

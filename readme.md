@@ -111,9 +111,11 @@ func (n *nodeVisible) Process(pi *vscene.ProcessInfo) {
 }
 ```
 
-Running logo.go with `go run logo.go` should produce something like
+Running logo.go with `go run logo.go` should produce something like. 
 
 ![alt text](docs/logo_example.png "Logo example")
+
+In Linux use `GODEBUG=cgocheck=0 go run logo.go` (*VGE will pass raw pointer to its support library libVGELib.so for performance reasons. See [Arhitecture](docs/achiteture.md) for more info*)
 
 ## Sample videos
 

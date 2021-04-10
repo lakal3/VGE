@@ -206,14 +206,16 @@ void vge::DynamicDescriptorOption::isValid(Instance* inst, vk::PhysicalDevice pd
 	}
 	auto features = pd.getFeatures2<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>(inst->get_dispatch());
 	auto extF = features.get< vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>();
+
 	if (extF.descriptorBindingPartiallyBound && extF.descriptorBindingUpdateUnusedWhilePending && extF.descriptorBindingVariableDescriptorCount &&
-		extF.runtimeDescriptorArray) {		
+		extF.runtimeDescriptorArray && extF.descriptorBindingSampledImageUpdateAfterBind && extF.descriptorBindingStorageImageUpdateAfterBind) {		
 		valid = true;
+		invalidReason = "";
 		return;
 	}
 
 	valid = false;
-	invalidReason = "Hardware must support partiallyBoundDescriptors, runtimeDescriptorArray, descriptorBindingUpdateUnusedWhilePending and descriptorBindingVariableDescriptorCount";
+	invalidReason = "Hardware must support partiallyBoundDescriptors, runtimeDescriptorArray, descriptorBindingUpdateUnusedWhilePending, descriptorBindingSampledImageUpdateAfterBind, descriptorBindingStorageImageUpdateAfterBind and descriptorBindingVariableDescriptorCount";
 }
 
 void vge::DynamicDescriptorOption::prepare(vk::DeviceCreateInfo& dci, std::vector<const char*>& extensions)

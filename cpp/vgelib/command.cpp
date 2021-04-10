@@ -49,8 +49,8 @@ void vge::Queue::submit(Command *cmd, SubmitInfo **info, size_t info_len, vk::Pi
 	} else {
 		waitFor = nullptr;
 	}
-	_dev->get_device().resetFences(1, &(cmd->_fence), _dev->get_dispatch());
-	_queue.submit(1, &si, cmd->_fence, _dev->get_dispatch());
+	DISCARD(_dev->get_device().resetFences(1, &(cmd->_fence), _dev->get_dispatch()));
+	DISCARD(_queue.submit(1, &si, cmd->_fence, _dev->get_dispatch()));
 	
 	for (size_t idx = 0; idx < info_len; idx++) {
 		info[idx]->submitted(this);
@@ -60,7 +60,7 @@ void vge::Queue::submit(Command *cmd, SubmitInfo **info, size_t info_len, vk::Pi
 void vge::Command::Dispose()
 {
 	if (!!_cp) {
-		_dev->get_device().waitForFences(1, &_fence, 1, MaxTimeout, _dev->get_dispatch());
+		DISCARD(_dev->get_device().waitForFences(1, &_fence, 1, MaxTimeout, _dev->get_dispatch()));
 		_dev->get_device().destroyFence(_fence, allocator, _dev->get_dispatch());
 		if (_waitSem != nullptr) {
 			_dev->get_device().destroySemaphore(_waitSem->semWait, allocator, _dev->get_dispatch());
@@ -211,7 +211,7 @@ void vge::Command::Compute(ComputePipeline* pl, uint32_t x, uint32_t y, uint32_t
 
 void vge::Command::Wait()
 {
-	_dev->get_device().waitForFences(1, &_fence, true, MaxTimeout, _dev->get_dispatch());
+	DISCARD(_dev->get_device().waitForFences(1, &_fence, true, MaxTimeout, _dev->get_dispatch()));
 }
 
 

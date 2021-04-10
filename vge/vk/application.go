@@ -6,9 +6,10 @@ import (
 )
 
 type Application struct {
-	owner Owner
-	hApp  hApplication
-	hInst hInstance
+	owner           Owner
+	hApp            hApplication
+	hInst           hInstance
+	dynamicIndexing bool
 }
 
 type Device struct {
@@ -63,7 +64,14 @@ func NewApplication(ctx APIContext, name string) *Application {
 // This call must be before actual application is initialized
 // You must have Vulkan SDK installed on your machine because validation layers are part of Vulkan SDK, not driver API:s.
 // See https://vulkan-tutorial.com/Drawing_a_triangle/Setup/Validation_layers for more info
+//
+// Validation layer can be also configured with Vulkan Configurator from Vulkan SDK. If you use Vulkan Configurator to validate application,
+// you should not add validation layer to application.
 func (a *Application) AddValidation(ctx APIContext) {
+	if a.hInst != 0 {
+		ctx.SetError(errors.New("Already initialized"))
+		return
+	}
 	call_AddValidation(ctx, a.hApp)
 }
 
@@ -74,7 +82,12 @@ func (a *Application) AddValidation(ctx APIContext) {
 // This call must be done before any device is created.
 // Note that device creating will fail if dynamic descriptor are not supported or request maxSize is too high
 func (a *Application) AddDynamicDescriptors(ctx APIContext) {
+	if a.hInst != 0 {
+		ctx.SetError(errors.New("Already initialized"))
+		return
+	}
 	call_AddDynamicDescriptors(ctx, a.hApp)
+	a.dynamicIndexing = true
 }
 
 // Initialize Vulkan application. Create Vulkan application and Vulkan instance.

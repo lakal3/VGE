@@ -69,6 +69,9 @@ void vge::Instance::GetPhysicalDevice(int32_t index, DeviceInfo *info)
 			info->reasonLen = minSize(256, invalidReson.size());
 			strncpy(info->reason, invalidReson.c_str(), info->reasonLen);
 			return;
+		} else {
+			info->valid = 0;
+			info->reasonLen = 0;
 		}
 	}
 }
@@ -143,7 +146,6 @@ bool vge::DeviceExtension::checkExtension(Instance *inst, vk::PhysicalDevice pd,
 	auto exList = pd.enumerateDeviceExtensionProperties();
 	for (auto ext : exList) {
 		if (extName == ext.extensionName) {
-			
 			return true;
 		}
 	}

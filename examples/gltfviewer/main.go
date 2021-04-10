@@ -56,7 +56,7 @@ func main() {
 	if app.debug {
 		vapp.AddOption(vapp.Validate{})
 		// Uncomment to use C++ debug library
-		vk.VGEDllPath = "VGELibd.dll"
+		// vk.VGEDllPath = "VGELibd.dll"
 	}
 
 	app.gltfRoot = flag.Arg(0)

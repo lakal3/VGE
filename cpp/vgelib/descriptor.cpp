@@ -27,6 +27,8 @@ void vge::DescriptorLayout::init()
 		addFlags.pBindingFlags = allFlags.data();
 		addFlags.bindingCount = static_cast<uint32_t>(allFlags.size());
 		dsci.pNext = &addFlags;
+		dsci.flags = vk::DescriptorSetLayoutCreateFlagBits::eUpdateAfterBindPoolEXT;
+		_updateAfterBind = true;
 	}
 	_dsLayout = _dev->get_device().createDescriptorSetLayout(dsci, allocator, _dev->get_dispatch());
 }
@@ -81,6 +83,9 @@ void vge::DescriptorPool::init()
 	fillSizes(poolSizes, _dsLayout);
 	dpci.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	dpci.pPoolSizes = poolSizes.data();
+	if (_dsLayout->get_updateAfterBind()) {
+		dpci.flags = vk::DescriptorPoolCreateFlagBits::eUpdateAfterBindEXT;
+	}
 	_pool =_dev->get_device().createDescriptorPool(dpci, allocator, _dev->get_dispatch());
 }
 
@@ -201,14 +206,16 @@ void vge::DynamicDescriptorOption::isValid(Instance* inst, vk::PhysicalDevice pd
 	}
 	auto features = pd.getFeatures2<vk::PhysicalDeviceFeatures2, vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>(inst->get_dispatch());
 	auto extF = features.get< vk::PhysicalDeviceDescriptorIndexingFeaturesEXT>();
+
 	if (extF.descriptorBindingPartiallyBound && extF.descriptorBindingUpdateUnusedWhilePending && extF.descriptorBindingVariableDescriptorCount &&
-		extF.runtimeDescriptorArray) {		
+		extF.runtimeDescriptorArray && extF.descriptorBindingSampledImageUpdateAfterBind && extF.descriptorBindingStorageImageUpdateAfterBind) {		
 		valid = true;
+		invalidReason = "";
 		return;
 	}
 
 	valid = false;
-	invalidReason = "Hardware must support partiallyBoundDescriptors, runtimeDescriptorArray, descriptorBindingUpdateUnusedWhilePending and descriptorBindingVariableDescriptorCount";
+	invalidReason = "Hardware must support partiallyBoundDescriptors, runtimeDescriptorArray, descriptorBindingUpdateUnusedWhilePending, descriptorBindingSampledImageUpdateAfterBind, descriptorBindingStorageImageUpdateAfterBind and descriptorBindingVariableDescriptorCount";
 }
 
 void vge::DynamicDescriptorOption::prepare(vk::DeviceCreateInfo& dci, std::vector<const char*>& extensions)
@@ -218,6 +225,8 @@ void vge::DynamicDescriptorOption::prepare(vk::DeviceCreateInfo& dci, std::vecto
 	_extOptions.descriptorBindingPartiallyBound = 1;
 	_extOptions.descriptorBindingUpdateUnusedWhilePending = 1;
 	_extOptions.descriptorBindingVariableDescriptorCount = 1;
+	_extOptions.descriptorBindingSampledImageUpdateAfterBind = 1;
+	_extOptions.descriptorBindingStorageImageUpdateAfterBind = 1;
 	_extOptions.runtimeDescriptorArray = 1;
 	dci.pNext = &_extOptions;
 	extensions.push_back(EXT_descriptor_indexing);

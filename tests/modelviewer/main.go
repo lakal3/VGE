@@ -86,7 +86,7 @@ func main() {
 		}
 	}
 	if config.debug {
-		vk.VGEDllPath = "vgelibd.dll"
+		// vk.VGEDllPath = "vgelibd.dll"
 	}
 	app.init()
 	defer app.Dispose()

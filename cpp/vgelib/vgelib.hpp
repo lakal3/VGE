@@ -43,6 +43,10 @@ namespace vge {
 #undef CreateWindow
 #endif
 
+#ifndef DISCARD
+#define DISCARD(x) static_cast<void>(x)
+#endif
+
 #include "vgelib/vgelib_if.hpp"
 #include "vgelib/app.hpp"
 #include "vgelib/memory.hpp"
@@ -60,4 +64,6 @@ namespace vge {
 #define DLLEXPORT
 #endif
 #endif
+
+
 

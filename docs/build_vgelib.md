@@ -15,7 +15,9 @@ Other dependencies (std_image.h) are included in the VGE project.
 
 ## Vulkan SDK
 
-Download and install [Vulkan SDK](https://vulkan.lunarg.com/)
+Download and install [Vulkan SDK](https://vulkan.lunarg.com/). 
+
+Default VGELib.dll has been built with SDK version 1.2.170. 
 
 Optionally: Run vkcube example from SDK to check that your display drivers support Vulkan.
 
@@ -38,7 +40,14 @@ Installing release mode binaries should install a new version of VGELib.dll (lib
 Linux release build was compiled with clang 9.0 C and C++ compilers and the build has been tested only with the clang compiler.
 GNU gcc/g++ compilers should also work if you prefer them.
 
-Linux needs additional libraries to build GLWF.
+Linux needs additional libraries to build GLWF. You should have at least installed:
+- libx11dev
+- libxrandr-dev
+- libxinerama-dev
+- libxcursor-dev
+- libxi-dev
+
+
 See their documentation about the requirements (or just run make and install what is missing).
 
 Also, make sure that you place your shared library (libVGELib.so) where the OS will be able to locate it.

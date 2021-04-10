@@ -281,9 +281,9 @@ void vge::Window::createSwapchain(Device *dev)
 		}
 		sfCap = dev->get_pd().getSurfaceCapabilitiesKHR(_surface, dev->get_dispatch());
 		uint32_t sfCount = 0;
-		dev->get_pd().getSurfaceFormatsKHR(_surface, &sfCount, nullptr, dev->get_dispatch());
+		DISCARD(dev->get_pd().getSurfaceFormatsKHR(_surface, &sfCount, nullptr, dev->get_dispatch()));
 		std::vector<vk::SurfaceFormatKHR> formats(sfCount);
-		dev->get_pd().getSurfaceFormatsKHR(_surface, &sfCount, formats.data(), dev->get_dispatch());
+		DISCARD(dev->get_pd().getSurfaceFormatsKHR(_surface, &sfCount, formats.data(), dev->get_dispatch()));
 		if (formats[0].format == vk::Format::eUndefined) {
 			_crInfo.imageFormat = vk::Format::eR8G8B8A8Unorm;			
 		} else {
@@ -313,9 +313,9 @@ void vge::Window::createSwapchain(Device *dev)
 	_crInfo.imageSharingMode = vk::SharingMode::eExclusive;
 	_swapChain = dev->get_device().createSwapchainKHR(_crInfo, allocator, dev->get_dispatch());
 	uint32_t imCount = 0;
-	dev->get_device().getSwapchainImagesKHR(_swapChain, &imCount, nullptr, dev->get_dispatch());
+	DISCARD(dev->get_device().getSwapchainImagesKHR(_swapChain, &imCount, nullptr, dev->get_dispatch()));
 	std::vector<vk::Image> images(imCount);
-	dev->get_device().getSwapchainImagesKHR(_swapChain, &imCount, images.data(), dev->get_dispatch());
+	DISCARD(dev->get_device().getSwapchainImagesKHR(_swapChain, &imCount, images.data(), dev->get_dispatch()));
 
 	ImageDescription desc;
 	desc.Depth = 1;

@@ -15,7 +15,9 @@ Other dependencies (std_image.h) are included in the VGE project.
 
 ## Vulkan SDK
 
-Download and install [Vulkan SDK](https://vulkan.lunarg.com/)
+Download and install [Vulkan SDK](https://vulkan.lunarg.com/). 
+
+Default VGELib.dll has been built with SDK version 1.2.170. 
 
 Optionally: Run vkcube example from SDK to check that your display drivers support Vulkan.
 

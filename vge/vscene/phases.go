@@ -134,7 +134,4 @@ type LightPhase interface {
 
 	// Add Special light. Light phase return true if it can handle given special light
 	AddSpecialLight(special interface{}, shadowMap *vk.ImageView, samples *vk.Sampler) bool
-
-	// Get render cache
-	GetCache() *vk.RenderCache
 }

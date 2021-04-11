@@ -181,7 +181,7 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 
 	lp, ok := pi.Phase.(vscene.LightPhase)
 	if ok {
-		hasShadowmap := lp.GetCache().GetPerFrame(pl.key, func(ctx vk.APIContext) interface{} {
+		hasShadowmap := pi.Phase.GetCache().GetPerFrame(pl.key, func(ctx vk.APIContext) interface{} {
 			return false
 		}).(bool)
 		pos := pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1})
@@ -189,7 +189,7 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 			lp.AddLight(vscene.Light{Intensity: pl.Intensity.Vec4(1),
 				Position: pos, Attenuation: pl.Attenuation.Vec4(pl.MaxDistance)}, nil, nil)
 		} else {
-			sr := lp.GetCache().Get(pl.key, func(ctx vk.APIContext) interface{} {
+			sr := pi.Phase.GetCache().Get(pl.key, func(ctx vk.APIContext) interface{} {
 				return nil
 			}).(*shadowResources)
 			lp.AddLight(vscene.Light{Intensity: pl.Intensity.Vec4(1),

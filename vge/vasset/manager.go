@@ -30,14 +30,16 @@ func (a *AssetManager) Dispose() {
 	a.assets = make(map[string]interface{})
 }
 
-func (a *AssetManager) Get(path string, construct func() (asset interface{}, err error)) (asset interface{}, err error) {
+// Get retrieves asset from cache. If asset is not found, contructor is called to retrieve asset
+// Added path parameter to constructor for generic functions in 0.20.1
+func (a *AssetManager) Get(path string, construct func(path string) (asset interface{}, err error)) (asset interface{}, err error) {
 	a.mx.Lock()
 	defer a.mx.Unlock()
 	asset, ok := a.assets[path]
 	if ok {
 		return asset, nil
 	}
-	asset, err = construct()
+	asset, err = construct(path)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +50,7 @@ func (a *AssetManager) Get(path string, construct func() (asset interface{}, err
 func (a *AssetManager) Load(path string, construct func(content []byte) (asset interface{}, err error)) (asset interface{}, err error) {
 	var rd io.ReadCloser
 	var content []byte
-	return a.Get(path, func() (asset interface{}, err error) {
+	return a.Get(path, func(path string) (asset interface{}, err error) {
 		rd, err = a.Loader.Open(path)
 		if err != nil {
 			return nil, err

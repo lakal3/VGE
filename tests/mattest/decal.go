@@ -17,7 +17,7 @@ import (
 
 func loadDecals() (set *decal.Set) {
 	// Add decals
-	rs, err := vapp.AM.Get("asset/decal/stain", func() (asset interface{}, err error) {
+	rs, err := vapp.AM.Get("asset/decal/stain", func(path string) (asset interface{}, err error) {
 		abContent, err := vasset.Load("assets/decals/stain_albedo.png", vapp.AM.Loader)
 		if err != nil {
 			return nil, err

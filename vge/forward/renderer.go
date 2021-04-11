@@ -17,10 +17,7 @@ type Renderer struct {
 	// RenderDone is an optional function that is called each time after completing rendering of scene
 	RenderDone func(started time.Time)
 
-	// GPSTiming if set, records GPU timings for each frame
-	// First value is start time, second at start of main cmd, third at end of main cmd
-	// NOTE! First timing if from different submit and maybe different submit queue. See Vulkan documentation for vkCmdWriteTimestamp.
-	GPUTiming func([]float64)
+	timedOutput func(started time.Time, gpuTimes []float64)
 
 	size         image.Point
 	owner        vk.Owner
@@ -31,6 +28,10 @@ type Renderer struct {
 	mpDepth      *vk.MemoryPool
 	imDepth      []*vk.Image
 	depthPrePass bool
+}
+
+func (f *Renderer) SetTimedOutput(output func(started time.Time, gpuTimes []float64)) {
+	f.timedOutput = output
 }
 
 func NewRenderer(depthBuffer bool) *Renderer {
@@ -111,7 +112,7 @@ func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.Ren
 	}).(*vk.Framebuffer)
 	start := time.Now()
 	var tp *vk.TimerPool
-	if f.GPUTiming != nil {
+	if f.timedOutput != nil {
 		tp = vk.NewTimerPool(rc.Ctx, rc.Device, 3)
 		rc.SetPerFrame(kTimer, tp)
 		timerCmd := vk.NewCommand(rc.Ctx, rc.Device, vk.QUEUEComputeBit, true)
@@ -124,7 +125,7 @@ func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.Ren
 		return vk.NewCommand(f.Ctx, f.dev, vk.QUEUEGraphicsBit, false)
 	}).(*vk.Command)
 	cmd.Begin()
-	if f.GPUTiming != nil {
+	if f.timedOutput != nil {
 		cmd.WriteTimer(tp, 1, vk.PIPELINEStageTopOfPipeBit)
 	}
 	frame := &Frame{}
@@ -166,7 +167,7 @@ func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.Ren
 	cmd.Wait()
 	runtime.KeepAlive(infos)
 	if tp != nil {
-		f.GPUTiming(tp.Get(rc.Ctx))
+		f.timedOutput(start, tp.Get(rc.Ctx))
 	}
 	if f.RenderDone != nil {
 		f.RenderDone(start)

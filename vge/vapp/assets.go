@@ -31,7 +31,7 @@ func LoadModel(path string) (model *vmodel.Model, err error) {
 	// mb.ShaderFactory = unlit.UnlitFactory
 	ext := strings.ToLower(filepath.Ext(path))
 	dl := vasset.SubDirLoader{DirPrefix: filepath.Dir(path), L: vasset.DefaultLoader}
-	rawModel, err := AM.Get(path, func() (asset interface{}, err error) {
+	rawModel, err := AM.Get(path, func(path string) (asset interface{}, err error) {
 		mb := vmodel.ModelBuilder{}
 		mb.ShaderFactory = pbr.PbrFactory
 		if vscene.FrameMaxDynamicSamplers > 0 {

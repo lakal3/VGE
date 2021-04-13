@@ -28,6 +28,7 @@ namespace vge {
 		void SetLayout(Image* view, vge::ImageRange* range, vk::ImageLayout layout);
 		void CopyBufferToImage(Buffer* src, Image* dst, vge::ImageRange* range, size_t offset);
 		void CopyImageToBuffer(Image* src, Buffer* dst, vge::ImageRange* range, size_t offset);
+		void ClearImage(Image* dst, ImageRange* imRange, vk::ImageLayout layout, float color, float alpha);
 		void Draw(DrawItem* draws, size_t draws_len);
 		void Compute(ComputePipeline* pl, uint32_t x, uint32_t y, uint32_t z, DescriptorSet** descriptors, size_t descriptors_len);
 		void Wait();

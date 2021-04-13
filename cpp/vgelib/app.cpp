@@ -361,6 +361,7 @@ void vge::Device::init()
 	// Available on all Windows / Linux drivers
 	pf.shaderStorageImageExtendedFormats = 1;
 	pf.geometryShader = 1;
+	pf.fragmentStoresAndAtomics = 1;
 
 	std::vector<vk::DeviceQueueCreateInfo> crqs;
 	float priorities[3] = { 1, 0.5, 0.25 };

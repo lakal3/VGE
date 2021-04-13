@@ -188,6 +188,14 @@ void vge::Command::CopyImageToBuffer(Image* src, Buffer* dst, vge::ImageRange* r
 	copyView(dst, src, range, offset, false);
 }
 
+void vge::Command::ClearImage(Image* dst, ImageRange* imRange, vk::ImageLayout layout, float color, float alpha)
+{
+	vk::ClearColorValue ccv;
+	ccv.setFloat32({ color, color, color, alpha });
+	vk::ImageSubresourceRange ssr(vk::ImageAspectFlagBits::eColor, imRange->FirstMipLevel, imRange->LevelCount, imRange->FirstLayer, imRange->LayerCount);
+	_cmd.clearColorImage(dst->get_handle(), layout, &ccv, 1, &ssr, _dev->get_dispatch());
+}
+
 void vge::Command::Draw(DrawItem* draws, size_t draws_len)
 {
 	Pipeline* prevpipeline = nullptr;

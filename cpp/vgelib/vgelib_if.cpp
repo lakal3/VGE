@@ -13,6 +13,7 @@ DLLEXPORT Exception * Buffer_GetPtr(Buffer* buffer, void *& ptr);
 DLLEXPORT Exception * Buffer_NewView(Buffer* buffer, int32_t format, uint64_t offset, uint64_t size, BufferView*& view);
 DLLEXPORT Exception * Command_Begin(Command* cmd);
 DLLEXPORT Exception * Command_BeginRenderPass(Command* cmd, RenderPass* rp, Framebuffer* fb);
+DLLEXPORT Exception * Command_ClearImage(Command* cmd, Image* dst, ImageRange* imRange, int32_t layout, float color, float alpha);
 DLLEXPORT Exception * Command_Compute(Command* hCmd, ComputePipeline* hPl, uint32_t x, uint32_t y, uint32_t z, DescriptorSet** descriptors, size_t descriptors_len);
 DLLEXPORT Exception * Command_CopyBuffer(Command* cmd, Buffer* src, Buffer* dst);
 DLLEXPORT Exception * Command_CopyBufferToImage(Command* cmd, Buffer* src, Image* dst, ImageRange* imRange, uint64_t offset);
@@ -67,6 +68,7 @@ DLLEXPORT Exception * Pipeline_AddDescriptorLayout(Pipeline* pl, DescriptorLayou
 DLLEXPORT Exception * Pipeline_AddShader(Pipeline* pl, int32_t stage, uint8_t* code, size_t code_len);
 DLLEXPORT Exception * QueryPool_Get(QueryPool* qp, uint64_t* values, size_t values_len, float& timestampPeriod);
 DLLEXPORT Exception * RenderPass_NewFrameBuffer(RenderPass* rp, ImageView** attachments, size_t attachments_len, Framebuffer*& fb);
+DLLEXPORT Exception * RenderPass_NewNullFrameBuffer(RenderPass* rp, uint32_t width, uint32_t height, Framebuffer*& fb);
 DLLEXPORT Exception * Window_GetNextFrame(Window* win, Image*& image, SubmitInfo*& submitInfo, int32_t& viewIndex);
 DLLEXPORT Exception * Window_GetPos(Window* win, WindowPos* pos);
 DLLEXPORT Exception * Window_PrepareSwapchain(Window* win, Device* dev, ImageDescription* imageDesc, int32_t& imageCount);
@@ -141,6 +143,15 @@ Exception * Command_Begin(Command* cmd) {
 Exception * Command_BeginRenderPass(Command* cmd, RenderPass* rp, Framebuffer* fb) {
     try {
         cmd->BeginRenderPass(rp, fb);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Command_ClearImage(Command* cmd, Image* dst, ImageRange* imRange, int32_t layout, float color, float alpha) {
+    try {
+        cmd->ClearImage(dst, imRange, vk::ImageLayout(layout), color, alpha);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }
@@ -612,6 +623,15 @@ Exception * QueryPool_Get(QueryPool* qp, uint64_t* values, size_t values_len, fl
 Exception * RenderPass_NewFrameBuffer(RenderPass* rp, ImageView** attachments, size_t attachments_len, Framebuffer*& fb) {
     try {
         rp->NewFrameBuffer(attachments, attachments_len, fb);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * RenderPass_NewNullFrameBuffer(RenderPass* rp, uint32_t width, uint32_t height, Framebuffer*& fb) {
+    try {
+        rp->NewNullFrameBuffer(width, height, fb);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }

@@ -77,6 +77,17 @@ void vge::RenderPass::NewFrameBuffer(ImageView** attachments, size_t attachments
 	
 }
 
+void vge::RenderPass::NewNullFrameBuffer(uint32_t width, uint32_t height, Framebuffer*& fb)
+{
+	vk::FramebufferCreateInfo fbci;
+	fbci.layers = 1;
+	fbci.width = width;
+	fbci.height = height;
+	fbci.renderPass = _renderPass;
+	fb = new Framebuffer(_dev, _dev->get_device().createFramebuffer(fbci, allocator, _dev->get_dispatch()), width, height);
+
+}
+
 
 void vge::RenderPass::Dispose()
 {

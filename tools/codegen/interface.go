@@ -208,6 +208,14 @@ type MainLib interface {
 		imRange *vk.ImageRange
 		offset  uint64
 	})
+	Command_ClearImage(struct {
+		cmd     hCommand
+		dst     hImage
+		imRange *vk.ImageRange
+		layout  vk.ImageLayout
+		color   float32
+		alpha   float32
+	})
 	Command_Draw(struct {
 		cmd   hCommand
 		draws []vk.DrawItem
@@ -290,6 +298,12 @@ type MainLib interface {
 		rp          hRenderPass
 		attachments []hImageView
 		fb          *hFramebuffer
+	})
+	RenderPass_NewNullFrameBuffer(struct {
+		rp     hRenderPass
+		width  uint32
+		height uint32
+		fb     *hFramebuffer
 	})
 	Device_NewSampler(struct {
 		dev        hDevice

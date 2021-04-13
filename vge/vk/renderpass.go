@@ -118,3 +118,14 @@ func NewFramebuffer(ctx APIContext, rp RenderPass, attachments []*ImageView) *Fr
 	call_RenderPass_NewFrameBuffer(ctx, hRenderPass(rp.GetRenderPass()), att, &fb.hFb)
 	return fb
 }
+
+// NewNullFramebuffer initialized new framebuffer without any attachments.
+// Instead you must give size for framebuffer that is normally fetch from first image
+func NewNullFramebuffer(ctx APIContext, rp RenderPass, width, height uint32) *Framebuffer {
+	if !rp.IsValid(ctx) {
+		return nil
+	}
+	fb := &Framebuffer{}
+	call_RenderPass_NewNullFrameBuffer(ctx, hRenderPass(rp.GetRenderPass()), width, height, &fb.hFb)
+	return fb
+}

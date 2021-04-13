@@ -19,6 +19,7 @@ var libcall struct {
 	t_Buffer_NewView                    uintptr
 	t_Command_Begin                     uintptr
 	t_Command_BeginRenderPass           uintptr
+	t_Command_ClearImage                uintptr
 	t_Command_Compute                   uintptr
 	t_Command_CopyBuffer                uintptr
 	t_Command_CopyBufferToImage         uintptr
@@ -73,6 +74,7 @@ var libcall struct {
 	t_Pipeline_AddShader                uintptr
 	t_QueryPool_Get                     uintptr
 	t_RenderPass_NewFrameBuffer         uintptr
+	t_RenderPass_NewNullFrameBuffer     uintptr
 	t_Window_GetNextFrame               uintptr
 	t_Window_GetPos                     uintptr
 	t_Window_PrepareSwapchain           uintptr
@@ -120,6 +122,10 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_Command_BeginRenderPass, err = dldyn.GetProcAddress(libcall.h_lib, "Command_BeginRenderPass")
+	if err != nil {
+		return err
+	}
+	libcall.t_Command_ClearImage, err = dldyn.GetProcAddress(libcall.h_lib, "Command_ClearImage")
 	if err != nil {
 		return err
 	}
@@ -339,6 +345,10 @@ func loadLib() (err error) {
 	if err != nil {
 		return err
 	}
+	libcall.t_RenderPass_NewNullFrameBuffer, err = dldyn.GetProcAddress(libcall.h_lib, "RenderPass_NewNullFrameBuffer")
+	if err != nil {
+		return err
+	}
 	libcall.t_Window_GetNextFrame, err = dldyn.GetProcAddress(libcall.h_lib, "Window_GetNextFrame")
 	if err != nil {
 		return err
@@ -420,6 +430,14 @@ func call_Command_BeginRenderPass(ctx APIContext, cmd hCommand, rp hRenderPass, 
 		defer atEnd()
 	}
 	rc := dldyn.Invoke(libcall.t_Command_BeginRenderPass, 3, uintptr(cmd), uintptr(rp), uintptr(fb))
+	handleError(ctx, rc)
+}
+func call_Command_ClearImage(ctx APIContext, cmd hCommand, dst hImage, imRange *ImageRange, layout ImageLayout, color float32, alpha float32) {
+	atEnd := ctx.Begin("Command_ClearImage")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke6(libcall.t_Command_ClearImage, 6, uintptr(cmd), uintptr(dst), uintptr(unsafe.Pointer(imRange)), uintptr(layout), uintptr(color), uintptr(alpha))
 	handleError(ctx, rc)
 }
 func call_Command_Compute(ctx APIContext, hCmd hCommand, hPl hComputePipeline, x uint32, y uint32, z uint32, descriptors []hDescriptorSet) {
@@ -837,6 +855,14 @@ func call_RenderPass_NewFrameBuffer(ctx APIContext, rp hRenderPass, attachments 
 		defer atEnd()
 	}
 	rc := dldyn.Invoke6(libcall.t_RenderPass_NewFrameBuffer, 4, uintptr(rp), sliceToUintptr(attachments), uintptr(len(attachments)), uintptr(unsafe.Pointer(fb)), 0, 0)
+	handleError(ctx, rc)
+}
+func call_RenderPass_NewNullFrameBuffer(ctx APIContext, rp hRenderPass, width uint32, height uint32, fb *hFramebuffer) {
+	atEnd := ctx.Begin("RenderPass_NewNullFrameBuffer")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke6(libcall.t_RenderPass_NewNullFrameBuffer, 4, uintptr(rp), uintptr(width), uintptr(height), uintptr(unsafe.Pointer(fb)), 0, 0)
 	handleError(ctx, rc)
 }
 func call_Window_GetNextFrame(ctx APIContext, win hWindow, image *hImage, submitInfo *hSubmitInfo, viewIndex *int32) {

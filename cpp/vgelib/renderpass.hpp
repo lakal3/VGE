@@ -8,6 +8,7 @@ namespace vge {
 	public:
 		RenderPass(const Device* dev, bool depthAttachment, AttachmentInfo* attachments, size_t attachmentCount);
 		void NewFrameBuffer(ImageView** attachments, size_t attachments_len, Framebuffer*& fb);
+		void NewNullFrameBuffer(uint32_t width,uint32_t height, Framebuffer*& fb);
 		void init();
 		const vk::RenderPass get_handle() const {
 			return _renderPass;
@@ -70,8 +71,7 @@ namespace vge {
 		}
 
 		vk::Extent2D get_extent() const {
-			auto mainDesc = _attachments[0]->get_image()->get_desc();
-			return vk::Extent2D(mainDesc.Width, mainDesc.Height);
+			return _extent;
 		};
 
 		const std::vector<ImageView*> &get_attachments() const {
@@ -80,10 +80,15 @@ namespace vge {
 	private:
 		virtual void Dispose() override;
 		Framebuffer(const Device *dev, vk::Framebuffer frameBuffer, const std::vector<ImageView*> attachments) : _dev(dev), _framebuffer(frameBuffer), _attachments(attachments) {
-
+			auto mainDesc = _attachments[0]->get_image()->get_desc();
+			_extent = vk::Extent2D(mainDesc.Width, mainDesc.Height);
+		}
+		Framebuffer(const Device* dev, vk::Framebuffer frameBuffer, uint32_t width, uint32_t height) : _dev(dev), _framebuffer(frameBuffer) {
+			_extent = vk::Extent2D(width, height);
 		}
 		std::vector<ImageView*> _attachments;
 		vk::Framebuffer _framebuffer;
 		const Device* const _dev;
+		vk::Extent2D _extent;
 	};
 }

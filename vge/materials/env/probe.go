@@ -11,6 +11,11 @@ import (
 	"math"
 )
 
+type EnvFrame interface {
+	// Add probe to frame
+	AddEnvironment(SPH [9]mgl32.Vec4, ubfImage vmodel.ImageIndex, pi *vscene.ProcessInfo)
+}
+
 type Probe struct {
 	pool       *vk.MemoryPool
 	desc       vk.ImageDescription
@@ -51,34 +56,29 @@ func NewProbe(ctx vk.APIContext, dev *vk.Device) *Probe {
 func (p *Probe) Process(pi *vscene.ProcessInfo) {
 	pre, ok := pi.Phase.(*vscene.PredrawPhase)
 	if ok {
+		ev, ok := pi.Frame.(EnvFrame)
+		if !ok {
+			return
+		}
+		cache := pi.Frame.GetCache()
 		if p.needUpdate {
-			p.renderProbe(pre.Cache.Ctx, pre.Cache, pre.Scene, pi.World.Col(3).Vec3())
+			p.renderProbe(cache.Ctx, cache, pre.Scene, pi.World.Col(3).Vec3())
 			// p.saveImg(pre.Cache, "d:/temp/prope.dds")
 		}
-		sampler := getEnvSampler(pre.Cache.Ctx, pre.Cache.Device)
-		idx := pre.Frame.AddFrameImage(pre.Cache, p.imgs[p.currentImg].NewCubeView(pre.Cache.Ctx, -1), sampler)
-		if idx >= 0 {
-			probeIndex := pre.Frame.AddProbe(p.SPH, idx)
-			pre.Cache.SetPerFrame(p.indexKey, probeIndex)
+		sampler := getEnvSampler(cache.Ctx, cache.Device)
+		imFrame, ok := pi.Frame.(vscene.ImageFrame)
+		if ok {
+			idx := imFrame.AddFrameImage(p.imgs[p.currentImg].NewCubeView(cache.Ctx, -1), sampler)
+			ev.AddEnvironment(p.SPH, idx, pi)
 		} else {
-			pre.Cache.SetPerFrame(p.indexKey, -1)
+			ev.AddEnvironment(p.SPH, 0, pi)
 		}
 	}
 	dp, ok := pi.Phase.(*drawProbe)
 	if ok && dp.p == p {
 		pi.Visible = false
-	} else {
-		ci := pi.Phase.GetCache()
-		if ci == nil {
-			return
-		}
-		probeIndex := ci.GetPerFrame(p.indexKey, func(ctx vk.APIContext) interface{} {
-			return -1
-		}).(int)
-		if probeIndex >= 0 {
-			pi.Set(KProbe, probeIndex)
-		}
 	}
+	// TODO: Add multi probe support
 }
 
 type probeSettings struct {
@@ -97,7 +97,7 @@ type drawProbe struct {
 }
 
 func (d *drawProbe) GetCache() *vk.RenderCache {
-	return d.DrawContext.Cache
+	return d.DrawContext.Frame.GetCache()
 }
 
 func (d *drawProbe) Begin() (atEnd func()) {
@@ -298,15 +298,13 @@ func (p *probeRender) renderMainLayer(cmd *vk.Command, layer int32, depthImage *
 	lr.iv = p.image.NewView(ctx, layer, 0)
 	lr.fb = vk.NewFramebuffer(ctx, p.p.frp, []*vk.ImageView{lr.iv, depthImage.DefaultView(ctx)})
 
-	dc1 := &drawProbe{DrawContext: vmodel.DrawContext{Cache: lr.rc, Pass: p.p.frp}, cmd: cmd,
+	f := &vscene.SimpleFrame{Cache: lr.rc}
+	dc1 := &drawProbe{DrawContext: vmodel.DrawContext{Frame: f, Pass: p.p.frp}, cmd: cmd,
 		p: p.p, layer: vscene.LAYERBackground, fb: lr.fb}
 	dc2 := &drawProbe{DrawContext: dc1.DrawContext, cmd: cmd, p: p.p, layer: vscene.LAYER3DProbe}
-	f := &vscene.SimpleFrame{}
 	size := image.Pt(int(p.p.desc.Width), int(p.p.desc.Height))
-	f.Projection, f.View = pc.CameraProjection(size)
-	// Mirror image over x axis
-	f.WriteFrame(lr.rc)
-	p.sc.Process(0, dc1, dc2)
+	f.SSF.Projection, f.SSF.View = pc.CameraProjection(size)
+	p.sc.Process(0, f, dc1, dc2)
 
 }
 

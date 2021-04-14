@@ -99,7 +99,7 @@ func renderImage(ctx vk.APIContext, angle float64, imageSize image.Point) (pngIm
 	sc.Init()
 
 	// Ambient light
-	al := vscene.NewNode(&vscene.AmbientLight{Intensity: mgl32.Vec3{0.7, 0.7, 0.7}})
+	al := vscene.NewNode(&env.AmbientLight{Intensity: mgl32.Vec3{0.7, 0.7, 0.7}})
 
 	// Gray background
 	bgNode := vscene.NewNode(env.NewGrayBG())
@@ -120,23 +120,25 @@ func renderImage(ctx vk.APIContext, angle float64, imageSize image.Point) (pngIm
 	// Render scene
 	cmd.Begin()
 
-	// We only need predraw phase, background phase and 3d phase
-	bg := vscene.NewDrawPhase(rc, wwApp.rp, vscene.LAYERBackground, cmd, func() {
-		cmd.BeginRenderPass(wwApp.rp, fb)
-	}, nil)
-	dp := vscene.NewDrawPhase(rc, wwApp.rp, vscene.LAYER3D, cmd, nil, func() {
-		cmd.EndRenderPass()
-	})
 	pc := vscene.NewPerspectiveCamera(1000)
 	pc.Target = mgl32.Vec3{0, cameraOrbit / 2, 0}
 	pc.Position = mgl32.Vec3{float32(math.Sin(angle) * cameraOrbit), cameraOrbit / 2, float32(cameraOrbit * math.Cos(angle))}
 	// Update camera projection and view matrix to current frame
+	frame := forward.NewFrame(rc)
+	frame.SF.Projection, frame.SF.View = pc.CameraProjection(imageSize)
+	frame.SF.EyePos = frame.SF.View.Inv().Col(3)
 
-	frame := &forward.Frame{}
-	frame.Projection, frame.View = pc.CameraProjection(imageSize)
+	// We only need predraw phase, background phase and 3d phase
+	bg := vscene.NewDrawPhase(frame, wwApp.rp, vscene.LAYERBackground, cmd, func() {
+		cmd.BeginRenderPass(wwApp.rp, fb)
+	}, nil)
+	dp := vscene.NewDrawPhase(frame, wwApp.rp, vscene.LAYER3D, cmd, nil, func() {
+		cmd.EndRenderPass()
+	})
+
 	// Predraw phase draws shadow maps etc.
-	ppPhase := &vscene.PredrawPhase{Scene: &sc, Cache: rc, Cmd: cmd, Frame: frame}
-	sc.Process(sc.Time, &vscene.AnimatePhase{}, ppPhase, &forward.FrameLightPhase{F: frame, Cache: rc}, bg, dp)
+	ppPhase := &vscene.PredrawPhase{Scene: &sc, Cmd: cmd}
+	sc.Process(sc.Time, frame, &vscene.AnimatePhase{Cache: rc}, ppPhase, &forward.FrameLightPhase{F: frame, Cache: rc}, bg, dp)
 
 	// Process pending request from predraw phase
 	for _, pd := range ppPhase.Pending {

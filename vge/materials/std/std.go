@@ -59,22 +59,26 @@ var ErrNoDynamicFrame = errors.New("STD material required dynamic descriptor sup
 
 func (u *Material) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, aniMatrix []mgl32.Mat4,
 	extra vmodel.ShaderExtra) {
-	rc := dc.Cache
+	ff, ok := dc.Frame.(*forward.Frame)
+	if !ok {
+		return // Not supported
+	}
+	rc := ff.GetCache()
 	gp := dc.Pass.Get(rc.Ctx, kStdSkinnedPipeline, func(ctx vk.APIContext) interface{} {
 		return u.NewPipeline(ctx, dc, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := forward.BindDynamicFrame(rc)
+	dsFrame := ff.BindDynamicFrame()
 	if dsFrame == nil {
-		dc.Cache.Ctx.SetError(ErrNoDynamicFrame)
-		return
+		// dc.Cache.Ctx.SetError(ErrNoDynamicFrame)
+		return // Only dynamic frame supported
 	}
 	uli := rc.GetPerFrame(kStdSkinnedInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &stdInstance{ds: ds, sl: sl}
 	}).(*stdInstance)
 	dm := stdMatInstance{world: world}
-	dsMesh, slMesh := uc.Alloc(dc.Cache.Ctx)
+	dsMesh, slMesh := uc.Alloc(rc.Ctx)
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	lInst := uint32(unsafe.Sizeof(stdMatInstance{}))
 	b := *(*[unsafe.Sizeof(stdMatInstance{})]byte)(unsafe.Pointer(&dm))
@@ -88,15 +92,19 @@ func (u *Material) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world m
 }
 
 func (u *Material) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, extra vmodel.ShaderExtra) {
-	rc := dc.Cache
+	ff, ok := dc.Frame.(*forward.Frame)
+	if !ok {
+		return // Not supported
+	}
+	rc := ff.GetCache()
 	gp := dc.Pass.Get(rc.Ctx, kStdPipeline, func(ctx vk.APIContext) interface{} {
 		return u.NewPipeline(ctx, dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := forward.BindDynamicFrame(rc)
+	dsFrame := ff.BindDynamicFrame()
 	if dsFrame == nil {
-		dc.Cache.Ctx.SetError(ErrNoDynamicFrame)
-		return
+		// dc.Cache.Ctx.SetError(ErrNoDynamicFrame)
+		return // Not supported
 	}
 	uli := rc.GetPerFrame(kStdInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
@@ -107,7 +115,7 @@ func (u *Material) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Ma
 	dm := stdMatInstance{world: world}
 	if len(decals) > 0 {
 		var slMesh *vk.Slice
-		dsMesh, slMesh = uc.Alloc(dc.Cache.Ctx)
+		dsMesh, slMesh = uc.Alloc(rc.Ctx)
 		dm.decalIndex = mgl32.Vec2{0, float32(len(decals) / 2)}
 		copy(slMesh.Content, vscene.Mat4ToBytes(decals))
 	}
@@ -130,7 +138,7 @@ type stdMatInstance struct {
 }
 
 func (u *Material) NewPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
-	rc := dc.Cache
+	rc := dc.Frame.GetCache()
 	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
 	if skinned {
 		vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)

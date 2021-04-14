@@ -9,12 +9,16 @@ import (
 )
 
 func (d *Decal) Process(pi *vscene.ProcessInfo) {
-	pre, ok := pi.Phase.(*vscene.PredrawPhase)
+	_, ok := pi.Phase.(*vscene.PredrawPhase)
 	if ok {
-		f := forward.MustGetForwardFrame(pre.Cache.Ctx, pre.Frame)
-		d.set.addImage(f, pre.Cache, d.txAlbedo)
-		d.set.addImage(f, pre.Cache, d.txMetalRoughness)
-		d.set.addImage(f, pre.Cache, d.txNormal)
+		f, ok := pi.Frame.(*forward.Frame)
+		if !ok {
+			return
+		}
+		cache := f.GetCache()
+		d.set.addImage(f, cache, d.txAlbedo)
+		d.set.addImage(f, cache, d.txMetalRoughness)
+		d.set.addImage(f, cache, d.txNormal)
 		return
 	}
 	dp, ok := pi.Phase.(vscene.DrawPhase)
@@ -35,9 +39,10 @@ func (d *Decal) Process(pi *vscene.ProcessInfo) {
 	}
 	at := pi.World.Mul4(d.At)
 	rAt := at.Inv()
-	txAlbedo := d.set.getImage(dc.Cache, d.txAlbedo)
-	txMetalRoughness := d.set.getImage(dc.Cache, d.txMetalRoughness)
-	txNormal := d.set.getImage(dc.Cache, d.txNormal)
+	cache := dc.Frame.GetCache()
+	txAlbedo := d.set.getImage(cache, d.txAlbedo)
+	txMetalRoughness := d.set.getImage(cache, d.txMetalRoughness)
+	txNormal := d.set.getImage(cache, d.txNormal)
 	if txNormal < 0 {
 		// not enough space
 		return

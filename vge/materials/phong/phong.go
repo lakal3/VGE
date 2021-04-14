@@ -45,18 +45,23 @@ type PhongMaterial struct {
 
 func (u *PhongMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4,
 	aniMatrix []mgl32.Mat4, extra vmodel.ShaderExtra) {
-	rc := dc.Cache
+	ff, ok := dc.Frame.(*forward.Frame)
+	if !ok {
+		// Unsupported
+		return
+	}
+	rc := ff.GetCache()
 	gp := dc.Pass.Get(rc.Ctx, kPhongPipeline, func(ctx vk.APIContext) interface{} {
 		return u.NewPipeline(ctx, dc)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := forward.BindFrame(rc)
+	dsFrame := ff.BindFrame()
 	uli := rc.GetPerFrame(kPhongInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &phongInstance{ds: ds, sl: sl}
 	}).(*phongInstance)
 	copy(uli.sl.Content[uli.count*64:uli.count*64+64], vk.Float32ToBytes(world[:]))
-	dsMesh, slMesh := uc.Alloc(dc.Cache.Ctx)
+	dsMesh, slMesh := uc.Alloc(rc.Ctx)
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindNormal)...).
 		AddDescriptors(dsFrame, uli.ds, u.dsMat, dsMesh).SetInstances(uli.count, 1)
@@ -72,12 +77,17 @@ func (u *PhongMaterial) SetDescriptor(dsMat *vk.DescriptorSet) {
 }
 
 func (u *PhongMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, extra vmodel.ShaderExtra) {
-	rc := dc.Cache
+	ff, ok := dc.Frame.(*forward.Frame)
+	if !ok {
+		// Unsupported
+		return
+	}
+	rc := ff.GetCache()
 	gp := dc.Pass.Get(rc.Ctx, kPhongPipeline, func(ctx vk.APIContext) interface{} {
 		return u.NewPipeline(ctx, dc)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := forward.BindFrame(rc)
+	dsFrame := ff.BindFrame()
 	uli := rc.GetPerFrame(kPhongInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &phongInstance{ds: ds, sl: sl}
@@ -93,7 +103,7 @@ func (u *PhongMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl
 }
 
 func (u *PhongMaterial) NewPipeline(ctx vk.APIContext, dc *vmodel.DrawContext) *vk.GraphicsPipeline {
-	rc := dc.Cache
+	rc := dc.Frame.GetCache()
 	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
 	vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
 	la := vscene.GetUniformLayout(ctx, rc.Device)

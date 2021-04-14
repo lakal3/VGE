@@ -34,13 +34,17 @@ func (f *Fire) Process(pi *vscene.ProcessInfo) {
 const maxInstances = 200
 
 func (f *Fire) draw(dc *vmodel.DrawContext, w mgl32.Mat4, time float64) {
-	rc := dc.Cache
+	sfc := vscene.GetSimpleFrame(dc.Frame)
+	if sfc == nil {
+		return // Not supported
+	}
+	rc := dc.Frame.GetCache()
 	gp := dc.Pass.Get(rc.Ctx, kFirePipeline, func(ctx vk.APIContext) interface{} {
 		return f.newPipeline(ctx, dc)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := vscene.BindSimpleFrame(rc)
-	fis := dc.Cache.GetPerFrame(kFireInstance, func(ctx vk.APIContext) interface{} {
+	dsFrame := sfc.BindFrame()
+	fis := rc.GetPerFrame(kFireInstance, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &fireInstances{ds: ds, sl: sl}
 	}).(*fireInstances)
@@ -52,7 +56,7 @@ func (f *Fire) draw(dc *vmodel.DrawContext, w mgl32.Mat4, time float64) {
 	dc.Draw(gp, 0, 6).AddDescriptors(dsFrame, fis.ds, dsFire).SetInstances(fis.count, 1)
 	fis.count++
 	if fis.count >= maxInstances {
-		dc.Cache.SetPerFrame(kFireInstance, nil)
+		rc.SetPerFrame(kFireInstance, nil)
 	}
 }
 
@@ -104,7 +108,7 @@ func (f *Fire) getFireTexture(ctx vk.APIContext, dev *vk.Device) *vk.DescriptorS
 }
 
 func (f *Fire) newPipeline(ctx vk.APIContext, dc *vmodel.DrawContext) *vk.GraphicsPipeline {
-	rc := dc.Cache
+	rc := dc.Frame.GetCache()
 	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
 	la := vscene.GetUniformLayout(ctx, rc.Device)
 	laFrame := vscene.GetUniformLayout(ctx, rc.Device)

@@ -1,5 +1,23 @@
 # Change history
 
+## Version 0.xx.1
+This version is bigger change and unfortunately there are some breaking changes.
+
+New features:
+- Better support different kind of renderers. Frame is now interface and not a default forward.Frame
+  Renderer type is indicate by Frame that is available for all Phases through PhaseInfo. Frame is allow passed to DrawContext so that material can access it more easilly
+- More complex frames should support SimpleFrame that allows some node types and materials to work with different Renderers
+- Some forward Frame methods have been change to interface so that for example Lights works on all renderer supporting LightPhase interface
+- VGE can now create Vulkan render pass with multiple or zero outputs.
+
+Breaking changes:
+- Forward renderer has been moved to own module. There will be new advanced (Deferred) renderer available later.
+- Frame is now an interface. Each node can check if renderer is supported by checking if frame can be cast to suitable type.
+
+TODO: Add example from cube
+
+  
+
 ## Version 0.14.1
 
 - Multiple fixes in Linux support including problems with Intel Vulkan driver that just displayed empty window.

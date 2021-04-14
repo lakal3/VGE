@@ -53,18 +53,23 @@ func (u *PbrMaterial) SetDescriptor(dsMat *vk.DescriptorSet) {
 
 func (u *PbrMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, aniMatrix []mgl32.Mat4,
 	extra vmodel.ShaderExtra) {
-	rc := dc.Cache
+	ff, ok := dc.Frame.(*forward.Frame)
+	if !ok {
+		// Unsupported
+		return
+	}
+	rc := ff.GetCache()
 	gp := dc.Pass.Get(rc.Ctx, kPbrSkinnedPipeline, func(ctx vk.APIContext) interface{} {
 		return u.NewPipeline(ctx, dc, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := forward.BindFrame(rc)
+	dsFrame := ff.BindFrame()
 	uli := rc.GetPerFrame(kPbrSkinnedInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &pbrInstance{ds: ds, sl: sl}
 	}).(*pbrInstance)
 	copy(uli.sl.Content[uli.count*64:uli.count*64+64], vk.Float32ToBytes(world[:]))
-	dsMesh, slMesh := uc.Alloc(dc.Cache.Ctx)
+	dsMesh, slMesh := uc.Alloc(rc.Ctx)
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindSkinned)...).
 		AddDescriptors(dsFrame, uli.ds, u.dsMat, dsMesh).SetInstances(uli.count, 1)
@@ -75,12 +80,17 @@ func (u *PbrMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, worl
 }
 
 func (u *PbrMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, extra vmodel.ShaderExtra) {
-	rc := dc.Cache
+	ff, ok := dc.Frame.(*forward.Frame)
+	if !ok {
+		// Unsupported
+		return
+	}
+	rc := ff.GetCache()
 	gp := dc.Pass.Get(rc.Ctx, kPbrPipeline, func(ctx vk.APIContext) interface{} {
 		return u.NewPipeline(ctx, dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := forward.BindFrame(rc)
+	dsFrame := dc.Frame.BindFrame()
 	uli := rc.GetPerFrame(kPbrInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &pbrInstance{ds: ds, sl: sl}
@@ -95,7 +105,7 @@ func (u *PbrMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32
 }
 
 func (u *PbrMaterial) NewPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
-	rc := dc.Cache
+	rc := dc.Frame.GetCache()
 	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
 	if skinned {
 		vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)

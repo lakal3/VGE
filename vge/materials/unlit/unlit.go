@@ -33,12 +33,16 @@ func (u *UnlitMaterial) SetDescriptor(dsMat *vk.DescriptorSet) {
 }
 
 func (u *UnlitMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, extra vmodel.ShaderExtra) {
-	rc := dc.Cache
+	scf := vscene.GetSimpleFrame(dc.Frame)
+	if scf == nil {
+		return // Simple frame not supported
+	}
+	rc := scf.GetCache()
 	gp := dc.Pass.Get(rc.Ctx, kUnlitPipeline, func(ctx vk.APIContext) interface{} {
 		return u.NewPipeline(ctx, dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsWorld := vscene.BindSimpleFrame(rc)
+	dsWorld := scf.BindFrame()
 	uli := rc.GetPerFrame(kUnlitInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &unlitInstances{ds: ds, sl: sl}
@@ -54,18 +58,22 @@ func (u *UnlitMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl
 
 func (u *UnlitMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, aniMatrix []mgl32.Mat4,
 	extra vmodel.ShaderExtra) {
-	rc := dc.Cache
+	scf := vscene.GetSimpleFrame(dc.Frame)
+	if scf == nil {
+		return // Simple frame not supported
+	}
+	rc := scf.GetCache()
 	gp := dc.Pass.Get(rc.Ctx, kUnlitSkinnedPipeline, func(ctx vk.APIContext) interface{} {
 		return u.NewPipeline(ctx, dc, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsWorld := vscene.BindSimpleFrame(rc)
+	dsWorld := scf.BindFrame()
 	uli := rc.GetPerFrame(kUnlitInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &unlitInstances{ds: ds, sl: sl}
 	}).(*unlitInstances)
 	copy(uli.sl.Content[uli.count*64:uli.count*64+64], vk.Float32ToBytes(world[:]))
-	dsMesh, slMesh := uc.Alloc(dc.Cache.Ctx)
+	dsMesh, slMesh := uc.Alloc(rc.Ctx)
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindNormal)...).
 		AddDescriptors(dsWorld, uli.ds, u.dsMat, dsMesh).SetInstances(uli.count, 1)
@@ -76,7 +84,7 @@ func (u *UnlitMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, wo
 }
 
 func (u *UnlitMaterial) NewPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
-	rc := dc.Cache
+	rc := dc.Frame.GetCache()
 	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
 	if skinned {
 		vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)

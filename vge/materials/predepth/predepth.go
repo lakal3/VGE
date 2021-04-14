@@ -17,7 +17,7 @@ type PreDepthPass struct {
 }
 
 func (p *PreDepthPass) GetCache() *vk.RenderCache {
-	return p.DC.Cache
+	return p.DC.Frame.GetCache()
 }
 
 func (p *PreDepthPass) Begin() (atEnd func()) {
@@ -32,7 +32,7 @@ func (p *PreDepthPass) Begin() (atEnd func()) {
 }
 
 func (p *PreDepthPass) DrawShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoTexture vmodel.ImageIndex) {
-	rc := p.DC.Cache
+	rc := p.DC.Frame.GetCache()
 	gp := p.DC.Pass.Get(rc.Ctx, kPreDepthPipeline, func(ctx vk.APIContext) interface{} {
 		return p.newPipeline(ctx, false)
 	}).(*vk.GraphicsPipeline)
@@ -52,7 +52,7 @@ func (p *PreDepthPass) DrawShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoText
 }
 
 func (p *PreDepthPass) DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoTexture vmodel.ImageIndex, aniMatrix []mgl32.Mat4) {
-	rc := p.DC.Cache
+	rc := p.DC.Frame.GetCache()
 	gp := p.DC.Pass.Get(rc.Ctx, kPreDepthSkinnedPipeline, func(ctx vk.APIContext) interface{} {
 		return p.newPipeline(ctx, true)
 	}).(*vk.GraphicsPipeline)
@@ -63,7 +63,7 @@ func (p *PreDepthPass) DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, alb
 		return &preDepthInstances{ds: ds, sl: sl}
 	}).(*preDepthInstances)
 	copy(uli.sl.Content[uli.count*64:uli.count*64+64], vk.Float32ToBytes(world[:]))
-	dsMesh, slMesh := uc.Alloc(p.DC.Cache.Ctx)
+	dsMesh, slMesh := uc.Alloc(rc.Ctx)
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	p.DC.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindNormal)...).
 		AddDescriptors(dsWorld, uli.ds, dsMesh).SetInstances(uli.count, 1)
@@ -74,7 +74,7 @@ func (p *PreDepthPass) DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, alb
 }
 
 func (p *PreDepthPass) newPipeline(ctx vk.APIContext, skinned bool) *vk.GraphicsPipeline {
-	rc := p.DC.Cache
+	rc := p.DC.Frame.GetCache()
 	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
 	if skinned {
 		vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)

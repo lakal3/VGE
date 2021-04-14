@@ -128,32 +128,32 @@ func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.Ren
 	if f.timedOutput != nil {
 		cmd.WriteTimer(tp, 1, vk.PIPELINEStageTopOfPipeBit)
 	}
-	frame := &Frame{}
-	frame.Projection, frame.View = camera.CameraProjection(f.size)
-	frame.EyePos = frame.View.Inv().Col(3)
-	bg := vscene.NewDrawPhase(rc, f.frp, vscene.LAYERBackground, cmd, func() {
+	frame := &Frame{cache: rc}
+	frame.SF.Projection, frame.SF.View = camera.CameraProjection(f.size)
+	frame.SF.EyePos = frame.SF.View.Inv().Col(3)
+	bg := vscene.NewDrawPhase(frame, f.frp, vscene.LAYERBackground, cmd, func() {
 		if !f.depthPrePass {
 			cmd.BeginRenderPass(f.frp, fb)
 		}
 	}, nil)
-	dp := vscene.NewDrawPhase(rc, f.frp, vscene.LAYER3D, cmd, nil, nil)
-	dt := vscene.NewDrawPhase(rc, f.frp, vscene.LAYERTransparent, cmd, nil, nil)
-	ui := vscene.NewDrawPhase(rc, f.frp, vscene.LAYERUI, cmd, nil, func() {
+	dp := vscene.NewDrawPhase(frame, f.frp, vscene.LAYER3D, cmd, nil, nil)
+	dt := vscene.NewDrawPhase(frame, f.frp, vscene.LAYERTransparent, cmd, nil, nil)
+	ui := vscene.NewDrawPhase(frame, f.frp, vscene.LAYERUI, cmd, nil, func() {
 		cmd.EndRenderPass()
 	})
-	ppPhase := &vscene.PredrawPhase{Scene: sc, Cache: rc, Cmd: cmd, Frame: frame}
+	ppPhase := &vscene.PredrawPhase{Scene: sc, Cmd: cmd}
 	lightPhase := FrameLightPhase{F: frame, Cache: rc}
 	if f.depthPrePass {
-		pdp := &predepth.PreDepthPass{Cmd: cmd, DC: vmodel.DrawContext{Cache: rc, Pass: f.frp}}
+		pdp := &predepth.PreDepthPass{Cmd: cmd, DC: vmodel.DrawContext{Frame: frame, Pass: f.frp}}
 		pdp.BindFrame = func() *vk.DescriptorSet {
-			return BindFrame(rc)
+			return frame.BindFrame()
 		}
 		pdp.OnBegin = func() {
 			cmd.BeginRenderPass(f.frp, fb)
 		}
-		sc.Process(sc.Time, &vscene.AnimatePhase{}, ppPhase, lightPhase, pdp, bg, dp, dt, ui)
+		sc.Process(sc.Time, frame, &vscene.AnimatePhase{}, ppPhase, lightPhase, pdp, bg, dp, dt, ui)
 	} else {
-		sc.Process(sc.Time, &vscene.AnimatePhase{}, ppPhase, lightPhase, bg, dp, dt, ui)
+		sc.Process(sc.Time, frame, &vscene.AnimatePhase{}, ppPhase, lightPhase, bg, dp, dt, ui)
 	}
 	// Complete pendings from predraw phase
 	for _, pd := range ppPhase.Pending {

@@ -16,10 +16,7 @@ func (f FrameLightPhase) GetCache() *vk.RenderCache {
 }
 
 func (f FrameLightPhase) Begin() (atEnd func()) {
-	return func() {
-		f.F.writeDynamicFrame(f.Cache)
-		f.F.writeFrame(f.Cache)
-	}
+	return nil
 }
 
 func (f FrameLightPhase) AddLight(standard vscene.Light, shadowMap *vk.ImageView, sampler *vk.Sampler) {

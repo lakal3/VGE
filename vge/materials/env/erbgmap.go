@@ -42,20 +42,26 @@ func (e *EquiRectBGNode) Dispose() {
 }
 
 func (eq *EquiRectBGNode) Draw(dc *vmodel.DrawContext) {
-	pl := dc.Pass.Get(dc.Cache.Ctx, kEqPipeline, func(ctx vk.APIContext) interface{} {
+	sfc := vscene.GetSimpleFrame(dc.Frame)
+	if sfc == nil {
+		return // Not supported
+	}
+	cache := sfc.GetCache()
+	pl := dc.Pass.Get(cache.Ctx, kEqPipeline, func(ctx vk.APIContext) interface{} {
 		return eq.newPipeline(dc)
 	}).(vk.Pipeline)
-	dsFrame := vscene.BindSimpleFrame(dc.Cache)
-	cb := getCube(dc.Cache.Ctx, dc.Cache.Device)
+	dsFrame := sfc.BindFrame()
+	cb := getCube(cache.Ctx, cache.Device)
 	dc.Draw(pl, 0, 36).AddInputs(cb.bVtx).AddDescriptors(dsFrame, eq.ds)
 }
 
 func (eq *EquiRectBGNode) newPipeline(dc *vmodel.DrawContext) *vk.GraphicsPipeline {
-	ctx := dc.Cache.Ctx
-	gp := vk.NewGraphicsPipeline(ctx, dc.Cache.Device)
+	cache := dc.Frame.GetCache()
+	ctx := cache.Ctx
+	gp := vk.NewGraphicsPipeline(ctx, cache.Device)
 	gp.AddVextexInput(ctx, vk.VERTEXInputRateVertex, vk.FORMATR32g32b32Sfloat)
-	la := getLayout(ctx, dc.Cache.Device)
-	laFrame := vscene.GetUniformLayout(ctx, dc.Cache.Device)
+	la := getLayout(ctx, cache.Device)
+	laFrame := vscene.GetUniformLayout(ctx, cache.Device)
 	gp.AddLayout(ctx, laFrame)
 	gp.AddLayout(ctx, la)
 	gp.AddShader(ctx, vk.SHADERStageVertexBit, eqrect_vert_spv)

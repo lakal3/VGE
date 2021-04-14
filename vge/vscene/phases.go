@@ -19,7 +19,6 @@ const (
 
 type Phase interface {
 	Begin() (atEnd func())
-	GetCache() *vk.RenderCache
 }
 
 type DrawPhase interface {
@@ -33,8 +32,8 @@ type ShadowPhase interface {
 	DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoTexture vmodel.ImageIndex, aniMatrix []mgl32.Mat4)
 }
 
-func NewDrawPhase(rc *vk.RenderCache, pass vk.RenderPass, layer Layer, cmd *vk.Command, begin func(), commit func()) DrawPhase {
-	return &BasicDrawPhase{DrawContext: vmodel.DrawContext{Cache: rc, Pass: pass}, Layer: layer, Cmd: cmd, begin: begin, commit: commit}
+func NewDrawPhase(frame vmodel.Frame, pass vk.RenderPass, layer Layer, cmd *vk.Command, begin func(), commit func()) DrawPhase {
+	return &BasicDrawPhase{DrawContext: vmodel.DrawContext{Frame: frame, Pass: pass}, Layer: layer, Cmd: cmd, begin: begin, commit: commit}
 }
 
 type BasicDrawPhase struct {
@@ -44,10 +43,6 @@ type BasicDrawPhase struct {
 	begin  func()
 	commit func()
 	// FP  *vk.Framebuffer
-}
-
-func (d *BasicDrawPhase) GetCache() *vk.RenderCache {
-	return d.DrawContext.Cache
 }
 
 func (d *BasicDrawPhase) GetDC(layer Layer) *vmodel.DrawContext {
@@ -75,14 +70,8 @@ func (d *BasicDrawPhase) Begin() (atEnd func()) {
 type PredrawPhase struct {
 	Scene   *Scene
 	Cmd     *vk.Command
-	Cache   *vk.RenderCache
-	Frame   Frame
 	Needeed []vk.SubmitInfo
 	Pending []func()
-}
-
-func (p *PredrawPhase) GetCache() *vk.RenderCache {
-	return p.Cache
 }
 
 func (p *PredrawPhase) Begin() (atEnd func()) {
@@ -93,10 +82,6 @@ type AnimatePhase struct {
 	Cache *vk.RenderCache
 }
 
-func (a *AnimatePhase) GetCache() *vk.RenderCache {
-	return nil
-}
-
 func (a *AnimatePhase) Begin() (atEnd func()) {
 	return nil
 }
@@ -104,10 +89,6 @@ func (a *AnimatePhase) Begin() (atEnd func()) {
 type BoudingBox struct {
 	box   vmodel.AABB
 	first bool
-}
-
-func (b *BoudingBox) GetCache() *vk.RenderCache {
-	return nil
 }
 
 func (b *BoudingBox) Begin() (atEnd func()) {

@@ -11,6 +11,7 @@ type ProcessInfo struct {
 	Time    float64
 	Visible bool
 	World   mgl32.Mat4
+	Frame   vmodel.Frame
 	parent  *ProcessInfo
 	extras  map[vk.Key]interface{}
 }

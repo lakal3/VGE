@@ -1,6 +1,7 @@
 package vscene
 
 import (
+	"github.com/lakal3/vge/vge/vmodel"
 	"reflect"
 	"runtime"
 	"sync"
@@ -57,7 +58,7 @@ func (sc *Scene) Update(action func()) {
 // Process will change scene to read only state and process through all phases. Some phases like shadow map rendering
 // might again recursively call Process to render shadow map. Process function keep consistent state of scene until all process
 // invocations have exited
-func (sc *Scene) Process(time float64, phases ...Phase) {
+func (sc *Scene) Process(time float64, frame vmodel.Frame, phases ...Phase) {
 	defer func() {
 		atomic.AddInt32(&sc.lockCount, -1)
 	}()
@@ -69,7 +70,7 @@ func (sc *Scene) Process(time float64, phases ...Phase) {
 	}
 
 	for _, ph := range phases {
-		sc.processPhase(time, mgl32.Ident4(), ph)
+		sc.processPhase(time, frame, mgl32.Ident4(), ph)
 	}
 }
 
@@ -89,12 +90,12 @@ func (sc *Scene) Locked() bool {
 	return atomic.LoadInt32(&sc.lockCount) > 0
 }
 
-func (sc *Scene) processPhase(time float64, world mgl32.Mat4, ph Phase) {
+func (sc *Scene) processPhase(time float64, frame vmodel.Frame, world mgl32.Mat4, ph Phase) {
 	atEnd := ph.Begin()
 	if atEnd != nil {
 		defer atEnd()
 	}
-	pi := ProcessInfo{Time: time, World: world, Phase: ph, Visible: true}
+	pi := ProcessInfo{Time: time, World: world, Frame: frame, Phase: ph, Visible: true}
 	sc.processNode(&sc.Root, &pi)
 }
 

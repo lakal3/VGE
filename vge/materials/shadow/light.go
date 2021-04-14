@@ -56,6 +56,29 @@ type shadowPass struct {
 	siCount     int
 }
 
+func (s *shadowPass) ViewProjection() (projection, view mgl32.Mat4) {
+	return mgl32.Perspective(math.Pi/2, 1, s.maxDistance/2000, s.maxDistance*2),
+		mgl32.LookAtV(s.pos, s.pos.Add(mgl32.Vec3{1, 0, 0}), mgl32.Vec3{0, -1, 0})
+}
+
+func (s *shadowPass) BindFrame() *vk.DescriptorSet {
+	uc := vscene.GetUniformCache(s.rc)
+	if s.ds == nil {
+		s.ds, s.sl = uc.Alloc(s.ctx)
+		s.si = &shadowInstance{}
+		s.si.projection = mgl32.Perspective(math.Pi/2, 1, s.maxDistance/2000, s.maxDistance*2)
+		pos := s.pos
+		s.si.view[0] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{1, 0, 0}), mgl32.Vec3{0, -1, 0})
+		s.si.view[1] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{-1, 0, 0}), mgl32.Vec3{0, -1, 0})
+		s.si.view[2] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{0, 1, 0}), mgl32.Vec3{0, 0, 1})
+		s.si.view[3] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{0, -1, 0}), mgl32.Vec3{0, 0, -1})
+		s.si.view[4] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{0, 0, 1}), mgl32.Vec3{0, -1, 0})
+		s.si.view[5] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{0, 0, -1}), mgl32.Vec3{0, -1, 0})
+		s.si.lightPos = pos.Vec4(s.maxDistance)
+	}
+	return s.ds
+}
+
 func (s *shadowPass) GetCache() *vk.RenderCache {
 	return s.rc
 }
@@ -76,21 +99,7 @@ func (s *shadowPass) Begin() (atEnd func()) {
 }
 
 func (s *shadowPass) DrawShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoTexture vmodel.ImageIndex) {
-	uc := vscene.GetUniformCache(s.rc)
-	if s.ds == nil {
-		s.ds, s.sl = uc.Alloc(s.ctx)
-		s.si = &shadowInstance{}
-		s.si.projection = mgl32.Perspective(math.Pi/2, 1, s.maxDistance/2000, s.maxDistance*2)
-		pos := s.pos
-		s.si.view[0] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{1, 0, 0}), mgl32.Vec3{0, -1, 0})
-		s.si.view[1] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{-1, 0, 0}), mgl32.Vec3{0, -1, 0})
-		s.si.view[2] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{0, 1, 0}), mgl32.Vec3{0, 0, 1})
-		s.si.view[3] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{0, -1, 0}), mgl32.Vec3{0, 0, -1})
-		s.si.view[4] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{0, 0, 1}), mgl32.Vec3{0, -1, 0})
-		s.si.view[5] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{0, 0, -1}), mgl32.Vec3{0, -1, 0})
-		s.si.lightPos = pos.Vec4(s.maxDistance)
-
-	}
+	s.BindFrame()
 	s.si.instances[s.siCount] = world
 	s.dl.DrawIndexed(s.pl, mesh.From, mesh.Count).AddDescriptors(s.ds).
 		AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindNormal)...).SetInstances(uint32(s.siCount), 1)
@@ -101,21 +110,8 @@ func (s *shadowPass) DrawShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoTextur
 }
 
 func (s *shadowPass) DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoTexture vmodel.ImageIndex, aniMatrix []mgl32.Mat4) {
+	s.BindFrame()
 	uc := vscene.GetUniformCache(s.rc)
-	if s.ds == nil {
-		s.ds, s.sl = uc.Alloc(s.ctx)
-		s.si = &shadowInstance{}
-		s.si.projection = mgl32.Perspective(math.Pi/2, 1, s.maxDistance/2000, s.maxDistance*2)
-		pos := s.pos
-		s.si.view[0] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{1, 0, 0}), mgl32.Vec3{0, -1, 0})
-		s.si.view[1] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{-1, 0, 0}), mgl32.Vec3{0, -1, 0})
-		s.si.view[2] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{0, 1, 0}), mgl32.Vec3{0, 0, 1})
-		s.si.view[3] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{0, -1, 0}), mgl32.Vec3{0, 0, -1})
-		s.si.view[4] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{0, 0, 1}), mgl32.Vec3{0, -1, 0})
-		s.si.view[5] = mgl32.LookAtV(pos, pos.Add(mgl32.Vec3{0, 0, -1}), mgl32.Vec3{0, -1, 0})
-		s.si.lightPos = pos.Vec4(s.maxDistance)
-
-	}
 	s.si.instances[s.siCount] = world
 	dsMesh, slMesh := uc.Alloc(s.ctx)
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
@@ -170,7 +166,7 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 			pl.MaxShadowDistance = pl.MaxDistance * 2
 		}
 		pos := pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1})
-		_, view := pd.Frame.ViewProjection()
+		_, view := pi.Frame.ViewProjection()
 		eyePos := view.Col(3).Vec3()
 		if eyePos.Sub(pos.Vec3()).Len() > pl.MaxShadowDistance {
 			// Skip shadow pass for light too long aways
@@ -181,7 +177,7 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 
 	lp, ok := pi.Phase.(vscene.LightPhase)
 	if ok {
-		hasShadowmap := pi.Phase.GetCache().GetPerFrame(pl.key, func(ctx vk.APIContext) interface{} {
+		hasShadowmap := pi.Frame.GetCache().GetPerFrame(pl.key, func(ctx vk.APIContext) interface{} {
 			return false
 		}).(bool)
 		pos := pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1})
@@ -189,7 +185,7 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 			lp.AddLight(vscene.Light{Intensity: pl.Intensity.Vec4(1),
 				Position: pos, Attenuation: pl.Attenuation.Vec4(pl.MaxDistance)}, nil, nil)
 		} else {
-			sr := pi.Phase.GetCache().Get(pl.key, func(ctx vk.APIContext) interface{} {
+			sr := pi.Frame.GetCache().Get(pl.key, func(ctx vk.APIContext) interface{} {
 				return nil
 			}).(*shadowResources)
 			lp.AddLight(vscene.Light{Intensity: pl.Intensity.Vec4(1),
@@ -199,26 +195,27 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 }
 
 func (pl *PointLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.ProcessInfo) *shadowResources {
-	rp := pd.Cache.Device.Get(pd.Cache.Ctx, kDepthPass, func(ctx vk.APIContext) interface{} {
-		return vk.NewDepthRenderPass(ctx, pd.Cache.Device, vk.IMAGELayoutShaderReadOnlyOptimal, ShadowFormat)
+	cache := pi.Frame.GetCache()
+	rp := cache.Device.Get(cache.Ctx, kDepthPass, func(ctx vk.APIContext) interface{} {
+		return vk.NewDepthRenderPass(ctx, cache.Device, vk.IMAGELayoutShaderReadOnlyOptimal, ShadowFormat)
 	}).(*vk.DepthRenderPass)
-	sr := pd.Cache.Get(pl.key, func(ctx vk.APIContext) interface{} {
-		return pl.makeResources(ctx, pd.Cache.Device, rp)
+	sr := cache.Get(pl.key, func(ctx vk.APIContext) interface{} {
+		return pl.makeResources(ctx, cache.Device, rp)
 	}).(*shadowResources)
 
-	gpl := rp.Get(pd.Cache.Ctx, kDepthPipeline, func(ctx vk.APIContext) interface{} {
-		return pl.makeShadowPipeline(ctx, pd.Cache.Device, rp)
+	gpl := rp.Get(cache.Ctx, kDepthPipeline, func(ctx vk.APIContext) interface{} {
+		return pl.makeShadowPipeline(ctx, cache.Device, rp)
 	}).(*vk.GraphicsPipeline)
-	gSkinnedPl := rp.Get(pd.Cache.Ctx, kSkinnedDepthPipeline, func(ctx vk.APIContext) interface{} {
-		return pl.makeSkinnedShadowPipeline(ctx, pd.Cache.Device, rp)
+	gSkinnedPl := rp.Get(cache.Ctx, kSkinnedDepthPipeline, func(ctx vk.APIContext) interface{} {
+		return pl.makeSkinnedShadowPipeline(ctx, cache.Device, rp)
 	}).(*vk.GraphicsPipeline)
 	cmd := sr.cmd
 	cmd.Begin()
 	cmd.BeginRenderPass(rp, sr.fb)
-	sp := &shadowPass{ctx: pd.Cache.Ctx, cmd: cmd, dl: &vk.DrawList{}, maxDistance: pl.MaxDistance,
-		pl: gpl, plSkin: gSkinnedPl, rc: pd.Cache}
+	sp := &shadowPass{ctx: cache.Ctx, cmd: cmd, dl: &vk.DrawList{}, maxDistance: pl.MaxDistance,
+		pl: gpl, plSkin: gSkinnedPl, rc: cache}
 	sp.pos = pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1}).Vec3()
-	pd.Scene.Process(pi.Time, sp)
+	pd.Scene.Process(pi.Time, sp, sp)
 	sp.flush()
 	cmd.EndRenderPass()
 	waitFor := cmd.SubmitForWait(1, vk.PIPELINEStageFragmentShaderBit)
@@ -226,8 +223,8 @@ func (pl *PointLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.Proces
 		pd.Needeed = append(pd.Needeed, waitFor)
 		cmd.Wait()
 	})
-	sr.sampler = getShadowSampler(pd.Cache.Ctx, pd.Cache.Device)
-	pd.Cache.SetPerFrame(pl.key, true)
+	sr.sampler = getShadowSampler(cache.Ctx, cache.Device)
+	cache.SetPerFrame(pl.key, true)
 	return sr
 }
 

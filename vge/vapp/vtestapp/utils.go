@@ -2,7 +2,7 @@ package vtestapp
 
 import (
 	"errors"
-	"github.com/lakal3/vge/vge/forward"
+	"image"
 	"io"
 	"io/ioutil"
 	"os"
@@ -60,7 +60,7 @@ func (m *MainImage) ForwardRender(depth bool, render func(cmd *vk.Command, dc *v
 	fp := vk.NewForwardRenderPass(TestApp.Ctx, TestApp.Dev, m.Desc.Format, vk.IMAGELayoutTransferSrcOptimal, df)
 	defer fp.Dispose()
 	dc.Pass = fp
-	dc.Cache = vk.NewRenderCache(TestApp.Ctx, TestApp.Dev)
+	dc.Frame = &vscene.SimpleFrame{Cache: vk.NewRenderCache(TestApp.Ctx, TestApp.Dev)}
 	cmd := vk.NewCommand(TestApp.Ctx, TestApp.Dev, vk.QUEUEGraphicsBit, true)
 	defer cmd.Dispose()
 	cmd.Begin()
@@ -80,6 +80,9 @@ func (m *MainImage) ForwardRender(depth bool, render func(cmd *vk.Command, dc *v
 var kFpTest = vk.NewKey()
 
 func (m *MainImage) RenderScene(time float64, depth bool) {
+	m.RenderSceneAt(time, depth, nil)
+}
+func (m *MainImage) RenderSceneAt(time float64, depth bool, camera vscene.Camera) {
 	rc := vk.NewRenderCache(TestApp.Ctx, TestApp.Dev)
 	defer rc.Dispose()
 	df := vk.FORMATUndefined
@@ -102,18 +105,20 @@ func (m *MainImage) RenderScene(time float64, depth bool) {
 
 	defer cmd.Dispose()
 	cmd.Begin()
-	bg := vscene.NewDrawPhase(rc, fp, vscene.LAYERBackground, cmd, func() {
+	frame := &vscene.SimpleFrame{Cache: rc}
+	if camera != nil {
+		frame.SSF.Projection, frame.SSF.View = camera.CameraProjection(
+			image.Pt(int(m.Image.Description.Width), int(m.Image.Description.Height)))
+	}
+	bg := vscene.NewDrawPhase(frame, fp, vscene.LAYERBackground, cmd, func() {
 		cmd.BeginRenderPass(fp, fb)
 	}, nil)
-	dp := vscene.NewDrawPhase(rc, fp, vscene.LAYER3D, cmd, nil, nil)
-	ui := vscene.NewDrawPhase(rc, fp, vscene.LAYERUI, cmd, nil, func() {
+	dp := vscene.NewDrawPhase(frame, fp, vscene.LAYER3D, cmd, nil, nil)
+	ui := vscene.NewDrawPhase(frame, fp, vscene.LAYERUI, cmd, nil, func() {
 		cmd.EndRenderPass()
 	})
-	frame := &forward.Frame{}
-	m.Root.Process(time, &vscene.AnimatePhase{},
-		&vscene.PredrawPhase{Scene: &m.Root, Cache: rc, Cmd: cmd, Frame: frame},
-		&forward.FrameLightPhase{F: frame, Cache: rc},
-		bg, dp, ui)
+	m.Root.Process(time, frame, &vscene.AnimatePhase{},
+		&vscene.PredrawPhase{Scene: &m.Root, Cmd: cmd}, bg, dp, ui)
 	cmd.Submit()
 	cmd.Wait()
 }

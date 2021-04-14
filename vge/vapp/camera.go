@@ -115,7 +115,7 @@ func OrbitControlFrom(priority float64, win *RenderWindow, pc *vscene.Perspectiv
 
 func (oc *OrbitControl) Zoom(sc *vscene.Scene) {
 	bb := &vscene.BoudingBox{}
-	sc.Process(oc.win.GetSceneTime(), bb)
+	sc.Process(oc.win.GetSceneTime(), vscene.NullFrame{}, bb)
 	aabb, empty := bb.Get()
 	var l float32
 	if empty {

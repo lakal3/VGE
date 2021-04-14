@@ -1,7 +1,6 @@
 package vscene
 
 import (
-	"errors"
 	"github.com/lakal3/vge/vge/vmodel"
 	"image"
 	"unsafe"
@@ -15,47 +14,83 @@ import (
 // relatively large values on all Windows / Linux cards that support dynamic descriptors
 var FrameMaxDynamicSamplers = uint32(0)
 
-type Frame interface {
-	ViewProjection() (projection, view mgl32.Mat4)
+// ImageFrame is frame that supports binding images to Frames descriptor set
+type ImageFrame interface {
+
 	// Add image bound with frame descriptor set. If imageIndex < 0, there where no more slots left
-	AddFrameImage(rc *vk.RenderCache, view *vk.ImageView, sampler *vk.Sampler) (imageIndex vmodel.ImageIndex)
-	// Add probe to frame
-	AddProbe(SPH [9]mgl32.Vec4, ubfImage vmodel.ImageIndex) (probeIndex int)
+	AddFrameImage(view *vk.ImageView, sampler *vk.Sampler) (imageIndex vmodel.ImageIndex)
 }
 
 type Camera interface {
 	CameraProjection(size image.Point) (projection, view mgl32.Mat4)
 }
 
-type SimpleFrame struct {
+type NullFrame struct {
+}
+
+func (n NullFrame) GetCache() *vk.RenderCache {
+	return nil
+}
+
+func (n NullFrame) ViewProjection() (projection, view mgl32.Mat4) {
+	return mgl32.Ident4(), mgl32.Ident4()
+}
+
+func (n NullFrame) BindFrame() *vk.DescriptorSet {
+	return nil
+}
+
+type SimpleShaderFrame struct {
 	Projection mgl32.Mat4
 	View       mgl32.Mat4
 }
 
-func (s *SimpleFrame) ViewProjection() (projection, view mgl32.Mat4) {
-	return s.Projection, s.View
+type AsSimpleFrame interface {
+	GetSimpleFrame() *SimpleFrame
 }
 
-func (s *SimpleFrame) WriteFrame(rc *vk.RenderCache) {
-	uc := GetUniformCache(rc)
-	_ = rc.GetPerFrame(kBoundSimpleFrame, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
-		s.CopyTo(sl)
-		return ds
-	})
+func GetSimpleFrame(f vmodel.Frame) *SimpleFrame {
+	asf := f.(AsSimpleFrame)
+	if asf != nil {
+		return asf.GetSimpleFrame()
+	}
+	return nil
+}
+
+type SimpleFrame struct {
+	Cache *vk.RenderCache
+	ds    *vk.DescriptorSet
+	SSF   SimpleShaderFrame
+}
+
+func (s *SimpleFrame) GetSimpleFrame() *SimpleFrame {
+	return s
+}
+
+func (s *SimpleFrame) BindFrame() *vk.DescriptorSet {
+	if s.ds == nil {
+		s.WriteFrame()
+	}
+	return s.ds
+}
+
+func (s *SimpleFrame) GetCache() *vk.RenderCache {
+	return s.Cache
+}
+
+func (s *SimpleFrame) ViewProjection() (projection, view mgl32.Mat4) {
+	return s.SSF.Projection, s.SSF.View
+}
+
+func (s *SimpleFrame) WriteFrame() *vk.DescriptorSet {
+	uc := GetUniformCache(s.Cache)
+	var sl *vk.Slice
+	s.ds, sl = uc.Alloc(s.Cache.Ctx)
+	s.CopyTo(sl)
+	return s.ds
 }
 
 func (s *SimpleFrame) CopyTo(sl *vk.Slice) {
-	b := *(*[unsafe.Sizeof(SimpleFrame{})]byte)(unsafe.Pointer(s))
+	b := *(*[unsafe.Sizeof(SimpleShaderFrame{})]byte)(unsafe.Pointer(&s.SSF))
 	copy(sl.Content, b[:])
-}
-
-var kBoundSimpleFrame = vk.NewKey()
-
-func BindSimpleFrame(rc *vk.RenderCache) *vk.DescriptorSet {
-	ds := rc.GetPerFrame(kBoundSimpleFrame, func(ctx vk.APIContext) interface{} {
-		ctx.SetError(errors.New("Frame not bound. BindSimpleFrame called before draw phase!"))
-		return nil
-	}).(*vk.DescriptorSet)
-	return ds
 }

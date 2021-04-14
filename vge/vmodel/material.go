@@ -75,8 +75,19 @@ func (mp MaterialProperties) GetImage(prop Property) ImageIndex {
 	return 0
 }
 
+type Frame interface {
+	// Retrieve rennder cache assosiate to this render instance
+	GetCache() *vk.RenderCache
+
+	// ViewProjection retrieves view and projection of render instance
+	ViewProjection() (projection, view mgl32.Mat4)
+
+	// BindFrame retrieves descriptor attached to frame type
+	BindFrame() *vk.DescriptorSet
+}
+
 type DrawContext struct {
-	Cache *vk.RenderCache
+	Frame Frame
 	Pass  vk.RenderPass
 	List  *vk.DrawList
 }

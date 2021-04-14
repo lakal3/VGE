@@ -20,12 +20,16 @@ func (e *EmissiveMaterial) SetDescriptor(dsMat *vk.DescriptorSet) {
 }
 
 func (e *EmissiveMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4) {
-	rc := dc.Cache
+	scf := vscene.GetSimpleFrame(dc.Frame)
+	if scf == nil {
+		return // Not supported
+	}
+	rc := scf.GetCache()
 	gp := dc.Pass.Get(rc.Ctx, kEmissivePipeline, func(ctx vk.APIContext) interface{} {
 		return e.newPipeline(ctx, dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsWorld := vscene.BindSimpleFrame(rc)
+	dsWorld := scf.BindFrame()
 	uli := rc.GetPerFrame(kEmissiveInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &emissiveInstances{ds: ds, sl: sl}
@@ -41,12 +45,16 @@ func (e *EmissiveMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world 
 }
 
 func (e *EmissiveMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, aniMatrix []mgl32.Mat4) {
-	rc := dc.Cache
+	scf := vscene.GetSimpleFrame(dc.Frame)
+	if scf == nil {
+		return // Not supported
+	}
+	rc := scf.GetCache()
 	gp := dc.Pass.Get(rc.Ctx, kEmissiveSkinnedPipeline, func(ctx vk.APIContext) interface{} {
 		return e.newPipeline(ctx, dc, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsWorld := vscene.BindSimpleFrame(rc)
+	dsWorld := scf.BindFrame()
 	uli := rc.GetPerFrame(kEmissiveInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &emissiveInstances{ds: ds, sl: sl}
@@ -54,7 +62,7 @@ func (e *EmissiveMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh,
 	copy(uli.sl.Content[uli.count*64:uli.count*64+64], vk.Float32ToBytes(world[:]))
 	copy(uli.sl.Content[MaxInstances*64+uli.count*16:MaxInstances*64+uli.count*16+16], vk.Float32ToBytes(e.Color[:]))
 
-	dsMesh, slMesh := uc.Alloc(dc.Cache.Ctx)
+	dsMesh, slMesh := uc.Alloc(rc.Ctx)
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindNormal)...).
 		AddDescriptors(dsWorld, uli.ds, dsMesh).SetInstances(uli.count, 1)
@@ -65,7 +73,7 @@ func (e *EmissiveMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh,
 }
 
 func (e *EmissiveMaterial) newPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
-	rc := dc.Cache
+	rc := dc.Frame.GetCache()
 	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
 	if skinned {
 		vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)

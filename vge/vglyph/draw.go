@@ -76,10 +76,11 @@ func (pl *Palette) Draw(dc *vmodel.DrawContext, position Position, appearance Ap
 	if len(gl.Name) == 0 {
 		return false
 	}
-	gp := dc.Pass.Get(dc.Cache.Ctx, kGlyphPipeline, func(ctx vk.APIContext) interface{} {
+	cache := dc.Frame.GetCache()
+	gp := dc.Pass.Get(cache.Ctx, kGlyphPipeline, func(ctx vk.APIContext) interface{} {
 		return newPipeline(ctx, dc)
 	}).(*vk.GraphicsPipeline)
-	uc := vscene.GetUniformCache(dc.Cache)
+	uc := vscene.GetUniformCache(cache)
 
 	scx := 2 / float32(position.ImageSize.X)
 	scy := 2 / float32(position.ImageSize.Y)
@@ -113,7 +114,8 @@ func (pl *Palette) Draw(dc *vmodel.DrawContext, position Position, appearance Ap
 }
 
 func (pl *Palette) drawInstance(dc *vmodel.DrawContext, uc *vscene.UniformCache, gp *vk.GraphicsPipeline, gi glyphInstance) {
-	gis := dc.Cache.GetPerFrame(kGlyphInstances, func(ctx vk.APIContext) interface{} {
+	cache := dc.Frame.GetCache()
+	gis := cache.GetPerFrame(kGlyphInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		item := dc.Draw(gp, 0, 6).AddDescriptors(ds, pl.ds)
 		return &glyphInstances{ds: ds, sl: sl, di: item}
@@ -124,7 +126,7 @@ func (pl *Palette) drawInstance(dc *vmodel.DrawContext, uc *vscene.UniformCache,
 	gis.count++
 	gis.di.SetInstances(0, gis.count)
 	if gis.count >= maxInstances {
-		dc.Cache.SetPerFrame(kGlyphInstances, nil)
+		cache.SetPerFrame(kGlyphInstances, nil)
 	}
 }
 
@@ -136,11 +138,11 @@ func (pl *Palette) DrawString(dc *vmodel.DrawContext, fontSize int, text string,
 	if gs == nil {
 		return false
 	}
-
-	gp := dc.Pass.Get(dc.Cache.Ctx, kGlyphPipeline+vk.Key(gs.kind), func(ctx vk.APIContext) interface{} {
+	cache := dc.Frame.GetCache()
+	gp := dc.Pass.Get(cache.Ctx, kGlyphPipeline+vk.Key(gs.kind), func(ctx vk.APIContext) interface{} {
 		return newPipeline(ctx, dc)
 	}).(*vk.GraphicsPipeline)
-	uc := vscene.GetUniformCache(dc.Cache)
+	uc := vscene.GetUniformCache(cache)
 	scx := 2 / float32(position.ImageSize.X)
 	scy := 2 / float32(position.ImageSize.Y)
 	scMat := mgl32.Translate2D(-1, -1).Mul3(mgl32.Scale2D(scx, scy))
@@ -401,7 +403,7 @@ type glyphInstance struct {
 }
 
 func newPipeline(ctx vk.APIContext, dc *vmodel.DrawContext) *vk.GraphicsPipeline {
-	rc := dc.Cache
+	rc := dc.Frame.GetCache()
 	laTheme := getThemeLayout(ctx, rc.Device)
 	la := vscene.GetUniformLayout(ctx, rc.Device)
 	gp := vk.NewGraphicsPipeline(ctx, rc.Device)

@@ -211,8 +211,9 @@ func (v *cubeApp) renderLoop(w *vk.Window) {
 		rc := caches[imageIndex]
 		// Start new frame
 		rc.NewFrame()
-		v.setCamera(rc, w.WindowDesc)
-		dc := &vmodel.DrawContext{Cache: rc, Pass: v.frp}
+		frame := v.setCamera(rc, w.WindowDesc)
+		// 1.20< dc := &vmodel.DrawContext{Cache: rc, Pass: v.frp}
+		dc := &vmodel.DrawContext{Frame: frame, Pass: v.frp}
 		// Retrieve view for image. If cache already has this value it is just returned. Otherwise we construct it using
 		// given constructor function. This is standard way to create assets in VGE. Get api will handle disposing created items
 		// when render cache is disposed. There is separate struct Owner in vk module if you want to implement same pattern in your
@@ -240,7 +241,7 @@ var kCmd = vk.NewKey()
 var kImageView = vk.NewKeys(5)
 
 func (v *cubeApp) render(dc *vmodel.DrawContext, mainView *vk.ImageView) *vk.Command {
-	rc := dc.Cache
+	rc := dc.Frame.GetCache()
 	// Get or create frame buffer from main image view
 	fb := rc.Get(kFp, func(ctx vk.APIContext) interface{} {
 		return vk.NewFramebuffer(ctx, dc.Pass, []*vk.ImageView{mainView})
@@ -280,10 +281,10 @@ func (v *cubeApp) renderNodes(node vmodel.Node, dc *vmodel.DrawContext, world mg
 // Transform from opengl coordinates to Vulkan one
 var VulkanProj = mgl32.Mat4{1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0.5, 0.5, 0, 0, 0, 1}
 
-func (v *cubeApp) setCamera(rc *vk.RenderCache, mainImage vk.ImageDescription) {
+func (v *cubeApp) setCamera(rc *vk.RenderCache, mainImage vk.ImageDescription) *vscene.SimpleFrame {
 	// Frame object is stored in render cache. VGE Shaders can access this information from cache.
 	// Frame must be typically at start of rendering. See unlit implementation for more details
-	f := &vscene.SimpleFrame{}
+	f := &vscene.SimpleFrame{Cache: rc}
 	// Calculate camera view and projection. Math left as an exercise to reader
 	aspect := float32(mainImage.Width) / float32(mainImage.Height)
 	eyePos := mgl32.Vec3{
@@ -292,8 +293,8 @@ func (v *cubeApp) setCamera(rc *vk.RenderCache, mainImage vk.ImageDescription) {
 		float32(app.scale * math.Sin(v.pitch)),
 	}.Vec4(1)
 	proj := mgl32.Perspective(1, aspect, 0.01, 100)
-	f.Projection = VulkanProj.Mul4(proj)
-	f.View = mgl32.LookAtV(eyePos.Vec3(), mgl32.Vec3{}, mgl32.Vec3{0, 1, 0})
+	f.SSF.Projection = VulkanProj.Mul4(proj)
+	f.SSF.View = mgl32.LookAtV(eyePos.Vec3(), mgl32.Vec3{}, mgl32.Vec3{0, 1, 0})
 	// f.Far = 100
-	f.WriteFrame(rc)
+	return f
 }

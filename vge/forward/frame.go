@@ -1,7 +1,6 @@
 package forward
 
 import (
-	"errors"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
@@ -12,7 +11,7 @@ import (
 const MAX_LIGHTS = 64
 const MAX_IMAGES = 48
 
-type Frame struct {
+type ShaderFrame struct {
 	Projection mgl32.Mat4
 	View       mgl32.Mat4
 	EyePos     mgl32.Vec4
@@ -24,35 +23,57 @@ type Frame struct {
 	Lights     [MAX_LIGHTS]vscene.Light
 }
 
-func (f *Frame) AddFrameImage(rc *vk.RenderCache, view *vk.ImageView, sampler *vk.Sampler) (imageIndex vmodel.ImageIndex) {
-	return f.SetFrameImage(rc, view, sampler)
+type Frame struct {
+	SF        ShaderFrame
+	ds        *vk.DescriptorSet
+	dsDynamic *vk.DescriptorSet
+	cache     *vk.RenderCache
+	sf        *vscene.SimpleFrame
 }
 
-func (f *Frame) AddProbe(SPH [9]mgl32.Vec4, ubfImage vmodel.ImageIndex) (probeIndex int) {
-	if f.EnvLods > 0 {
-		return 0 // Currently only one probe
+func NewFrame(cache *vk.RenderCache) *Frame {
+	return &Frame{cache: cache}
+}
+
+func (f *Frame) GetSimpleFrame() *vscene.SimpleFrame {
+	if f.sf == nil {
+		f.sf = &vscene.SimpleFrame{SSF: vscene.SimpleShaderFrame{Projection: f.SF.Projection, View: f.SF.View}, Cache: f.cache}
 	}
-	f.EnvMap, f.EnvLods = float32(ubfImage), 6
-	f.SPH = SPH
-	return 0
+	return f.sf
+}
+
+func (f *Frame) GetCache() *vk.RenderCache {
+	return f.cache
+}
+
+func (f *Frame) AddEnvironment(SPH [9]mgl32.Vec4, ubfImage vmodel.ImageIndex, pi *vscene.ProcessInfo) {
+	if f.SF.EnvLods > 0 || f.ds != nil {
+		return // Currently only one probe that must be added at prepare phase
+	}
+	f.SF.EnvMap, f.SF.EnvLods = float32(ubfImage), 6
+	f.SF.SPH = SPH
+}
+
+func (f *Frame) AddFrameImage(view *vk.ImageView, sampler *vk.Sampler) (imageIndex vmodel.ImageIndex) {
+	return f.SetFrameImage(f.cache, view, sampler)
 }
 
 func (f *Frame) ViewProjection() (projection, view mgl32.Mat4) {
-	return f.Projection, f.View
+	return f.SF.Projection, f.SF.View
 }
 
-func (f *Frame) CopyTo(sl *vk.Slice) {
-	b := *(*[unsafe.Sizeof(Frame{})]byte)(unsafe.Pointer(f))
+func (f *Frame) copyTo(sl *vk.Slice) {
+	b := *(*[unsafe.Sizeof(ShaderFrame{})]byte)(unsafe.Pointer(&f.SF))
 	copy(sl.Content, b[:])
 }
 
 func (f *Frame) AddLight(l vscene.Light) {
-	lPos := int(f.NoLights)
+	lPos := int(f.SF.NoLights)
 	if lPos >= MAX_LIGHTS-1 {
 		return
 	}
-	f.NoLights++
-	f.Lights[lPos] = l
+	f.SF.NoLights++
+	f.SF.Lights[lPos] = l
 }
 
 var kBoundFrame = vk.NewKey()
@@ -85,20 +106,6 @@ func (f *frameDescriptor) Dispose() {
 		f.pool.Dispose()
 		f.pool, f.buffer = nil, nil
 	}
-}
-
-// Convert frame to forward renderer frame. If frame is not forward frame return value is nil
-func GetForwardFrame(f vscene.Frame) *Frame {
-	fr, _ := f.(*Frame)
-	return fr
-}
-
-func MustGetForwardFrame(ctx vk.APIContext, f vscene.Frame) *Frame {
-	fr := GetForwardFrame(f)
-	if fr == nil {
-		ctx.SetError(errors.New("Current frame is not forward.*Frame. Most likely this material is not compatible with current renderer"))
-	}
-	return fr
 }
 
 // SetFrameImage sets image for whole frame (like environment) and returns its index. If imageIndex < 0 all image slots has been used
@@ -140,22 +147,22 @@ func (f *Frame) SetFrameImage(rc *vk.RenderCache, view *vk.ImageView, sampler *v
 	return
 }
 
-func (f *Frame) writeFrame(rc *vk.RenderCache) {
+func (f *Frame) writeFrame() {
+	rc := f.cache
 	lt := GetFrameLayout(rc.Ctx, rc.Device)
 	fd := rc.Get(kBoundFrame, func(ctx vk.APIContext) interface{} {
 		return newFrameDescriptor(rc, lt)
 
 	}).(*frameDescriptor)
-	_ = rc.GetPerFrame(kBoundFrame, func(ctx vk.APIContext) interface{} {
+	f.ds = rc.GetPerFrame(kBoundFrame, func(ctx vk.APIContext) interface{} {
 		fd.buffer.Bytes(rc.Ctx)
-		f.CopyTo(fd.sl)
-		sf := vscene.SimpleFrame{Projection: f.Projection, View: f.View}
-		sf.WriteFrame(rc)
+		f.copyTo(fd.sl)
 		return fd.ds
-	})
+	}).(*vk.DescriptorSet)
 }
 
-func (f *Frame) writeDynamicFrame(rc *vk.RenderCache) {
+func (f *Frame) writeDynamicFrame() {
+	rc := f.cache
 	lt := GetDynamicFrameLayout(rc.Ctx, rc.Device)
 	if lt == nil {
 		return
@@ -164,29 +171,29 @@ func (f *Frame) writeDynamicFrame(rc *vk.RenderCache) {
 		return newDynamicFrameDescriptor(rc, lt)
 
 	}).(*frameDescriptor)
-	_ = rc.GetPerFrame(kBoundDynamicFrame, func(ctx vk.APIContext) interface{} {
+	f.dsDynamic = rc.GetPerFrame(kBoundDynamicFrame, func(ctx vk.APIContext) interface{} {
 		fd.buffer.Bytes(rc.Ctx)
-		f.CopyTo(fd.sl)
+		f.copyTo(fd.sl)
 		return fd.ds
-	})
-}
-
-func BindFrame(rc *vk.RenderCache) *vk.DescriptorSet {
-	ds := rc.GetPerFrame(kBoundFrame, func(ctx vk.APIContext) interface{} {
-		ctx.SetError(errors.New("Frame not bound. BindFrame called before draw phase!"))
-		return nil
 	}).(*vk.DescriptorSet)
-	return ds
 }
 
-func BindDynamicFrame(rc *vk.RenderCache) *vk.DescriptorSet {
-	ds := rc.GetPerFrame(kBoundDynamicFrame, func(ctx vk.APIContext) interface{} {
-		return nil
-	})
-	if ds == nil {
+func (f *Frame) BindFrame() *vk.DescriptorSet {
+	if f.ds == nil {
+		f.writeFrame()
+	}
+	return f.ds
+}
+
+func (f *Frame) BindDynamicFrame() *vk.DescriptorSet {
+	if f.dsDynamic != nil {
+		return f.dsDynamic
+	}
+	if vscene.FrameMaxDynamicSamplers == 0 {
 		return nil
 	}
-	return ds.(*vk.DescriptorSet)
+	f.writeDynamicFrame()
+	return f.dsDynamic
 }
 
 func newFrameDescriptor(rc *vk.RenderCache, lt *vk.DescriptorLayout) *frameDescriptor {

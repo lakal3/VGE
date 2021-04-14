@@ -22,19 +22,6 @@ func (d *DirectionalLight) Process(pi *ProcessInfo) {
 	}
 }
 
-type AmbientLight struct {
-	Intensity mgl32.Vec3
-}
-
-func (al *AmbientLight) Process(pi *ProcessInfo) {
-	bf, ok := pi.Phase.(*PredrawPhase)
-	if ok {
-		var sph [9]mgl32.Vec4
-		sph[0] = al.Intensity.Vec4(1)
-		bf.Frame.AddProbe(sph, 0)
-	}
-}
-
 type PointLight struct {
 	// Light intensity (and color)
 	Intensity mgl32.Vec3

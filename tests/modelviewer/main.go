@@ -298,7 +298,7 @@ func (v *viewerApp) setLights() {
 	v.nLights.Children = append(v.nLights.Children, nPoint, nPoint2, dl)
 	if len(config.env) == 0 {
 		v.nLights.Children = append(v.nLights.Children, &vscene.Node{
-			Ctrl: &vscene.AmbientLight{Intensity: mgl32.Vec3{0.2, 0.2, 0.2}}})
+			Ctrl: &env.AmbientLight{Intensity: mgl32.Vec3{0.2, 0.2, 0.2}}})
 
 	}
 }

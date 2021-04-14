@@ -148,7 +148,7 @@ func (v *viewerApp) loadModel() error {
 		v.nEnv = &vscene.Node{Ctrl: eq}
 	} else {
 		v.nLights.Children = append(v.nLights.Children, &vscene.Node{
-			Ctrl: &vscene.AmbientLight{Intensity: mgl32.Vec3{0.2, 0.2, 0.2}}})
+			Ctrl: &env.AmbientLight{Intensity: mgl32.Vec3{0.2, 0.2, 0.2}}})
 
 	}
 	return nil

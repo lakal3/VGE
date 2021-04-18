@@ -37,6 +37,9 @@ namespace vge {
 		void AddVertexFormat(vk::Format format, uint32_t offset);
 		void AddDepth(bool write, bool check);
 		void AddAlphaBlend();
+		void SetTopology(vk::PrimitiveTopology topology) {
+			_topology = topology;
+		}
 	private:
 		GraphicsPipeline(const Device* dev);
 		virtual const vk::PipelineBindPoint get_bindpoint() const override {
@@ -47,6 +50,7 @@ namespace vge {
 		vk::PipelineColorBlendStateCreateInfo _colorBlendState;
 		vk::PipelineDepthStencilStateCreateInfo _depthState;
 		std::vector<vk::DynamicState> _dynStates;
+		vk::PrimitiveTopology _topology;
 	};
 
 	class ComputePipeline : public Pipeline {

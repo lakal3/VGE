@@ -352,6 +352,10 @@ type MainLib interface {
 	GraphicsPipeline_AddAlphaBlend(struct {
 		pl hGraphicsPipeline
 	})
+	GraphicsPipeline_SetTopology(struct {
+		pl       hGraphicsPipeline
+		topology vk.PrimitiveTopology
+	})
 	NewImageLoader(struct{ loader *hImageLoader })
 	ImageLoader_Supported(struct {
 		loader hImageLoader

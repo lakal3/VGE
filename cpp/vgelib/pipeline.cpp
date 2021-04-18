@@ -25,7 +25,7 @@ void vge::GraphicsPipeline::Create(RenderPass* renderPass)
 	prsci.lineWidth = 1.0;
 	gpci.pRasterizationState = &prsci;
 	vk::PipelineInputAssemblyStateCreateInfo piasci;
-	piasci.topology = vk::PrimitiveTopology::eTriangleList;
+	piasci.topology = _topology;
 	gpci.pInputAssemblyState = &piasci;
 	gpci.pDepthStencilState = &_depthState;
 	std::vector<vk::PipelineColorBlendAttachmentState> _colorStateAttachments;
@@ -110,7 +110,7 @@ void vge::GraphicsPipeline::AddAlphaBlend()
 	_blendMode = 1;
 }
 
-vge::GraphicsPipeline::GraphicsPipeline(const Device* dev) :Pipeline(dev) {
+vge::GraphicsPipeline::GraphicsPipeline(const Device* dev) :Pipeline(dev), _topology(vk::PrimitiveTopology::eTriangleList) {
 	_dynStates.push_back(vk::DynamicState::eViewport);
 	_dynStates.push_back(vk::DynamicState::eScissor);
 	_depthState.maxDepthBounds = 1;

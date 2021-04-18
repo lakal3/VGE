@@ -57,6 +57,7 @@ var libcall struct {
 	t_GraphicsPipeline_AddVertexBinding uintptr
 	t_GraphicsPipeline_AddVertexFormat  uintptr
 	t_GraphicsPipeline_Create           uintptr
+	t_GraphicsPipeline_SetTopology      uintptr
 	t_ImageLoader_Describe              uintptr
 	t_ImageLoader_Load                  uintptr
 	t_ImageLoader_Save                  uintptr
@@ -274,6 +275,10 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_GraphicsPipeline_Create, err = dldyn.GetProcAddress(libcall.h_lib, "GraphicsPipeline_Create")
+	if err != nil {
+		return err
+	}
+	libcall.t_GraphicsPipeline_SetTopology, err = dldyn.GetProcAddress(libcall.h_lib, "GraphicsPipeline_SetTopology")
 	if err != nil {
 		return err
 	}
@@ -719,6 +724,14 @@ func call_GraphicsPipeline_Create(ctx APIContext, pipeline hGraphicsPipeline, re
 		defer atEnd()
 	}
 	rc := dldyn.Invoke(libcall.t_GraphicsPipeline_Create, 2, uintptr(pipeline), uintptr(renderPass), 0)
+	handleError(ctx, rc)
+}
+func call_GraphicsPipeline_SetTopology(ctx APIContext, pl hGraphicsPipeline, topology PrimitiveTopology) {
+	atEnd := ctx.Begin("GraphicsPipeline_SetTopology")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke(libcall.t_GraphicsPipeline_SetTopology, 2, uintptr(pl), uintptr(topology), 0)
 	handleError(ctx, rc)
 }
 func call_ImageLoader_Describe(ctx APIContext, loader hImageLoader, kind []byte, desc *ImageDescription, content []uint8) {

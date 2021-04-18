@@ -51,6 +51,7 @@ DLLEXPORT Exception * GraphicsPipeline_AddDepth(GraphicsPipeline* pl, bool write
 DLLEXPORT Exception * GraphicsPipeline_AddVertexBinding(GraphicsPipeline* pl, uint32_t stride, int32_t rate);
 DLLEXPORT Exception * GraphicsPipeline_AddVertexFormat(GraphicsPipeline* pl, int32_t format, uint32_t offset);
 DLLEXPORT Exception * GraphicsPipeline_Create(GraphicsPipeline* pipeline, RenderPass* renderPass);
+DLLEXPORT Exception * GraphicsPipeline_SetTopology(GraphicsPipeline* pl, int32_t topology);
 DLLEXPORT Exception * ImageLoader_Describe(ImageLoader* loader, char * kind, size_t kind_len, ImageDescription* desc, uint8_t* content, size_t content_len);
 DLLEXPORT Exception * ImageLoader_Load(ImageLoader* loader, char * kind, size_t kind_len, uint8_t* content, size_t content_len, Buffer* buf);
 DLLEXPORT Exception * ImageLoader_Save(ImageLoader* loader, char * kind, size_t kind_len, ImageDescription* desc, Buffer* buf, uint8_t* content, size_t content_len, uint64_t& reqSize);
@@ -470,6 +471,15 @@ Exception * GraphicsPipeline_AddVertexFormat(GraphicsPipeline* pl, int32_t forma
 Exception * GraphicsPipeline_Create(GraphicsPipeline* pipeline, RenderPass* renderPass) {
     try {
         pipeline->Create(renderPass);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * GraphicsPipeline_SetTopology(GraphicsPipeline* pl, int32_t topology) {
+    try {
+        pl->SetTopology(vk::PrimitiveTopology(topology));
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }

@@ -64,6 +64,10 @@ func (gp *GraphicsPipeline) AddDepth(ctx APIContext, write bool, check bool) {
 	call_GraphicsPipeline_AddDepth(ctx, gp.hPl, write, check)
 }
 
+func (gp *GraphicsPipeline) SetTopology(ctx APIContext, topology PrimitiveTopology) {
+
+}
+
 func (gp *GraphicsPipeline) Create(ctx APIContext, rp RenderPass) {
 	call_GraphicsPipeline_Create(ctx, gp.hPl, hRenderPass(rp.GetRenderPass()))
 	gp.initialized = true

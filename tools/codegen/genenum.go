@@ -31,6 +31,7 @@ var allEnums []enumInfo = []enumInfo{
 	{name: "VkPipelineStageFlagBits"},
 	{name: "VkPhysicalDeviceType"},
 	{name: "VkDescriptorBindingFlagBitsEXT"},
+	{name: "VkPrimitiveTopology"},
 }
 
 /*

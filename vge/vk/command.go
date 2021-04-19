@@ -108,9 +108,9 @@ func (c *Command) CopyBufferToImage(dst *Image, src *Buffer, imRange *ImageRange
 	}
 }
 
-func (c *Command) ClearImage(dst *Image, imRange *ImageRange, layout ImageLayout, color float32, alpha float32) {
+func (c *Command) ClearImage(dst *Image, imRange *ImageRange, color float32, alpha float32) {
 	if c.IsValid(c.Ctx) && dst.IsValid(c.Ctx) {
-		call_Command_ClearImage(c.Ctx, c.hCmd, dst.hImage, imRange, layout, color, alpha)
+		call_Command_ClearImage(c.Ctx, c.hCmd, dst.hImage, imRange, imRange.Layout, color, alpha)
 	}
 }
 func (c *Command) BeginRenderPass(renderPass RenderPass, fb *Framebuffer) {

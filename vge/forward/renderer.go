@@ -17,22 +17,23 @@ type Renderer struct {
 	// RenderDone is an optional function that is called each time after completing rendering of scene
 	RenderDone func(started time.Time)
 
+	// API context attached to renderer
+	Ctx vk.APIContext
+
 	timedOutput func(started time.Time, gpuTimes []float64)
 
 	size         image.Point
 	owner        vk.Owner
 	dev          *vk.Device
-	Ctx          vk.APIContext
 	depth        bool
 	frp          *vk.ForwardRenderPass
 	mpDepth      *vk.MemoryPool
 	imDepth      []*vk.Image
 	depthPrePass bool
-	rdCache      *vk.RenderCache
 }
 
 func (f *Renderer) GetPerRenderer(key vk.Key, ctor func(ctx vk.APIContext) interface{}) interface{} {
-	return f.rdCache.Get(key, ctor)
+	return f.owner.Get(f.Ctx, key, ctor)
 }
 
 func (f *Renderer) SetTimedOutput(output func(started time.Time, gpuTimes []float64)) {

@@ -54,6 +54,11 @@ type shadowPass struct {
 	sl          *vk.Slice
 	si          *shadowInstance
 	siCount     int
+	renderer    vmodel.Renderer
+}
+
+func (s *shadowPass) GetRenderer() vmodel.Renderer {
+	return s.renderer
 }
 
 func (s *shadowPass) ViewProjection() (projection, view mgl32.Mat4) {
@@ -165,6 +170,10 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 		if pl.MaxShadowDistance == 0 {
 			pl.MaxShadowDistance = pl.MaxDistance * 2
 		}
+		_, ok := pi.Frame.(vscene.ImageFrame)
+		if !ok {
+			return
+		}
 		pos := pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1})
 		_, view := pi.Frame.ViewProjection()
 		eyePos := view.Col(3).Vec3()
@@ -181,16 +190,21 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 			return false
 		}).(bool)
 		pos := pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1})
-		if !hasShadowmap {
-			lp.AddLight(vscene.Light{Intensity: pl.Intensity.Vec4(1),
-				Position: pos, Attenuation: pl.Attenuation.Vec4(pl.MaxDistance)}, nil, nil)
-		} else {
+		imFrame, ok := pi.Frame.(vscene.ImageFrame)
+		l := vscene.Light{Intensity: pl.Intensity.Vec4(1),
+			Position: pos, Attenuation: pl.Attenuation.Vec4(pl.MaxDistance)}
+		var imIndex vmodel.ImageIndex
+		if ok && hasShadowmap {
 			sr := pi.Frame.GetCache().Get(pl.key, func(ctx vk.APIContext) interface{} {
 				return nil
 			}).(*shadowResources)
-			lp.AddLight(vscene.Light{Intensity: pl.Intensity.Vec4(1),
-				Position: pos, Attenuation: pl.Attenuation.Vec4(pl.MaxDistance)}, sr.cubeView, sr.sampler)
+			imIndex = imFrame.AddFrameImage(sr.cubeView, sr.sampler)
 		}
+		if imIndex > 0 {
+			l.ShadowMapMethod = 1
+			l.Direction[3] = float32(imIndex)
+		}
+		lp.AddLight(l, lp)
 	}
 }
 
@@ -213,7 +227,7 @@ func (pl *PointLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.Proces
 	cmd.Begin()
 	cmd.BeginRenderPass(rp, sr.fb)
 	sp := &shadowPass{ctx: cache.Ctx, cmd: cmd, dl: &vk.DrawList{}, maxDistance: pl.MaxDistance,
-		pl: gpl, plSkin: gSkinnedPl, rc: cache}
+		pl: gpl, plSkin: gSkinnedPl, rc: cache, renderer: pi.Frame.GetRenderer()}
 	sp.pos = pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1}).Vec3()
 	pd.Scene.Process(pi.Time, sp, sp)
 	sp.flush()

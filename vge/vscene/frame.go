@@ -28,6 +28,10 @@ type Camera interface {
 type NullFrame struct {
 }
 
+func (n NullFrame) GetRenderer() vmodel.Renderer {
+	return nil
+}
+
 func (n NullFrame) GetCache() *vk.RenderCache {
 	return nil
 }
@@ -58,9 +62,14 @@ func GetSimpleFrame(f vmodel.Frame) *SimpleFrame {
 }
 
 type SimpleFrame struct {
-	Cache *vk.RenderCache
-	ds    *vk.DescriptorSet
-	SSF   SimpleShaderFrame
+	Cache    *vk.RenderCache
+	ds       *vk.DescriptorSet
+	SSF      SimpleShaderFrame
+	Renderer vmodel.Renderer
+}
+
+func (s *SimpleFrame) GetRenderer() vmodel.Renderer {
+	return s.Renderer
 }
 
 func (s *SimpleFrame) GetSimpleFrame() *SimpleFrame {

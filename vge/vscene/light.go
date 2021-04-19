@@ -7,6 +7,14 @@ type Light struct {
 	Position    mgl32.Vec4 // w = 0 for directional light and this is shadowmap position
 	Direction   mgl32.Vec4 // if w > 0, shadowmap index = w - 1
 	Attenuation mgl32.Vec4 // 0, 1st and 2nd order, w is shadowmap index
+	// InnerAngle for spotlight
+	InnerAngle float32
+	// OuterAngle for spotlight
+	OuterAngle float32
+	// Shadow mapping method. 0 - No map, 1 - Point line cube shadow map
+	ShadowMapMethod float32
+	// Free for custom implementation
+	Custom float32
 }
 
 type DirectionalLight struct {
@@ -18,7 +26,7 @@ func (d *DirectionalLight) Process(pi *ProcessInfo) {
 	bf, ok := pi.Phase.(LightPhase)
 	if ok {
 		bf.AddLight(Light{Intensity: d.Intensity.Vec4(1),
-			Direction: d.Direction.Vec4(0), Attenuation: mgl32.Vec4{1, 0, 0, 0}}, nil, nil)
+			Direction: d.Direction.Vec4(0), Attenuation: mgl32.Vec4{1, 0, 0, 0}}, d)
 	}
 }
 
@@ -40,6 +48,6 @@ func (p *PointLight) Process(pi *ProcessInfo) {
 		}
 		pos := pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1})
 		bf.AddLight(Light{Intensity: p.Intensity.Vec4(1),
-			Position: pos, Attenuation: p.Attenuation.Vec4(p.MaxDistance)}, nil, nil)
+			Position: pos, Attenuation: p.Attenuation.Vec4(p.MaxDistance)}, p)
 	}
 }

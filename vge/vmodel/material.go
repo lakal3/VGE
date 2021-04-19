@@ -75,8 +75,16 @@ func (mp MaterialProperties) GetImage(prop Property) ImageIndex {
 	return 0
 }
 
+type Renderer interface {
+	// GetPerRenderer allows phases share item for whole renderer
+	GetPerRenderer(key vk.Key, ctor func(ctx vk.APIContext) interface{}) interface{}
+}
+
 type Frame interface {
-	// Retrieve rennder cache assosiate to this render instance
+	// Retrieve renderer associated to this frame
+	GetRenderer() Renderer
+
+	// Retrieve render cache assosiate to this render instance
 	GetCache() *vk.RenderCache
 
 	// ViewProjection retrieves view and projection of render instance

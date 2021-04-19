@@ -110,9 +110,6 @@ func (b *BoudingBox) Get() (aabb vmodel.AABB, empty bool) {
 }
 
 type LightPhase interface {
-	// Add light to scene
-	AddLight(standard Light, shadowMap *vk.ImageView, samples *vk.Sampler)
-
-	// Add Special light. Light phase return true if it can handle given special light
-	AddSpecialLight(special interface{}, shadowMap *vk.ImageView, samples *vk.Sampler) bool
+	// Add light to scene. Special is raw reference to light allowing customization in frame / renderer
+	AddLight(standard Light, special interface{})
 }

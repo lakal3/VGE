@@ -28,6 +28,11 @@ type Renderer struct {
 	mpDepth      *vk.MemoryPool
 	imDepth      []*vk.Image
 	depthPrePass bool
+	rdCache      *vk.RenderCache
+}
+
+func (f *Renderer) GetPerRenderer(key vk.Key, ctor func(ctx vk.APIContext) interface{}) interface{} {
+	return f.rdCache.Get(key, ctor)
 }
 
 func (f *Renderer) SetTimedOutput(output func(started time.Time, gpuTimes []float64)) {

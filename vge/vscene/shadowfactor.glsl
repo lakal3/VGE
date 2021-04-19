@@ -8,10 +8,8 @@ vec2( 0, 0), vec2( 1,  1), vec2( 1, -1), vec2(-1, -1), vec2(-1,  1)
 );
 
 float getShadowFactor(LIGHT l, vec3 position) {
+    int shadowMethod = int(l.shadowMapMethod);
     int shadowMapIdx = int(l.direction.w);
-    if (shadowMapIdx <= 0) {
-        return 1;
-    }
 #ifndef DYNAMIC_DESCRIPTORS
     if (shadowMapIdx >= MAX_IMAGES) {
         return 1;
@@ -19,7 +17,7 @@ float getShadowFactor(LIGHT l, vec3 position) {
 #endif
     vec4 lightPos = l.position;
     float maxDist = l.attenuation.w;
-    if (lightPos.w > 0) {   // Point light
+    if (shadowMethod == 1) {   // Point light shadow cubemap
         vec3 l2f = position - vec3(lightPos);
         float lr = length(l2f);
 

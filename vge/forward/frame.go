@@ -29,6 +29,11 @@ type Frame struct {
 	dsDynamic *vk.DescriptorSet
 	cache     *vk.RenderCache
 	sf        *vscene.SimpleFrame
+	renderer  *Renderer
+}
+
+func (f *Frame) GetRenderer() vmodel.Renderer {
+	return f.renderer
 }
 
 func NewFrame(cache *vk.RenderCache) *Frame {

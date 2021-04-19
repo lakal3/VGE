@@ -39,7 +39,11 @@ func (pc *PerspectiveCamera) CameraProjection(size image.Point) (projection, vie
 }
 
 func NewPerspectiveCamera(far float32) *PerspectiveCamera {
-	pc := &PerspectiveCamera{Near: far / 10000, Far: far, FoV: 1,
+	n := float32(0.1)
+	if far < 100.0 {
+		n = far / 1000.0
+	}
+	pc := &PerspectiveCamera{Near: n, Far: far, FoV: 1,
 		Position: mgl32.Vec3{0, 0, -1},
 		Up:       mgl32.Vec3{0, 1, 0},
 	}

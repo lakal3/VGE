@@ -9,6 +9,10 @@ struct LIGHT {
     vec4 position;    // if w = 0, directional light
     vec4 direction;   // if w > 0, shadowmap index = w - 1
     vec4 attenuation; // w = shadow map index, if any
+    float innerAngle;
+    float outerAngle;
+    float shadowMapMethod;
+    float custom;
 };
 
 layout(set=0, binding=0) uniform FRAME {

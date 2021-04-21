@@ -9,7 +9,7 @@ vec2( 0, 0), vec2( 1,  1), vec2( 1, -1), vec2(-1, -1), vec2(-1,  1)
 
 float getShadowFactor(LIGHT l, vec3 position) {
     int shadowMethod = int(l.shadowMapMethod);
-    int shadowMapIdx = int(l.direction.w);
+    int shadowMapIdx = int(l.shadowMapIndex);
 #ifndef DYNAMIC_DESCRIPTORS
     if (shadowMapIdx >= MAX_IMAGES) {
         return 1;

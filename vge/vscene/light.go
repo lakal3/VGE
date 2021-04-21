@@ -4,8 +4,8 @@ import "github.com/go-gl/mathgl/mgl32"
 
 type Light struct {
 	Intensity   mgl32.Vec4
-	Position    mgl32.Vec4 // w = 0 for directional light and this is shadowmap position
-	Direction   mgl32.Vec4 // if w > 0, shadowmap index = w - 1
+	Position    mgl32.Vec4 // w = 0 for directional light, 1 = point light, 2 = spot light
+	Direction   mgl32.Vec4 // depending on light type
 	Attenuation mgl32.Vec4 // 0, 1st and 2nd order, w is shadowmap index
 	// InnerAngle for spotlight
 	InnerAngle float32
@@ -13,8 +13,8 @@ type Light struct {
 	OuterAngle float32
 	// Shadow mapping method. 0 - No map, 1 - Point line cube shadow map
 	ShadowMapMethod float32
-	// Free for custom implementation
-	Custom float32
+	// Index for shadow map
+	ShadowMapIndex float32
 }
 
 type DirectionalLight struct {

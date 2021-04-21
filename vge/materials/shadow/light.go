@@ -202,7 +202,7 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 		}
 		if imIndex > 0 {
 			l.ShadowMapMethod = 1
-			l.Direction[3] = float32(imIndex)
+			l.ShadowMapIndex = float32(imIndex)
 		}
 		lp.AddLight(l, lp)
 	}

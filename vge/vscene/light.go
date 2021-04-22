@@ -7,6 +7,7 @@ type Light struct {
 	Position    mgl32.Vec4 // w = 0 for directional light, 1 = point light, 2 = spot light
 	Direction   mgl32.Vec4 // depending on light type
 	Attenuation mgl32.Vec4 // 0, 1st and 2nd order, w is shadowmap index
+	ShadowPlane mgl32.Vec4 // Shadow plane (quoternion)
 	// InnerAngle for spotlight
 	InnerAngle float32
 	// OuterAngle for spotlight

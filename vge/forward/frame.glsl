@@ -9,6 +9,7 @@ struct LIGHT {
     vec4 position;    // if w = 0, directional light, 1 = point light
     vec4 direction;   // direction for directional light, quoternion for spot light
     vec4 attenuation; // w = shadow map index, if any
+    vec4 shadowPlane; // Rotation to shadow plane (quoternion)
     float innerAngle;
     float outerAngle;
     float shadowMapMethod;

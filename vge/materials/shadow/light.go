@@ -174,9 +174,8 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 		if !ok {
 			return
 		}
+		eyePos, _ := vscene.GetEyePosition(pi.Frame)
 		pos := pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1})
-		_, view := pi.Frame.ViewProjection()
-		eyePos := view.Col(3).Vec3()
 		if eyePos.Sub(pos.Vec3()).Len() > pl.MaxShadowDistance {
 			// Skip shadow pass for light too long aways
 			return

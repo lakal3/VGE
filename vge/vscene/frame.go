@@ -61,6 +61,15 @@ func GetSimpleFrame(f vmodel.Frame) *SimpleFrame {
 	return nil
 }
 
+func GetEyePosition(f vmodel.Frame) (pos mgl32.Vec3, ok bool) {
+	sf := GetSimpleFrame(f)
+	if sf == nil {
+		return
+	}
+	eyePos := sf.SSF.View.Col(3).Vec3()
+	return eyePos, true
+}
+
 type SimpleFrame struct {
 	Cache    *vk.RenderCache
 	ds       *vk.DescriptorSet

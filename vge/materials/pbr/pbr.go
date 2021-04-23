@@ -90,7 +90,7 @@ func (u *PbrMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32
 		return u.NewPipeline(ctx, dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := dc.Frame.BindFrame()
+	dsFrame := ff.BindFrame()
 	uli := rc.GetPerFrame(kPbrInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &pbrInstance{ds: ds, sl: sl}

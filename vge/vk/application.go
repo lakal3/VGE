@@ -76,8 +76,8 @@ func (a *Application) AddValidation(ctx APIContext) {
 }
 
 // AddDynamicDescriptors adds dynamics descriptor support to device.
-// To check actual number of supported samplers per stage, use devices Props. Typically this is large number but
-// Intel integrated chips only support ~64 samplers per stage
+// VGE 0.20 now sets update after bind to flag to dynamics descriptors that seems to allow at least ~500000 samples image per stage!
+// See maxDescriptorSetUpdateAfterBindSamplers from Vulkan database for actual recorder limits
 //
 // This call must be done before any device is created.
 // Note that device creating will fail if dynamic descriptor are not supported or request maxSize is too high

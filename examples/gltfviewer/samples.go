@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/lakal3/vge/vge/materials/std"
 	"io"
 	"log"
 	"math"
@@ -63,6 +64,10 @@ func loadSample(sample *Sample) {
 	// factory that can use multiple shaders based on material info from model
 	mb.ShaderFactory = pbr.PbrFactory
 
+	// For deferred renderer we must Std material that support deferred renderer
+	if app.deferred {
+		mb.ShaderFactory = std.Factory
+	}
 	// Generate mipmaps for sponza
 	if sample.Scene == 2 {
 		mb.MipLevels = 6
@@ -152,11 +157,11 @@ func buildScene(sample *Sample, model *vscene.Node) {
 		nLights.Children = append(nLights.Children, vscene.NewNode(
 			&vscene.DirectionalLight{Intensity: mgl32.Vec3{0.7, 0.7, 0.7}, Direction: mgl32.Vec3{0.1, -1, -0.2}.Normalize()}))
 	case 2: // Two rotating point lights with shadows
-		nLights.Children = append(nLights.Children, newRotLight(sample, 0.7, mgl32.Vec3{1, 1, 1}),
-			newRotLight(sample, 1.2, mgl32.Vec3{1, 1, 1}))
+		nLights.Children = append(nLights.Children, newRotLight(sample, 0.7, mgl32.Vec3{1, 1, 1}, false),
+			newRotLight(sample, 1.2, mgl32.Vec3{1, 1, 1}, true))
 	case 3: // Two rotating point lights with shadows
-		nLights.Children = append(nLights.Children, newRotLight(sample, 0.7, mgl32.Vec3{3, 3, 3}),
-			newRotLight(sample, 1.2, mgl32.Vec3{3, 3, 3}))
+		nLights.Children = append(nLights.Children, newRotLight(sample, 0.7, mgl32.Vec3{3, 3, 3}, false),
+			newRotLight(sample, 1.2, mgl32.Vec3{3, 3, 3}, true))
 	case 4:
 		nLights.Children = append(nLights.Children,
 			newPlacedLight(sample, mgl32.Vec3{-5, 1.14, 1.05}),
@@ -225,15 +230,27 @@ func (r *rotLight) Process(pi *vscene.ProcessInfo) {
 }
 
 // Create new shadow light node
-func newRotLight(s *Sample, speed float64, intesity mgl32.Vec3) *vscene.Node {
+func newRotLight(s *Sample, speed float64, intesity mgl32.Vec3, spotLight bool) *vscene.Node {
 	// Put light a target height and about half distance from initial camera distance
 	dl := s.Position.Sub(s.Target).Len()
-	l := shadow.NewPointLight(vscene.PointLight{Intensity: intesity, Attenuation: mgl32.Vec3{0, 0, 1 / (dl * dl)}}, 512)
-	l.MaxDistance = dl * 1.5
-	return vscene.NewNode(&rotLight{offset: rand.Float64() * 3, speed: speed},
-		vscene.NewNode(
-			vscene.NewMultiControl(&vscene.TransformControl{Transform: mgl32.Translate3D(dl/2, s.Target.Y(), 0)}, l),
-		))
+	if spotLight {
+		l := shadow.NewSpotLight(vscene.SpotLight{Intensity: intesity, Attenuation: mgl32.Vec3{0, 0, 1 / (dl * dl)},
+			OuterAngle: 45, InnerAngle: 25, Direction: mgl32.Vec3{-0.3, -1, 0}.Normalize(),
+		}, 512)
+		l.MaxDistance = dl * 1.5
+		return vscene.NewNode(&rotLight{offset: rand.Float64() * 3, speed: speed},
+			vscene.NewNode(
+				vscene.NewMultiControl(&vscene.TransformControl{Transform: mgl32.Translate3D(dl/2, s.Target.Y(), 0)}, l),
+			))
+
+	} else {
+		l := shadow.NewPointLight(vscene.PointLight{Intensity: intesity, Attenuation: mgl32.Vec3{0, 0, 1 / (dl * dl)}}, 512)
+		l.MaxDistance = dl * 1.5
+		return vscene.NewNode(&rotLight{offset: rand.Float64() * 3, speed: speed},
+			vscene.NewNode(
+				vscene.NewMultiControl(&vscene.TransformControl{Transform: mgl32.Translate3D(dl/2, s.Target.Y(), 0)}, l),
+			))
+	}
 }
 
 func floorPos(sample *Sample) vscene.NodeControl {

@@ -29,15 +29,15 @@ type Frame struct {
 	dsDynamic *vk.DescriptorSet
 	cache     *vk.RenderCache
 	sf        *vscene.SimpleFrame
-	renderer  *Renderer
+	renderer  vmodel.Renderer
 }
 
 func (f *Frame) GetRenderer() vmodel.Renderer {
 	return f.renderer
 }
 
-func NewFrame(cache *vk.RenderCache) *Frame {
-	return &Frame{cache: cache}
+func NewFrame(cache *vk.RenderCache, renderer vmodel.Renderer) *Frame {
+	return &Frame{cache: cache, renderer: renderer}
 }
 
 func (f *Frame) GetSimpleFrame() *vscene.SimpleFrame {
@@ -132,11 +132,11 @@ func (f *Frame) SetFrameImage(rc *vk.RenderCache, view *vk.ImageView, sampler *v
 	if fi.idx < MAX_IMAGES {
 		fd.ds.WriteImage(rc.Ctx, 1, uint32(fi.idx), view, sampler)
 		ii = fi.idx
-		fi.idx++
 	} else {
 		ii = -1
 	}
 	if fdDyn == nil {
+		fi.idx++
 		return ii
 	}
 	if fi.idx < vmodel.ImageIndex(fdDyn.maxSize) {
@@ -145,10 +145,10 @@ func (f *Frame) SetFrameImage(rc *vk.RenderCache, view *vk.ImageView, sampler *v
 			fd.ds.WriteImage(rc.Ctx, 1, uint32(fi.idx), view, sampler)
 		}
 		ii = fi.idx
-		fi.idx++
 	} else {
 		ii = -1
 	}
+	fi.idx++
 	return
 }
 

@@ -150,13 +150,30 @@ void main() {
         o_Color = vec4(sh(normalize(reflect(iDir, normal))) * i_modes.xyz,1);
         return;
     }
+    int noLight;
+    if (m == 7) {
+        vec3 factor = vec3(0);
+        for (noLight = 0; noLight < frame.noLights; noLight++) {
+            float sf = getShadowFactor(frame.lights[noLight], vec3(i_position));
+            switch (noLight % 3) {
+            case 0:
+                factor.r += sf;
+            case 1:
+                factor.g += sf;
+            case 2:
+                factor.b += sf;
+
+            }
+        }
+        o_Color = vec4(factor, 1);
+        return;
+    }
     vec3 viewDir = normalize(frame.cameraPos.xyz - i_position);
     float normalDView = max(dot(normal, viewDir), 0.0);
 
     vec3 lightColors = vec3(0);
     vec3 specularColor = vec3(0.5, 0.5, 0.5);
     diffuseColor = diffuseColor * i_modes.rgb;
-    int noLight;
     for (noLight = 0; noLight < frame.noLights; noLight++) {
 
         vec3 lightOut = calcLight(frame.lights[noLight], normal, viewDir, diffuseColor, specularColor );

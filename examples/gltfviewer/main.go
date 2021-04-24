@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/lakal3/vge/vge/deferred"
 	"github.com/lakal3/vge/vge/forward"
 	"log"
 	"os"
@@ -30,10 +31,12 @@ var app struct {
 	probe      *env.Probe
 	extraUi    *vui.Conditional
 	devIndex   int
+	deferred   bool
 }
 
 func main() {
 	flag.BoolVar(&app.debug, "debug", false, "Use debugging API")
+	flag.BoolVar(&app.deferred, "deferred", false, "Use deferred renderer")
 	// Use devIndex to select device. If not given, use first device
 	flag.IntVar(&app.devIndex, "dev", -1, "Device index")
 	flag.Parse()
@@ -58,7 +61,10 @@ func main() {
 		// Uncomment to use C++ debug library
 		// vk.VGEDllPath = "VGELibd.dll"
 	}
-
+	if app.deferred {
+		// Deferred shaders requires dynamic descriptors
+		vapp.AddOption(vapp.DynamicDescriptors{MaxDescriptors: 1024})
+	}
 	app.gltfRoot = flag.Arg(0)
 	vasset.DefaultLoader = vasset.DirectoryLoader{Directory: "../../assets"}
 
@@ -73,7 +79,12 @@ func main() {
 	}
 
 	// Initialize forward rendered
-	rd := forward.NewRenderer(true)
+	var rd vscene.Renderer
+	if app.deferred {
+		rd = deferred.NewRenderer()
+	} else {
+		rd = forward.NewRenderer(true)
+	}
 	// Build main window
 	app.rw = vapp.NewRenderWindow("GLTF Viewer", rd)
 

@@ -129,7 +129,7 @@ func (v Validate) TerminateApp() {
 }
 
 // Request dynamics descriptor support from device. Some advanced shaders supporting for example decals will require this option
-// and it should be supported on all up-to-date drivers on Windows and Linux. Number of (combine) image samples however varies a LOT!
+// and it should be supported on all up-to-date drivers on Windows and Linux.
 //
 // This (VK_EXT_descriptor_indexing) will be standard option in Vulkan 1.2.
 type DynamicDescriptors struct {

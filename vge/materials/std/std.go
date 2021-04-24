@@ -4,6 +4,7 @@ package std
 
 import (
 	"errors"
+	"github.com/lakal3/vge/vge/deferred"
 	"github.com/lakal3/vge/vge/forward"
 	"unsafe"
 
@@ -15,6 +16,9 @@ import (
 )
 
 const maxInstances = 200 // Must match shader value
+
+// MinEmission is minimum emission to interpret that material is emissive. Otherwise it is non emissive
+const MinEmission = 0.01
 
 func Factory(ctx vk.APIContext, dev *vk.Device, props vmodel.MaterialProperties) (
 	sh vmodel.Shader, layout *vk.DescriptorLayout, ubf []byte, images []vmodel.ImageIndex) {
@@ -35,7 +39,9 @@ func Factory(ctx vk.APIContext, dev *vk.Device, props vmodel.MaterialProperties)
 	if tx_normal > 0 {
 		ub.normalMap = 1
 	}
-
+	if ub.emissiveColor.Vec3().Len() < MinEmission {
+		ub.emissiveColor = mgl32.Vec4{}
+	}
 	b := *(*[unsafe.Sizeof(stdMaterial{})]byte)(unsafe.Pointer(&ub))
 	return &Material{}, getStdLayout(ctx, dev), b[:], []vmodel.ImageIndex{tx_diffuse, tx_normal, tx_metalRoughness, tx_emissive}
 }
@@ -61,7 +67,8 @@ func (u *Material) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world m
 	extra vmodel.ShaderExtra) {
 	ff, ok := dc.Frame.(*forward.Frame)
 	if !ok {
-		return // Not supported
+		u.drawSkinnedDeferred(dc, mesh, world, aniMatrix, extra)
+		return
 	}
 	rc := ff.GetCache()
 	gp := dc.Pass.Get(rc.Ctx, kStdSkinnedPipeline, func(ctx vk.APIContext) interface{} {
@@ -80,9 +87,7 @@ func (u *Material) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world m
 	dm := stdMatInstance{world: world}
 	dsMesh, slMesh := uc.Alloc(rc.Ctx)
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
-	lInst := uint32(unsafe.Sizeof(stdMatInstance{}))
-	b := *(*[unsafe.Sizeof(stdMatInstance{})]byte)(unsafe.Pointer(&dm))
-	copy(uli.sl.Content[uli.count*lInst:(uli.count+1)*lInst], b[:])
+	uli.writeInstance(dm)
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindSkinned)...).
 		AddDescriptors(dsFrame, uli.ds, u.dsMat, dsMesh).SetInstances(uli.count, 1)
 	uli.count++
@@ -94,7 +99,8 @@ func (u *Material) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world m
 func (u *Material) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, extra vmodel.ShaderExtra) {
 	ff, ok := dc.Frame.(*forward.Frame)
 	if !ok {
-		return // Not supported
+		u.drawDeferred(dc, mesh, world, extra)
+		return
 	}
 	rc := ff.GetCache()
 	gp := dc.Pass.Get(rc.Ctx, kStdPipeline, func(ctx vk.APIContext) interface{} {
@@ -120,10 +126,59 @@ func (u *Material) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Ma
 		copy(slMesh.Content, vscene.Mat4ToBytes(decals))
 	}
 
-	lInst := uint32(unsafe.Sizeof(stdMatInstance{}))
-	b := *(*[unsafe.Sizeof(stdMatInstance{})]byte)(unsafe.Pointer(&dm))
-	copy(uli.sl.Content[uli.count*lInst:(uli.count+1)*lInst], b[:])
+	uli.writeInstance(dm)
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindNormal)...).
+		AddDescriptors(dsFrame, uli.ds, u.dsMat, dsMesh).SetInstances(uli.count, 1)
+	uli.count++
+	if uli.count >= maxInstances {
+		rc.SetPerFrame(kStdInstances, nil)
+	}
+}
+
+func (u *Material) drawDeferred(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, extra vmodel.ShaderExtra) {
+	frame, ok := dc.Frame.(*deferred.DeferredFrame)
+	if !ok {
+		return
+	}
+	rc := dc.Frame.GetCache()
+	gp := dc.Pass.Get(rc.Ctx, kDefPipeline, func(ctx vk.APIContext) interface{} {
+		return u.NewDeferredPipeline(ctx, dc, false)
+	}).(*vk.GraphicsPipeline)
+	uc := vscene.GetUniformCache(rc)
+	dsFrame := frame.BindFrame()
+	uli := rc.GetPerFrame(kStdInstances, func(ctx vk.APIContext) interface{} {
+		ds, sl := uc.Alloc(ctx)
+		return &stdInstance{ds: ds, sl: sl}
+	}).(*stdInstance)
+	uli.writeInstance(stdMatInstance{world: world})
+	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindNormal)...).
+		AddDescriptors(dsFrame, uli.ds, u.dsMat).SetInstances(uli.count, 1)
+	uli.count++
+	if uli.count >= maxInstances {
+		rc.SetPerFrame(kStdInstances, nil)
+	}
+}
+
+func (u *Material) drawSkinnedDeferred(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, aniMatrix []mgl32.Mat4,
+	extra vmodel.ShaderExtra) {
+	frame, ok := dc.Frame.(*deferred.DeferredFrame)
+	if !ok {
+		return
+	}
+	rc := dc.Frame.GetCache()
+	gp := dc.Pass.Get(rc.Ctx, kDefSkinnedPipeline, func(ctx vk.APIContext) interface{} {
+		return u.NewDeferredPipeline(ctx, dc, true)
+	}).(*vk.GraphicsPipeline)
+	uc := vscene.GetUniformCache(rc)
+	dsFrame := frame.BindFrame()
+	uli := rc.GetPerFrame(kStdInstances, func(ctx vk.APIContext) interface{} {
+		ds, sl := uc.Alloc(ctx)
+		return &stdInstance{ds: ds, sl: sl}
+	}).(*stdInstance)
+	uli.writeInstance(stdMatInstance{world: world})
+	dsMesh, slMesh := uc.Alloc(rc.Ctx)
+	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
+	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindSkinned)...).
 		AddDescriptors(dsFrame, uli.ds, u.dsMat, dsMesh).SetInstances(uli.count, 1)
 	uli.count++
 	if uli.count >= maxInstances {
@@ -166,6 +221,33 @@ func (u *Material) NewPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, skinne
 	return gp
 }
 
+func (u *Material) NewDeferredPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
+	rc := dc.Frame.GetCache()
+	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
+	if skinned {
+		vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)
+		gp.AddShader(ctx, vk.SHADERStageVertexBit, defmat_vert_skin_spv)
+
+	} else {
+		vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
+		gp.AddShader(ctx, vk.SHADERStageVertexBit, defmat_vert_spv)
+	}
+	laFrame := vscene.GetUniformLayout(ctx, rc.Device)
+	la := vscene.GetUniformLayout(ctx, rc.Device)
+	la2 := getStdLayout(ctx, rc.Device)
+	laUBF := vscene.GetUniformLayout(ctx, rc.Device)
+	gp.AddLayout(ctx, laFrame)
+	gp.AddLayout(ctx, la)
+	gp.AddLayout(ctx, la2)
+	if skinned {
+		gp.AddLayout(ctx, laUBF) // Transform matrix
+	}
+	gp.AddShader(ctx, vk.SHADERStageFragmentBit, defmat_frag_spv)
+	gp.AddDepth(ctx, true, true)
+	gp.Create(ctx, dc.Pass)
+	return gp
+}
+
 type stdMaterial struct {
 	albedoColor     mgl32.Vec4
 	emissiveColor   mgl32.Vec4
@@ -180,11 +262,19 @@ type stdInstance struct {
 	count uint32
 }
 
+func (i stdInstance) writeInstance(dm stdMatInstance) {
+	lInst := uint32(unsafe.Sizeof(stdMatInstance{}))
+	b := *(*[unsafe.Sizeof(stdMatInstance{})]byte)(unsafe.Pointer(&dm))
+	copy(i.sl.Content[i.count*lInst:(i.count+1)*lInst], b[:])
+}
+
 var kStdLayout = vk.NewKey()
 var kStdPipeline = vk.NewKey()
 var kStdSkinnedPipeline = vk.NewKey()
 var kStdInstances = vk.NewKey()
 var kStdSkinnedInstances = vk.NewKey()
+var kDefPipeline = vk.NewKey()
+var kDefSkinnedPipeline = vk.NewKey()
 
 func getStdLayout(ctx vk.APIContext, dev *vk.Device) *vk.DescriptorLayout {
 	la := vscene.GetUniformLayout(ctx, dev)

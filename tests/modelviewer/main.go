@@ -31,6 +31,7 @@ var config struct {
 	debug          bool
 	devIndex       int
 	maxDescriptors int
+	dirShadow      bool
 }
 
 type viewerApp struct {
@@ -68,6 +69,7 @@ func main() {
 	flag.StringVar(&config.env, "env", "", "Environment HDR image")
 	flag.BoolVar(&config.debug, "debug", false, "Use debug layers")
 	flag.IntVar(&config.devIndex, "dev", -1, "Device index")
+	flag.BoolVar(&config.dirShadow, "dirshadow", false, "Shadow for directional light")
 	flag.IntVar(&config.maxDescriptors, "maxDescriptors", 1024, "Max dynamics descriptors. Set to 0 to disable feature")
 
 	flag.Parse()
@@ -263,6 +265,9 @@ func (v *viewerApp) keyHandler(ctx vk.APIContext, ev vapp.Event) (unregister boo
 		case 'R':
 			mode = 3
 			v.setMode()
+		case 'l':
+			mode = 7
+			v.setMode()
 		}
 	}
 	return false
@@ -284,17 +289,22 @@ func (v *viewerApp) setLights() {
 		&vscene.TransformControl{mgl32.Translate3D(4.3, 3.5, 0)}),
 		&vscene.Node{
 			Ctrl: shadow.NewPointLight(vscene.PointLight{Intensity: mgl32.Vec3{0.2, 1.8, 0.2}, Attenuation: mgl32.Vec3{0, 0, 0.2}}, 512),
-		}, vscene.NodeFromModel(app.mLB, 1, false))
+		}, vscene.NewNode(shadow.NoShadow{}, vscene.NodeFromModel(app.mLB, 1, false)))
 	nPoint2 := vscene.NewNode(vscene.NewMultiControl(
 		&vscene.RotateAnimate{Speed: 0.7, Axis: mgl32.Vec3{0, 1, 0}},
 		&vscene.TransformControl{mgl32.Translate3D(6, 1.5, 0)}),
 		&vscene.Node{
-			Ctrl: shadow.NewPointLight(vscene.PointLight{Intensity: mgl32.Vec3{1.2, 1.2, 1.2}, Attenuation: mgl32.Vec3{0, 0, 0.32}}, 512),
-		}, vscene.NodeFromModel(app.mLB, 2, false))
-	dl := &vscene.Node{
-		Ctrl: &vscene.DirectionalLight{Intensity: mgl32.Vec3{0.3, 0.3, 0.3}, Direction: mgl32.Vec3{-0.1, -0.8, 0}},
+			Ctrl: shadow.NewSpotLight(vscene.SpotLight{Intensity: mgl32.Vec3{1.2, 1.2, 1.2}, Attenuation: mgl32.Vec3{0, 0, 0.32},
+				OuterAngle: 45, InnerAngle: 30, Direction: mgl32.Vec3{-0.4, -0.8, 0}.Normalize(),
+			}, 512),
+		}, vscene.NewNode(shadow.NoShadow{}, vscene.NodeFromModel(app.mLB, 2, false)))
+	dirLight := vscene.DirectionalLight{Intensity: mgl32.Vec3{0.3, 0.3, 0.8}, Direction: mgl32.Vec3{-0.1, -0.8, 0}}
+	dl := &vscene.Node{}
+	if config.dirShadow {
+		dl.Ctrl = shadow.NewDirectionalLight(dirLight, 512).SetMaxShadowDistance(20)
+	} else {
+		dl.Ctrl = &dirLight
 	}
-	_ = dl
 	v.nLights.Children = append(v.nLights.Children, nPoint, nPoint2, dl)
 	if len(config.env) == 0 {
 		v.nLights.Children = append(v.nLights.Children, &vscene.Node{

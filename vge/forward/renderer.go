@@ -134,7 +134,7 @@ func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.Ren
 	if f.timedOutput != nil {
 		cmd.WriteTimer(tp, 1, vk.PIPELINEStageTopOfPipeBit)
 	}
-	frame := &Frame{cache: rc}
+	frame := &Frame{cache: rc, renderer: f}
 	frame.SF.Projection, frame.SF.View = camera.CameraProjection(f.size)
 	frame.SF.EyePos = frame.SF.View.Inv().Col(3)
 	bg := vscene.NewDrawPhase(frame, f.frp, vscene.LAYERBackground, cmd, func() {

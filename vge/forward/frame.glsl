@@ -32,7 +32,9 @@ layout(set=0, binding=0) uniform FRAME {
 #ifdef DYNAMIC_DESCRIPTORS
 layout(set=0, binding=1) uniform sampler2D frameImages2D[];
 layout(set=0, binding=1) uniform samplerCube frameImagesCube[];
+layout(set=0, binding=1) uniform sampler2DArray frameImagesArray[];
 #else
 layout(set=0, binding=1) uniform sampler2D frameImages2D[MAX_IMAGES];
 layout(set=0, binding=1) uniform samplerCube frameImagesCube[MAX_IMAGES];
+layout(set=0, binding=1) uniform sampler2DArray frameImagesArray[MAX_IMAGES];
 #endif

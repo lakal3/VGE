@@ -40,6 +40,9 @@ type Renderer struct {
 	laLights     *vk.DescriptorLayout
 	dpLights     *vk.DescriptorPool
 	dsLights     []*vk.DescriptorSet
+	laDraw       *vk.DescriptorLayout
+	dpDraw       *vk.DescriptorPool
+	dsDraw       []*vk.DescriptorSet
 	size         image.Point
 	joinPipeline *vk.GraphicsPipeline
 
@@ -64,10 +67,9 @@ func (f *Renderer) SetTimedOutput(output func(started time.Time, gpuTimes []floa
 var kImageViews = vk.NewKeys(10)
 var kFpSplit = vk.NewKey()
 var kFpBG = vk.NewKey()
-var kFpShadow = vk.NewKey()
 var kFpFinal = vk.NewKey()
 var kCmd = vk.NewKey()
-var vkShadowLayout = vk.NewKey()
+var kFrameLayout = vk.NewKey()
 
 func (f *Renderer) Dispose() {
 	for _, v := range f.imViews {
@@ -136,9 +138,12 @@ func (f *Renderer) Setup(ctx vk.APIContext, dev *vk.Device, mainImage vk.ImageDe
 		la := vscene.GetUniformLayout(ctx, dev)
 		f.laLights = la.AddDynamicBinding(ctx, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit,
 			vscene.FrameMaxDynamicSamplers, vk.DESCRIPTORBindingPartiallyBoundBitExt)
+		f.laDraw = GetFrameLayout(ctx, dev)
 		f.dpLights = vk.NewDescriptorPool(ctx, f.laLights, images)
+		f.dpDraw = vk.NewDescriptorPool(ctx, f.laDraw, images)
 		for idx := 0; idx < images; idx++ {
 			f.dsLights = append(f.dsLights, f.dpLights.Alloc(ctx))
+			f.dsDraw = append(f.dsDraw, f.dpDraw.Alloc(ctx))
 		}
 		f.joinPipeline = f.newLightsPipeline(ctx, dev)
 	}
@@ -157,8 +162,8 @@ func (f *Renderer) Setup(ctx vk.APIContext, dev *vk.Device, mainImage vk.ImageDe
 		f.imMaterial = append(f.imMaterial, f.mpImages.ReserveImage(ctx, materialDesc, vk.IMAGEUsageColorAttachmentBit|vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageSampledBit))
 	}
 
-	for idx := 0; idx < images; idx++ {
-		f.frameBuffers = append(f.frameBuffers, f.mpImages.ReserveBuffer(ctx, 16384, true, vk.BUFFERUsageUniformBufferBit))
+	for idx := 0; idx < images*2; idx++ {
+		f.frameBuffers = append(f.frameBuffers, f.mpImages.ReserveBuffer(ctx, 32768, true, vk.BUFFERUsageUniformBufferBit))
 	}
 	sampler := vmodel.GetDefaultSampler(ctx, f.dev)
 	f.whiteImage = f.mpImages.ReserveImage(ctx, vmodel.DescribeWhiteImage(ctx), vk.IMAGEUsageSampledBit|vk.IMAGEUsageTransferDstBit)
@@ -174,6 +179,14 @@ func (f *Renderer) Setup(ctx vk.APIContext, dev *vk.Device, mainImage vk.ImageDe
 		f.dsLights[idx].WriteImage(ctx, 1, 4, f.imDepth[idx].DefaultView(ctx), sampler)
 	}
 
+}
+
+func GetFrameLayout(ctx vk.APIContext, dev *vk.Device) *vk.DescriptorLayout {
+	return dev.Get(ctx, kFrameLayout, func(ctx vk.APIContext) interface{} {
+		la := vscene.GetUniformLayout(ctx, dev)
+		return la.AddDynamicBinding(ctx, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit,
+			vscene.FrameMaxDynamicSamplers, vk.DESCRIPTORBindingPartiallyBoundBitExt)
+	}).(*vk.DescriptorLayout)
 }
 
 func (f *Renderer) Render(camera vscene.Camera, sc *vscene.Scene, rc *vk.RenderCache, mainImage *vk.Image, imageIndex int, infos []vk.SubmitInfo) {
@@ -221,8 +234,9 @@ func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.Ren
 	if f.timedOutput != nil {
 		cmd.WriteTimer(tp, 1, vk.PIPELINEStageTopOfPipeBit)
 	}
-	frame := &DeferredFrame{dsLight: dsLight, imagesUsed: 4, cache: rc, renderer: f}
-	frame.bfLightsFrame = f.frameBuffers[imageIndex]
+	frame := &DeferredFrame{dsLight: dsLight, dsDraw: f.dsDraw[imageIndex], imagesUsed: 4, cache: rc, renderer: f}
+	frame.bfLightsFrame = f.frameBuffers[imageIndex*2]
+	frame.bfDrawFrame = f.frameBuffers[imageIndex*2+1]
 	frame.LightsFrame.Debug = float32(f.debugMode)
 	frame.LightsFrame.Index = float32(f.debugIndex)
 	f.debugIndex = (f.debugIndex + 1) % 256

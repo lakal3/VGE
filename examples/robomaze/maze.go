@@ -176,6 +176,9 @@ func (m *maze) prepareScene() {
 				&tileControl{m: m, endTime: endTime, x: x, y: y}, m.nFloor))
 		}
 	}
+	if app.oil {
+		m.nFloorRoot.Ctrl = &stainPainter{m: m}
+	}
 	// Add towers
 	for idx := 0; idx < 4; idx++ {
 		angle := float32(idx) * math.Pi / 2

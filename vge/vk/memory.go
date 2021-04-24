@@ -69,6 +69,10 @@ type ImageView struct {
 	view  hImageView
 }
 
+func (im ImageView) Handle() uintptr {
+	return uintptr(im.view)
+}
+
 type BufferView struct {
 	b     *Buffer
 	hView hBufferView

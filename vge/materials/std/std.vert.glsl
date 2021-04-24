@@ -20,13 +20,13 @@ layout(set = 1, binding = 0) uniform INSTANCES {
 } instances;
 
 #ifdef SKINNED
+#define SKIN_SET 4
 #include "../../vscene/skin.glsl"
 #endif
 
 layout(location = 0) out vec3 o_position;
 layout(location = 1) out vec2 o_UV0;
-layout(location = 2) out flat ivec2 o_decalIndex;
-layout(location = 3) out mat3 o_normalSpace;
+layout(location = 2) out mat3 o_normalSpace;
 
 out gl_PerVertex
 {
@@ -36,7 +36,6 @@ out gl_PerVertex
 void main() {
     mat4 world = instances.inst[gl_InstanceIndex].world;
     vec2 decalIndex = instances.inst[gl_InstanceIndex].decalIndex;
-    o_decalIndex = ivec2(int(decalIndex.x), int(decalIndex.y));
 
     #ifdef SKINNED
     world = world * skinMatrix();

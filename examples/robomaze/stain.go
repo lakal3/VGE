@@ -10,19 +10,41 @@ import (
 )
 
 type stain struct {
-	dec       *decal.Decal
 	pos       mgl32.Vec2
 	rot       float32
 	createdAt float64
 	updateAt  float64
 	removed   bool
-	m         *maze
+	location  mgl32.Mat4
 }
 
-func (s *stain) Process(pi *vscene.ProcessInfo) {
-	if pi.Time-s.updateAt > 0.001 {
-		s.updateAt = pi.Time
-		d := pi.Time - s.createdAt
+type stainPainter struct {
+	painter decal.LocalPainter
+	m       *maze
+}
+
+func (s *stainPainter) Process(pi *vscene.ProcessInfo) {
+	_, ok := pi.Phase.(*vscene.AnimatePhase)
+	if ok {
+		var lst []*stain
+		s.painter.Decals = nil
+		for _, st := range s.m.stains {
+			st.update(pi.Time)
+			if !st.removed {
+				lst = append(lst, st)
+				s.painter.AddDecal(app.stainSet, 0, st.location, mgl32.Vec4{1, 1, 1, 1})
+			}
+		}
+		s.m.stains = lst
+	} else {
+		s.painter.Process(pi)
+	}
+}
+
+func (s *stain) update(time float64) {
+	if time-s.updateAt > 0.001 {
+		s.updateAt = time
+		d := time - s.createdAt
 		var scale float32
 		if d < 2 {
 			scale = float32(d) / 2
@@ -31,23 +53,12 @@ func (s *stain) Process(pi *vscene.ProcessInfo) {
 		}
 		if scale < 0 {
 			s.removed = true
-			var lst []*stain
-			for _, st := range s.m.stains {
-				if !st.removed {
-					lst = append(lst, st)
-				}
-			}
-			s.m.stains = lst
 
 		} else {
-			s.dec.At = mgl32.Translate3D(s.pos[0], 0, s.pos[1]).Mul4(
+			s.location = mgl32.Translate3D(s.pos[0], 0, s.pos[1]).Mul4(
 				mgl32.HomogRotate3DY(s.rot)).Mul4(mgl32.Scale3D(scale*0.2, 1, scale*0.2))
 		}
 	}
-	if s.removed {
-		return
-	}
-	s.dec.Process(pi)
 }
 
 var minStainDelta = 1.0
@@ -66,19 +77,8 @@ func (r *robo) checkNewStain(time float64) {
 	}
 
 	st := &stain{
-		m: r.m, pos: mgl32.Vec2{lerpFloat(wd, r.current.x, r.next.x), -lerpFloat(wd, r.current.y, r.next.y)},
-		rot: rand.Float32() * math.Pi * 2, createdAt: time, dec: app.stainSet.NewInstance("oil_stain", mgl32.Ident4()),
+		pos: mgl32.Vec2{lerpFloat(wd, r.current.x, r.next.x), -lerpFloat(wd, r.current.y, r.next.y)},
+		rot: rand.Float32() * math.Pi * 2, createdAt: time,
 	}
 	r.m.stains = append(r.m.stains, st)
-	updateStains(r.m)
-}
-
-func updateStains(m *maze) {
-	app.mainWnd.Scene.Update(func() {
-		var ncs []vscene.NodeControl
-		for _, st := range m.stains {
-			ncs = append(ncs, st)
-		}
-		m.nFloorRoot.Ctrl = vscene.NewMultiControl(ncs...)
-	})
 }

@@ -10,3 +10,4 @@ layout(set=0, binding=0) uniform FRAME {
     float filler3;
 } frame;
 
+layout(set=0, binding=1) uniform sampler2D frameImages2D[];

@@ -17,8 +17,7 @@ layout(location = 0) out vec4 o_Color;
 
 layout(location = 0) in vec3 i_position;
 layout(location = 1) in vec2 i_UV0;
-layout(location = 2) in flat ivec2 i_decalIndex;
-layout(location = 3) in mat3 i_normalSpace;
+layout(location = 2) in mat3 i_normalSpace;
 
 layout(set = 2, binding = 0) uniform MATERIAL {
     vec4 albedoColor;
@@ -37,55 +36,10 @@ layout(set=2, binding=1) uniform sampler2D textures[4];
 
 #include "../decal/decal.glsl"
 
-layout(set=3, binding=0) uniform DECALS {
-    DECAL decals[256];
-} decals;
 
 
 const float PI = 3.14159265;
 
-vec3 lerp3(vec3 base, vec3 target, float factor) {
-    return base * (1 - factor) + target * factor;
-}
-
-float lerp1(float base, float target, float factor) {
-    return base * (1 - factor) + target * factor;
-}
-
-void calcDecal(int idx, vec3 pos, inout vec3 albedo, inout vec3 normal, inout float metallic, inout float roughness, vec3 refNormal) {
-    DECAL d = decals.decals[idx];
-    vec4 dp = d.toDecalSpace * vec4(pos, 1);
-    if (dp.x < -1 || dp.x > 1 || dp.y < -1 || dp.y > 1 || dp.z < -1 || dp.z > 1) {
-        return;
-    }
-    vec3 dNormal = vec3(d.toDecalSpace * vec4(normal, 0));
-    vec4 aBase = d.albedoColor;
-    vec2 samplePoint = dp.xz * vec2(0.5) + vec2(0.5);
-    if (d.tx_albedo > 0) {
-        aBase = aBase * texture(frameImages2D[int(d.tx_albedo)], samplePoint);
-    }
-    float factor = aBase.a;
-    vec3 aNormal = vec3(0, 1, 0);
-    factor = dot(aNormal, refNormal) * d.normalAttenuation * factor + (1 - d.normalAttenuation) * factor;
-    if (factor < 0.01) {
-        return;
-    }
-    if (d.tx_normal > 0) {
-        aNormal = vec3(texture(frameImages2D[int(d.tx_normal)], samplePoint)) * vec3(2) - vec3(1);
-        aNormal = normalize(aNormal.xzy);   // Convert to Y - up
-    }
-    float aMetallic = d.metallicFactor;
-    float aRoughness = d.roughnessFactor;
-    if (d.tx_metalRoughness > 0) {
-        vec3 mrColor = texture(frameImages2D[int(d.tx_normal)], samplePoint).rgb;
-        aMetallic = mrColor.b * aMetallic;
-        aRoughness = mrColor.g * aRoughness;
-    }
-    albedo = lerp3(albedo, vec3(aBase), factor);
-    normal = lerp3(normal, aNormal, factor);
-    metallic = lerp1(metallic,aMetallic,factor);
-    roughness = lerp1(roughness,aRoughness,factor);
-}
 
 
 vec3 calcNormal() {
@@ -221,7 +175,8 @@ void main() {
     float roughness = mrColor.g * material.roughnessFactor;
 
     // Decals
-    for (int idx = i_decalIndex.x; idx < i_decalIndex.y; idx++) {
+    int noDecals = int(decals.noDecals);
+    for (int idx = 0; idx < noDecals; idx++) {
         calcDecal(idx, i_position, albedo, normal, metallic, roughness, refNormal);
     }
 

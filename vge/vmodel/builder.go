@@ -87,6 +87,14 @@ func (mb *ModelBuilder) AddMaterial(name string, props MaterialProperties) Mater
 	return mi
 }
 
+// Add new decal material to model builders. For decal material model builder will not create a shader nor allocate any
+// descriptor sets.
+func (mb *ModelBuilder) AddDecalMaterial(name string, props MaterialProperties) MaterialIndex {
+	mi := MaterialIndex(len(mb.materials))
+	mb.materials = append(mb.materials, materialInfo{props: props, name: name, decal: true})
+	return mi
+}
+
 // Attach image to model. This image can be them bound to material using material properties
 func (mb *ModelBuilder) AddImage(kind string, content []byte, usage vk.ImageUsageFlags) ImageIndex {
 	_ = mb.AddWhite()
@@ -147,10 +155,7 @@ func (mb *ModelBuilder) AddNode(name string, parent *NodeBuilder, transform mgl3
 // Convert content of model builder to actual model and uploads model content (except skins) to GPU
 func (mb *ModelBuilder) ToModel(ctx vk.APIContext, dev *vk.Device) *Model {
 	mb.wg = &sync.WaitGroup{}
-	if mb.ShaderFactory == nil {
-		ctx.SetError(errors.New("Set ShaderFactory"))
-		return nil
-	}
+
 	m := &Model{}
 	mb.AddWhite()
 	m.memPool = vk.NewMemoryPool(dev)
@@ -194,7 +199,9 @@ func (mb *ModelBuilder) ToModel(ctx vk.APIContext, dev *vk.Device) *Model {
 		}
 	}
 	ubfLen := mb.buildMaterials(ctx, dev, m)
-	m.bUbf = m.memPool.ReserveBuffer(ctx, ubfLen, false, vk.BUFFERUsageTransferDstBit|vk.BUFFERUsageUniformBufferBit)
+	if ubfLen > 0 {
+		m.bUbf = m.memPool.ReserveBuffer(ctx, ubfLen, false, vk.BUFFERUsageTransferDstBit|vk.BUFFERUsageUniformBufferBit)
+	}
 	m.memPool.Allocate(ctx)
 	cp := NewCopier(ctx, dev)
 	defer cp.Dispose()
@@ -291,8 +298,14 @@ func (mb *ModelBuilder) buildMaterials(ctx vk.APIContext, dev *vk.Device, m *Mod
 	mCounts := make(map[*vk.DescriptorLayout]int)
 	mPools := make(map[*vk.DescriptorLayout]*vk.DescriptorPool)
 	for idx, mt := range mb.materials {
-		mt.mat, mt.layout, mt.ubf, mt.images = mb.ShaderFactory(ctx, dev, mt.props)
-		mCounts[mt.layout] = mCounts[mt.layout] + 1
+		if !mt.decal {
+			if mb.ShaderFactory == nil {
+				ctx.SetError(errors.New("Set ShaderFactory"))
+				return 0
+			}
+			mt.mat, mt.layout, mt.ubf, mt.images = mb.ShaderFactory(ctx, dev, mt.props)
+			mCounts[mt.layout] = mCounts[mt.layout] + 1
+		}
 		mb.materials[idx] = mt
 
 	}
@@ -305,6 +318,10 @@ func (mb *ModelBuilder) buildMaterials(ctx vk.APIContext, dev *vk.Device, m *Mod
 
 	offset := uint64(0)
 	for idx, mi := range mb.materials {
+		if mi.decal {
+			m.materials = append(m.materials, Material{Props: mi.props, Name: mi.name})
+			continue
+		}
 		mi.ds = mPools[mi.layout].Alloc(ctx)
 		mi.offset = offset
 		mb.materials[idx] = mi
@@ -320,8 +337,14 @@ func (mb *ModelBuilder) buildMaterials(ctx vk.APIContext, dev *vk.Device, m *Mod
 }
 
 func (mb *ModelBuilder) copyUbf(m *Model, cp *Copier, ubfLen uint64, sampler *vk.Sampler) {
+	if ubfLen == 0 {
+		return
+	}
 	ubfs := make([]byte, ubfLen)
 	for mIndex, mi := range mb.materials {
+		if mi.decal {
+			continue
+		}
 		copy(ubfs[mi.offset:], mi.ubf)
 		mi.ds.WriteSlice(cp.ctx, 0, 0, m.bUbf.Slice(cp.ctx, mi.offset, mi.offset+uint64(len(mi.ubf))))
 		for idx, ib := range mi.images {
@@ -333,6 +356,9 @@ func (mb *ModelBuilder) copyUbf(m *Model, cp *Copier, ubfLen uint64, sampler *vk
 }
 
 func (mb *ModelBuilder) addNodes(n *NodeBuilder, m *Model) NodeIndex {
+	if n == nil {
+		return -1
+	}
 	node := Node{Model: m, Name: n.name, Transform: n.location}
 	result := NodeIndex(len(m.nodes))
 	node.Mesh = n.mesh
@@ -369,6 +395,7 @@ type materialInfo struct {
 	layout *vk.DescriptorLayout
 	props  MaterialProperties
 	name   string
+	decal  bool
 }
 
 // MeshBuilder is used to construct one mesh. Mesh is then added to model builder

@@ -99,12 +99,15 @@ func (rp roboPos) vp() int {
 var roboScale = mgl32.HomogRotate3DX(math.Pi / 2).Mul4(mgl32.Scale3D(0.002, 0.002, 0.002))
 
 func (r *robo) Process(pi *vscene.ProcessInfo) {
+	_, ok := pi.Phase.(*vscene.AnimatePhase)
+	if ok {
+		if app.oil {
+			r.checkNewStain(pi.Time)
+		}
+	}
 	if r.done {
 		pi.Visible = false
 		return
-	}
-	if app.oil {
-		r.checkNewStain(pi.Time)
 	}
 	wd := pi.Time - r.walkStart
 	if wd > 1 {

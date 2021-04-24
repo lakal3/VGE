@@ -48,12 +48,14 @@ type DeferredFrame struct {
 	dsLight       *vk.DescriptorSet
 	dsDraw        *vk.DescriptorSet
 	bfLightsFrame *vk.Buffer
+	bfDrawFrame   *vk.Buffer
 	cache         *vk.RenderCache
 	imagesUsed    uint32
 	probesUsed    int
 	lightUsed     int
 	sf            *vscene.SimpleFrame
 	renderer      *Renderer
+	drawUpdated   bool
 }
 
 func (d *DeferredFrame) GetRenderer() vmodel.Renderer {
@@ -65,16 +67,29 @@ func (d *DeferredFrame) GetCache() *vk.RenderCache {
 }
 
 func (d *DeferredFrame) BindFrame() *vk.DescriptorSet {
-	if d.dsDraw == nil {
+	if !d.drawUpdated {
 		d.writeDrawFrame()
+		d.drawUpdated = true
 	}
 	return d.dsDraw
 }
 
+var kFrameImages = vk.NewKey()
+
 func (d *DeferredFrame) AddFrameImage(view *vk.ImageView, sampler *vk.Sampler) (imageIndex vmodel.ImageIndex) {
+	hm := d.cache.GetPerFrame(kFrameImages, func(ctx vk.APIContext) interface{} {
+		return make(map[uintptr]vmodel.ImageIndex)
+	}).(map[uintptr]vmodel.ImageIndex)
+	imageIndex, ok := hm[view.Handle()]
+	if ok {
+		return imageIndex
+	}
 	d.imagesUsed++
 	d.dsLight.WriteImage(d.cache.Ctx, 1, d.imagesUsed, view, sampler)
-	return vmodel.ImageIndex(d.imagesUsed)
+	d.dsDraw.WriteImage(d.cache.Ctx, 1, d.imagesUsed, view, sampler)
+	imageIndex = vmodel.ImageIndex(d.imagesUsed)
+	hm[view.Handle()] = imageIndex
+	return
 }
 
 var _ vscene.ImageFrame = &DeferredFrame{}
@@ -97,13 +112,10 @@ func (f *DeferredFrame) GetSimpleFrame() *vscene.SimpleFrame {
 
 var kBoundDrawFrame = vk.NewKey()
 
-func (f *DeferredFrame) writeDrawFrame() *vk.DescriptorSet {
-	cache := vscene.GetUniformCache(f.cache)
-	ds, sl := cache.Alloc(f.cache.Ctx)
+func (f *DeferredFrame) writeDrawFrame() {
 	b := *(*[unsafe.Sizeof(DrawFrame{})]byte)(unsafe.Pointer(&f.DrawPhase))
-	copy(sl.Content, b[:])
-	f.dsDraw = ds
-	return f.dsDraw
+	copy(f.bfDrawFrame.Bytes(f.cache.Ctx), b[:])
+	f.dsDraw.WriteBuffer(f.cache.Ctx, 0, 0, f.bfDrawFrame)
 }
 
 func (d *DeferredFrame) writeLightsFrame() {

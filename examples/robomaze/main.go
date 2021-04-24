@@ -15,7 +15,6 @@ import (
 	"log"
 
 	"github.com/go-gl/mathgl/mgl32"
-	"github.com/lakal3/vge/vge/materials/decal"
 	"github.com/lakal3/vge/vge/materials/env"
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vasset"
@@ -32,7 +31,7 @@ var app struct {
 	fenceModel  *vmodel.Model
 	robotModel  *vmodel.Model
 	envMaze     *env.EquiRectBGNode
-	stainSet    *decal.Set
+	stainSet    *vmodel.Model
 	probe       *env.Probe
 	theme       *mintheme.Theme
 	orbitCamera bool
@@ -155,7 +154,7 @@ func loadModels2(lw *logoWindow) (err error) {
 	app.envMaze = rawEnv.(*env.EquiRectBGNode)
 	app.probe = env.NewProbe(vapp.Ctx, vapp.Dev)
 	if app.oil {
-		b := &decal.Builder{}
+		b := vmodel.ModelBuilder{}
 		rIdx, err := vapp.AM.Load("decals/stain_albedo.png", func(content []byte) (asset interface{}, err error) {
 			return b.AddImage("png", content, vk.IMAGEUsageSampledBit|vk.IMAGEUsageTransferDstBit), nil
 		})
@@ -164,8 +163,8 @@ func loadModels2(lw *logoWindow) (err error) {
 		}
 		props := vmodel.NewMaterialProperties().SetImage(vmodel.TxAlbedo, rIdx.(vmodel.ImageIndex)).
 			SetFactor(vmodel.FMetalness, 1).SetFactor(vmodel.FRoughness, 0.2).SetColor(vmodel.CAlbedo, mgl32.Vec4{0.7, 0.7, 0.7, 0.7})
-		b.AddDecal("oil_stain", props)
-		app.stainSet = b.Build(vapp.Ctx, vapp.Dev)
+		b.AddDecalMaterial("oil_stain", props)
+		app.stainSet = b.ToModel(vapp.Ctx, vapp.Dev)
 	}
 	return nil
 }

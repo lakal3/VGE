@@ -84,12 +84,13 @@ func (u *Material) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world m
 		ds, sl := uc.Alloc(ctx)
 		return &stdInstance{ds: ds, sl: sl}
 	}).(*stdInstance)
+	dsDecal := decal.BindPainter(rc, extra)
 	dm := stdMatInstance{world: world}
 	dsMesh, slMesh := uc.Alloc(rc.Ctx)
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	uli.writeInstance(dm)
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindSkinned)...).
-		AddDescriptors(dsFrame, uli.ds, u.dsMat, dsMesh).SetInstances(uli.count, 1)
+		AddDescriptors(dsFrame, uli.ds, u.dsMat, dsDecal, dsMesh).SetInstances(uli.count, 1)
 	uli.count++
 	if uli.count >= maxInstances {
 		rc.SetPerFrame(kStdSkinnedInstances, nil)
@@ -116,19 +117,11 @@ func (u *Material) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Ma
 		ds, sl := uc.Alloc(ctx)
 		return &stdInstance{ds: ds, sl: sl}
 	}).(*stdInstance)
-	dsMesh := uli.ds
-	decals := decal.GetDecals(extra)
+	dsDecal := decal.BindPainter(rc, extra)
 	dm := stdMatInstance{world: world}
-	if len(decals) > 0 {
-		var slMesh *vk.Slice
-		dsMesh, slMesh = uc.Alloc(rc.Ctx)
-		dm.decalIndex = mgl32.Vec2{0, float32(len(decals) / 2)}
-		copy(slMesh.Content, vscene.Mat4ToBytes(decals))
-	}
-
 	uli.writeInstance(dm)
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindNormal)...).
-		AddDescriptors(dsFrame, uli.ds, u.dsMat, dsMesh).SetInstances(uli.count, 1)
+		AddDescriptors(dsFrame, uli.ds, u.dsMat, dsDecal).SetInstances(uli.count, 1)
 	uli.count++
 	if uli.count >= maxInstances {
 		rc.SetPerFrame(kStdInstances, nil)
@@ -151,8 +144,9 @@ func (u *Material) drawDeferred(dc *vmodel.DrawContext, mesh vmodel.Mesh, world 
 		return &stdInstance{ds: ds, sl: sl}
 	}).(*stdInstance)
 	uli.writeInstance(stdMatInstance{world: world})
+	dsDecal := decal.BindPainter(rc, extra)
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindNormal)...).
-		AddDescriptors(dsFrame, uli.ds, u.dsMat).SetInstances(uli.count, 1)
+		AddDescriptors(dsFrame, uli.ds, u.dsMat, dsDecal).SetInstances(uli.count, 1)
 	uli.count++
 	if uli.count >= maxInstances {
 		rc.SetPerFrame(kStdInstances, nil)
@@ -177,9 +171,11 @@ func (u *Material) drawSkinnedDeferred(dc *vmodel.DrawContext, mesh vmodel.Mesh,
 	}).(*stdInstance)
 	uli.writeInstance(stdMatInstance{world: world})
 	dsMesh, slMesh := uc.Alloc(rc.Ctx)
+	dsDecal := decal.BindPainter(rc, extra)
+
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindSkinned)...).
-		AddDescriptors(dsFrame, uli.ds, u.dsMat, dsMesh).SetInstances(uli.count, 1)
+		AddDescriptors(dsFrame, uli.ds, u.dsMat, dsDecal, dsMesh).SetInstances(uli.count, 1)
 	uli.count++
 	if uli.count >= maxInstances {
 		rc.SetPerFrame(kStdInstances, nil)
@@ -214,7 +210,10 @@ func (u *Material) NewPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, skinne
 	gp.AddLayout(ctx, laFrame)
 	gp.AddLayout(ctx, la)
 	gp.AddLayout(ctx, la2)
-	gp.AddLayout(ctx, laUBF) // Transform & decal matrix
+	gp.AddLayout(ctx, la) // Decals
+	if skinned {
+		gp.AddLayout(ctx, laUBF) // Transform & decal matrix
+	}
 	gp.AddShader(ctx, vk.SHADERStageFragmentBit, std_frag_spv)
 	gp.AddDepth(ctx, true, true)
 	gp.Create(ctx, dc.Pass)
@@ -232,7 +231,7 @@ func (u *Material) NewDeferredPipeline(ctx vk.APIContext, dc *vmodel.DrawContext
 		vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
 		gp.AddShader(ctx, vk.SHADERStageVertexBit, defmat_vert_spv)
 	}
-	laFrame := vscene.GetUniformLayout(ctx, rc.Device)
+	laFrame := deferred.GetFrameLayout(ctx, rc.Device)
 	la := vscene.GetUniformLayout(ctx, rc.Device)
 	la2 := getStdLayout(ctx, rc.Device)
 	laUBF := vscene.GetUniformLayout(ctx, rc.Device)
@@ -242,6 +241,7 @@ func (u *Material) NewDeferredPipeline(ctx vk.APIContext, dc *vmodel.DrawContext
 	if skinned {
 		gp.AddLayout(ctx, laUBF) // Transform matrix
 	}
+	gp.AddLayout(ctx, la) // Decals
 	gp.AddShader(ctx, vk.SHADERStageFragmentBit, defmat_frag_spv)
 	gp.AddDepth(ctx, true, true)
 	gp.Create(ctx, dc.Pass)

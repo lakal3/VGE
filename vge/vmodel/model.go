@@ -74,6 +74,20 @@ func (m *Model) GetMaterial(idx MaterialIndex) Material {
 	return m.materials[idx]
 }
 
+func (m *Model) GetImage(idx ImageIndex) *vk.Image {
+	return m.images[idx]
+}
+
+// FindMaterial finds material index for named material. Return is -1 if material was not found
+func (m *Model) FindMaterial(name string) MaterialIndex {
+	for idx, m := range m.materials {
+		if m.Name == name {
+			return MaterialIndex(idx)
+		}
+	}
+	return -1
+}
+
 func (m *Model) Bounds(index NodeIndex, transform mgl32.Mat4, includeChild bool) (aabb AABB) {
 	node := m.nodes[index]
 	transform = transform.Mul4(node.Transform)

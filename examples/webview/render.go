@@ -73,6 +73,14 @@ func initApp(ctx initContext) error {
 // Camera orbit is dependant of rendered image size. Elf model is about 25 units high
 const cameraOrbit = 50.0
 
+type imageRenderer struct {
+	rc *vk.RenderCache
+}
+
+func (i imageRenderer) GetPerRenderer(key vk.Key, ctor func(ctx vk.APIContext) interface{}) interface{} {
+	return i.rc.Get(key, ctor)
+}
+
 func renderImage(ctx vk.APIContext, angle float64, imageSize image.Point) (pngImage []byte) {
 	// Initialize render cache to handle frame related object
 	rc := vk.NewRenderCache(ctx, wwApp.dev)
@@ -124,7 +132,7 @@ func renderImage(ctx vk.APIContext, angle float64, imageSize image.Point) (pngIm
 	pc.Target = mgl32.Vec3{0, cameraOrbit / 2, 0}
 	pc.Position = mgl32.Vec3{float32(math.Sin(angle) * cameraOrbit), cameraOrbit / 2, float32(cameraOrbit * math.Cos(angle))}
 	// Update camera projection and view matrix to current frame
-	frame := forward.NewFrame(rc)
+	frame := forward.NewFrame(rc, imageRenderer{rc: rc})
 	frame.SF.Projection, frame.SF.View = pc.CameraProjection(imageSize)
 	frame.SF.EyePos = frame.SF.View.Inv().Col(3)
 

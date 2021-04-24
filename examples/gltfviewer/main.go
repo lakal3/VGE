@@ -78,7 +78,7 @@ func main() {
 		log.Fatal("Failed to load initial tools. Ensure that you are in sample directory")
 	}
 
-	// Initialize forward rendered
+	// Initialize forward or deferred rendered
 	var rd vscene.Renderer
 	if app.deferred {
 		rd = deferred.NewRenderer()

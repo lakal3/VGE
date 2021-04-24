@@ -9,7 +9,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/lakal3/vge/vge/deferred"
 	"github.com/lakal3/vge/vge/forward"
+	"github.com/lakal3/vge/vge/vscene"
 	"log"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -36,6 +38,7 @@ var app struct {
 	orbitCamera bool
 	predepth    bool
 	oil         bool
+	deferred    bool
 	video       bool
 	devIndex    int
 	fps         bool
@@ -50,6 +53,7 @@ func main() {
 	flag.IntVar(&app.devIndex, "dev", -1, "Device index")
 	flag.BoolVar(&app.video, "video", false, "Set windows to video size 1280 x 768")
 	flag.BoolVar(&app.fps, "fps", false, "Add FPS debug control to window")
+	flag.BoolVar(&app.deferred, "deferred", false, "Use deferred renderer")
 	flag.Parse()
 
 	if app.devIndex >= 0 {
@@ -59,16 +63,25 @@ func main() {
 		vapp.AddOption(vapp.Validate{})
 		// vk.VGEDllPath = "VGELibd.dll"
 	}
-	if app.oil {
+	if app.oil || app.deferred {
 		// Add dynamics descriptor support.
 		vapp.AddOption(vapp.DynamicDescriptors{MaxDescriptors: 1024})
 	}
 	vasset.DefaultLoader = vasset.DirectoryLoader{Directory: "../../assets"}
 
-	rd := forward.NewRenderer(true)
-	if app.predepth {
-		rd.AddDepthPrePass()
+	// Initialize forward or deferred rendered
+	var rd vscene.Renderer
+	if app.deferred {
+		rd = deferred.NewRenderer()
+	} else {
+		rdf := forward.NewRenderer(true)
+		if app.predepth {
+			// Predepth is useless in deferred shading
+			rdf.AddDepthPrePass()
+		}
+		rd = rdf
 	}
+
 	vapp.Init("robomaze", vapp.Desktop{})
 	if app.video {
 		app.mainWnd = vapp.NewRenderWindowAt("Robo maze", vk.WindowPos{Left: -1, Top: -1, Width: 1246, Height: 730}, rd)

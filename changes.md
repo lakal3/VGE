@@ -1,18 +1,32 @@
 # Change history
 
-## Version 0.xx.1
-This version is bigger change and unfortunately there are some breaking changes.
+## Version 0.20.1 (beta)
+This version is bigger improvement and unfortunately there are some breaking changes.
 
 New features:
+- Experimental version of deferred renderer that uses [Deferred shading](https://en.wikipedia.org/wiki/Deferred_shading) to
+  render views instead of initial forward renderer.
+
 - Better support different kind of renderers. Frame is now interface and not a default forward.Frame
   Renderer type is indicate by Frame that is available for all Phases through PhaseInfo. Frame is allow passed to DrawContext so that material can access it more easilly
+
 - More complex frames should support SimpleFrame that allows some node types and materials to work with different Renderers
+
+- All basic light types, spot light (**new**), directional light and point light are now supported
+
+- All basic light types now supports shadows. 
+  Shadow maps uses now Parabloid mapping that reduces number of point light shadow maps from 6 to 2 and
+  allows support for spotlights using same mapping but with only one map.
+
 - Some forward Frame methods have been change to interface so that for example Lights works on all renderer supporting LightPhase interface
+
 - VGE can now create Vulkan render pass with multiple or zero outputs.
 
 Breaking changes:
-- Forward renderer has been moved to own module. There will be new advanced (Deferred) renderer available later.
-- Frame is now an interface. Each node can check if renderer is supported by checking if frame can be cast to suitable type.
+
+- Forward renderer has been moved to own module. There will be new advanced (deferred) renderer available.
+
+- Frame that is related to renderer is now an interface. Each node can check if renderer is supported by checking if frame can be cast to suitable type.
 
 TODO: Add example from cube
 

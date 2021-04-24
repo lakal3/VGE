@@ -59,11 +59,14 @@ You do not to know anything about this tool unless you plan to change the Go/C++
 For performance reason VGE will pass pointers to Go memory. VGE support library VGELib.dll (libVGELib.so) is aware of Golangs carbage collector and will not hold pointer to memory after call to library completed. As long as Golang don't implement moving carbage collector this is safe! 
 
 In Windows this works out of box. However in Linux we must use short CGO module to invoke libVGELib.so. 
-Unfortunately currrent implementation of CGO will check that we will not send pointers from Go's heap to CGO calls :(. cgocheck=0 will disable this check.
+Unfortunately current implementation of CGO will check that we will not send pointers from Go's heap to CGO calls :(. cgocheck=0 will disable this check.
 
-**If anyone knows how to load .so library and invoke functions from it without CGO, please submit an issues describing how to do it!**
+**Go 1.17 will most like support new Handle type that solves this problem!**
 
-(Moving collector might never happend due to way Golang uses inner pointers etc.. And if it ever will implement it, we must just change generated code to one that will allocate memory from C++ module, making it slower on large images etc. )
+VGE will support handles when they are available. See more from Golang issue 37033.
+
+
+
 
 
 

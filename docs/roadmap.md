@@ -7,8 +7,10 @@ Planned VGE features (not in priority order)
 - [ ] Forward+ render pass that supports post processing effects like the depth fog.
    - Some shaders like fire should also use postprocessing so that they could sample an already rendered scene
    - Depth effects like the fog
-- [ ] Shadows for directional lights
-- [ ] Spot lights (with shadows)
+- [x] Shadows for directional lights (in version 0.20.1)
+- [x] Spot lights (with shadows) (in version 0.20.1)
+- [ ] Deferred renderer (experimental version available in 0.20.1)
+- [ ] Improved decals in deferred shader
 - [ ] Basic dialogs like yes/no
 - [ ] Water shader (Needs Forward+ render pass)
 - [ ] Asset packing
@@ -26,4 +28,4 @@ Planned VGE features (not in priority order)
   - Better text editing
 - [ ] Integration with some physics engine (most likely a separate project)
 
-And of course, the neverending project to improve documentation, API reference and examples.
+And of course, the never ending project to improve documentation, API reference and examples.

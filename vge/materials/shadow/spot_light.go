@@ -91,9 +91,9 @@ func (pl *SpotLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.Process
 	cmd.BeginRenderPass(rsr.rp, fb)
 	sp := &plShadowPass{ctx: cache.Ctx, cmd: cmd, dl: &vk.DrawList{}, maxDistance: pl.MaxDistance,
 		pl: gpl, plSkin: gSkinnedPl, rc: cache, renderer: pi.Frame.GetRenderer()}
-	lightPos := pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1})
-	sp.pos = lightPos.Vec3()
-	sp.dir = pi.World.Mul4x1(pl.Direction.Vec4(0)).Vec3()
+	l := pl.AsStdLight(pi.World)
+	sp.pos = l.Position.Vec3()
+	sp.dir = l.Direction.Vec3()
 
 	pd.Scene.Process(pi.Time, sp, sp)
 	sp.flush()

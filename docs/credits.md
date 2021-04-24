@@ -26,7 +26,8 @@ Single file C/C++ libraries used for png, jpg and hdr image decompression
 
 [Blender](https://www.blender.org/)
 
-A superior tool to edit the 3D models. Although, not directly in the project, most of the assets models were post processed with Blender 2.8x.
+A superior tool to edit the 3D models. Although, not directly in the project, most of the assets models were post processed with
+Blender 2.9x.
 
 
 ## 2D and 3D assets
@@ -92,6 +93,11 @@ VGE uses this idea to bake fonts and vector graphics to renderable glyphs.
 [Motion capture formats](http://www.dcs.shef.ac.uk/intranet/research/public/resmes/CS0111.pdf)
 
 Used to build BVH parsing module, vanimation.
+
+[Parabloid mapping](http://www.klayge.org/material/3_12/DPSM/DualParaboloidMappingInTheVertexShader.pdf)
+
+Use for new shadow maps in version 0.20.1.
+
 
 _There were other resources as well but the listed above were the most beneficial._
 

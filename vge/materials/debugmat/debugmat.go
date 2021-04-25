@@ -13,7 +13,7 @@ import (
 	"github.com/lakal3/vge/vge/vscene"
 )
 
-const maxInstaces = 200 // Must match to shader definition!
+const maxInstaces = 600 // Must match to shader definition!
 
 func DebugMatFactory(ctx vk.APIContext, dev *vk.Device, props vmodel.MaterialProperties) (
 	sh vmodel.Shader, layout *vk.DescriptorLayout, ubf []byte, images []vmodel.ImageIndex) {
@@ -72,10 +72,11 @@ func (u *DebugMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, wo
 	lInst := uint32(unsafe.Sizeof(debugMatInstance{}))
 	b := *(*[unsafe.Sizeof(debugMatInstance{})]byte)(unsafe.Pointer(&dm))
 	copy(uli.sl.Content[uli.count*lInst:(uli.count+1)*lInst], b[:])
+	decals := decal.BindPainter(rc, extra)
 	dsMesh, slMesh := uc.Alloc(rc.Ctx)
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindSkinned)...).
-		AddDescriptors(dsFrame, uli.ds, u.dsMat, dsMesh).SetInstances(uli.count, 1)
+		AddDescriptors(dsFrame, uli.ds, u.dsMat, decals, dsMesh).SetInstances(uli.count, 1)
 	uli.count++
 	if uli.count >= maxInstaces {
 		rc.SetPerFrame(kDebugInstances, nil)
@@ -105,20 +106,15 @@ func (u *DebugMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl
 		ds, sl := uc.Alloc(ctx)
 		return &debugInstance{ds: ds, sl: sl}
 	}).(*debugInstance)
-	dsMesh, slMesh := uc.Alloc(rc.Ctx)
-	decals := decal.GetDecals(extra)
+	decals := decal.BindPainter(rc, extra)
 	dm := debugMatInstance{world: world, modes: DebugModes}
-	if len(decals) > 0 {
-		dm.decalIndex = mgl32.Vec2{0, float32(len(decals) / 2)}
-		copy(slMesh.Content, vscene.Mat4ToBytes(decals))
-	}
 
 	lInst := uint32(unsafe.Sizeof(debugMatInstance{}))
 	b := *(*[unsafe.Sizeof(debugMatInstance{})]byte)(unsafe.Pointer(&dm))
 	copy(uli.sl.Content[uli.count*lInst:(uli.count+1)*lInst], b[:])
 
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindNormal)...).
-		AddDescriptors(dsFrame, uli.ds, u.dsMat, dsMesh).SetInstances(uli.count, 1)
+		AddDescriptors(dsFrame, uli.ds, u.dsMat, decals).SetInstances(uli.count, 1)
 	uli.count++
 	if uli.count >= maxInstaces {
 		rc.SetPerFrame(kDebugInstances, nil)
@@ -151,7 +147,11 @@ func (u *DebugMaterial) NewPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, s
 	gp.AddLayout(ctx, laFrame)
 	gp.AddLayout(ctx, laUBF)
 	gp.AddLayout(ctx, la2)
-	gp.AddLayout(ctx, laUBF) // Transform matrix
+	gp.AddLayout(ctx, laUBF) // Decals
+	if skinned {
+		gp.AddLayout(ctx, laUBF) // Transform matrix
+	}
+
 	gp.AddShader(ctx, vk.SHADERStageFragmentBit, debugmat_frag_spv)
 	gp.AddDepth(ctx, true, true)
 	gp.Create(ctx, dc.Pass)

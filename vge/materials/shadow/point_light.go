@@ -58,7 +58,7 @@ type plResources struct {
 	cmd []*vk.Command
 }
 
-const maxInstances = 100
+const maxInstances = 1000
 
 func QuoternionFromYUp(direction mgl32.Vec3) mgl32.Vec4 {
 	q := mgl32.QuatBetweenVectors(mgl32.Vec3{0, 1, 0}, direction)
@@ -71,7 +71,7 @@ type shaderFrame struct {
 	lightPos  mgl32.Vec4
 	minShadow float32
 	maxShadow float32
-	dummy1    float32
+	yFactor   float32
 	dummy2    float32
 
 	instances [maxInstances]mgl32.Mat4
@@ -92,6 +92,7 @@ type plShadowPass struct {
 	siCount     int
 	renderer    vmodel.Renderer
 	dir         mgl32.Vec3
+	yFactor     float32
 }
 
 func (s *plShadowPass) GetRenderer() vmodel.Renderer {
@@ -103,7 +104,11 @@ func (s *plShadowPass) BindFrame() *vk.DescriptorSet {
 	if s.dsFrame == nil {
 		s.dsFrame, s.slFrame = uc.Alloc(s.ctx)
 		s.si = &shaderFrame{lightPos: s.pos.Vec4(1), maxShadow: s.maxDistance, minShadow: 0}
-		s.si.plane = QuoternionFromYUp(s.dir)
+		if s.yFactor != 0 {
+			s.si.yFactor = s.yFactor
+		} else {
+			s.si.plane = QuoternionFromYUp(s.dir)
+		}
 
 	}
 	return s.dsFrame
@@ -263,9 +268,9 @@ func (pl *PointLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.Proces
 		pl: gpl, plSkin: gSkinnedPl, rc: cache, renderer: pi.Frame.GetRenderer()}
 	lightPos := pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1})
 	sp.pos = lightPos.Vec3()
-	sp.dir = mgl32.Vec3{0, -1, 0}
+	sp.yFactor = -1
 	if side == 1 {
-		sp.dir = mgl32.Vec3{0, 1, 0}
+		sp.yFactor = 1
 	}
 
 	pd.Scene.Process(pi.Time, sp, sp)

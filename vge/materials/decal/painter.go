@@ -9,22 +9,18 @@ import (
 )
 
 type DecalInstance struct {
-	Model        *vmodel.Model
-	Material     vmodel.MaterialIndex
-	AlbedoFactor mgl32.Vec4
-	Location     mgl32.Mat4
-
-	// Tag is extra information for Instance user
-	Tag interface{}
+	Model    *vmodel.Model
+	Material vmodel.MaterialIndex
+	Location mgl32.Mat4
 }
 
 type LocalPainter struct {
 	Decals []DecalInstance
 }
 
-func (l *LocalPainter) AddDecal(model *vmodel.Model, material vmodel.MaterialIndex, at mgl32.Mat4, albedoFactor mgl32.Vec4) int {
+func (l *LocalPainter) AddDecal(model *vmodel.Model, material vmodel.MaterialIndex, at mgl32.Mat4) int {
 	idx := len(l.Decals)
-	l.Decals = append(l.Decals, DecalInstance{Model: model, Material: material, AlbedoFactor: albedoFactor, Location: at})
+	l.Decals = append(l.Decals, DecalInstance{Model: model, Material: material, Location: at})
 	return idx
 }
 

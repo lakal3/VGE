@@ -26,7 +26,11 @@ void main() {
     o_uv0 = i_uv0;
     vec4 worldPos = world * vec4(i_position, 1);
     vec3 samplePos = worldPos.xyz - frame.lightPos.xyz;
-    o_position = qtransform(frame.plane, samplePos);
+    if (frame.yFactor != 0) {
+        o_position = samplePos * vec3(1, frame.yFactor, 1);
+    } else {
+        o_position = qtransform(frame.plane, samplePos);
+    }
 
     // because the origin is at 0 the proj-vector
     // matches the vertex-position

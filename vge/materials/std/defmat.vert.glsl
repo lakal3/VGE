@@ -6,7 +6,7 @@
 
 #include "../../deferred/frame.glsl"
 
-#define MAX_INSTANCES 200
+#define MAX_INSTANCES 1000
 
 struct INSTANCE {
     mat4 world;

@@ -32,6 +32,7 @@ var config struct {
 	devIndex       int
 	maxDescriptors int
 	dirShadow      bool
+	lights         string
 }
 
 type viewerApp struct {
@@ -42,7 +43,7 @@ type viewerApp struct {
 	nLights   *vscene.Node
 	nEnv      *vscene.Node
 	lightBall vmodel.NodeBuilder
-	dSet      *decal.Set
+	dSet      *vmodel.Model
 }
 
 func (v *viewerApp) Dispose() {
@@ -71,7 +72,7 @@ func main() {
 	flag.IntVar(&config.devIndex, "dev", -1, "Device index")
 	flag.BoolVar(&config.dirShadow, "dirshadow", false, "Shadow for directional light")
 	flag.IntVar(&config.maxDescriptors, "maxDescriptors", 1024, "Max dynamics descriptors. Set to 0 to disable feature")
-
+	flag.StringVar(&config.lights, "lights", "spd", "Light to set an (default all)")
 	flag.Parse()
 	if flag.NArg() < 1 {
 		usage()
@@ -189,23 +190,23 @@ func (v *viewerApp) loadModel() {
 		v.owner.AddChild(eq)
 		v.nEnv = &vscene.Node{Ctrl: eq}
 	}
-	return
 	// Add decals
-	b := &decal.Builder{}
-	stAlbedo := v.loadImage(b, "assets/decals/stain_albedo.png")
+	b := &vmodel.ModelBuilder{}
+	stAlbedo := v.loadImage(b, "assets/decals/stone_albedo.png")
 	props := vmodel.NewMaterialProperties().SetImage(vmodel.TxAlbedo, stAlbedo)
-	b.AddDecal("stain", props)
-	v.dSet = b.Build(v, vapp.Dev)
+	b.AddDecalMaterial("stain", props)
+	v.dSet = b.ToModel(v, vapp.Dev)
 	v.owner.AddChild(v.dSet)
-	v.nModel.Ctrl = vscene.NewMultiControl(
-		v.dSet.NewInstance("stain", mgl32.Ident4()),
-		v.dSet.NewInstance("stain", mgl32.Translate3D(2, 0, 2)),
-		v.dSet.NewInstance("stain", mgl32.Translate3D(2, 0, -2).Mul4(mgl32.HomogRotate3DX(-1))),
-		v.dSet.NewInstance("stain", mgl32.Translate3D(-2, 0, -2).Mul4(mgl32.Scale3D(1.5, 1.5, 1.5))),
-	)
+	lp := &decal.LocalPainter{}
+	lp.AddDecal(v.dSet, 0, mgl32.Ident4().Mul4(mgl32.Scale3D(5, 5, 5)))
+	lp.AddDecal(v.dSet, 0, mgl32.Translate3D(2, 0, 2))
+	lp.AddDecal(v.dSet, 0, mgl32.Translate3D(2, 0, -2).Mul4(mgl32.HomogRotate3DX(-1)))
+	lp.AddDecal(v.dSet, 0, mgl32.Translate3D(-2, 0, -2).Mul4(mgl32.Scale3D(1.5, 1.5, 1.5)))
+
+	v.nModel.Ctrl = lp
 }
 
-func (v *viewerApp) loadImage(sb *decal.Builder, imageName string) vmodel.ImageIndex {
+func (v *viewerApp) loadImage(sb *vmodel.ModelBuilder, imageName string) vmodel.ImageIndex {
 	content, err := ioutil.ReadFile(imageName)
 	if err != nil {
 		v.SetError(err)
@@ -292,7 +293,7 @@ func (v *viewerApp) setLights() {
 		}, vscene.NewNode(shadow.NoShadow{}, vscene.NodeFromModel(app.mLB, 1, false)))
 	nPoint2 := vscene.NewNode(vscene.NewMultiControl(
 		&vscene.RotateAnimate{Speed: 0.7, Axis: mgl32.Vec3{0, 1, 0}},
-		&vscene.TransformControl{mgl32.Translate3D(6, 1.5, 0)}),
+		&vscene.TransformControl{mgl32.Translate3D(6, 3, 0)}),
 		&vscene.Node{
 			Ctrl: shadow.NewSpotLight(vscene.SpotLight{Intensity: mgl32.Vec3{1.2, 1.2, 1.2}, Attenuation: mgl32.Vec3{0, 0, 0.32},
 				OuterAngle: 45, InnerAngle: 30, Direction: mgl32.Vec3{-0.4, -0.8, 0}.Normalize(),
@@ -305,7 +306,15 @@ func (v *viewerApp) setLights() {
 	} else {
 		dl.Ctrl = &dirLight
 	}
-	v.nLights.Children = append(v.nLights.Children, nPoint, nPoint2, dl)
+	if strings.IndexRune(config.lights, 'p') >= 0 {
+		v.nLights.Children = append(v.nLights.Children, nPoint)
+	}
+	if strings.IndexRune(config.lights, 's') >= 0 {
+		v.nLights.Children = append(v.nLights.Children, nPoint2)
+	}
+	if strings.IndexRune(config.lights, 'd') >= 0 {
+		v.nLights.Children = append(v.nLights.Children, dl)
+	}
 	if len(config.env) == 0 {
 		v.nLights.Children = append(v.nLights.Children, &vscene.Node{
 			Ctrl: &env.AmbientLight{Intensity: mgl32.Vec3{0.2, 0.2, 0.2}}})

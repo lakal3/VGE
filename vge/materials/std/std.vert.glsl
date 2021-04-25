@@ -4,7 +4,7 @@
 
 #define DYNAMIC_DESCRIPTORS 1
 
-#define MAX_INSTANCES 200
+#define MAX_INSTANCES 1000
 
 #include "../../vscene/input.glsl"
 #include "../../forward/frame.glsl"

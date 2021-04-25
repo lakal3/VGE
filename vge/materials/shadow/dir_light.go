@@ -14,10 +14,22 @@ type DirectionalLight struct {
 	// we just turn shadows off
 	vscene.DirectionalLight
 
-	// MaxShadowDistance determines how large area shadow map will cover. Everything outside if will be fully lit
+	// MaxShadowDistance determines how large area shadow map will cover. Everything outside if will be fully lit.
+	// Default size is 100 but should match to size of your scene.
+	// Currently VGE dont support multiple resolutions for depth map, but this may change in future.
 	MaxShadowDistance float32
-	key               vk.Key
-	mapSize           uint32
+
+	// CenterPoint tells where to place light shadow map. Even though directional lights don't have any place we must
+	// place shadowmap somewhere and create an orthographic projection from that point to lights direction. CenterPoint and MaxShadowDistance
+	// will define a volume that will be contained in shadowmap. For directional lights all points outside shadowmap are considered visible.
+	//
+	// Centerpoint is depth value we use to reverse transform to world cordinates after we add half of MaxShadowDistance to lights directions. Typically values
+	// around 0.99 places shadowmap so that it covert current view. See GetShadowmapPos for details.
+	// Default value for CenterPoint is 0.99
+	CenterPoint float32
+
+	key     vk.Key
+	mapSize uint32
 }
 
 // SetMaxShadowDistance sets MaxShadowDistance
@@ -26,18 +38,24 @@ func (pl *DirectionalLight) SetMaxShadowDistance(maxDistance float32) *Direction
 	return pl
 }
 
+// SetCenterPoint sets CenterPoint
+func (pl *DirectionalLight) SetCenterPoint(centerPoint float32) *DirectionalLight {
+	pl.CenterPoint = centerPoint
+	return pl
+}
+
 // NewDirectionalLight creates a new shadow casting direction light.
 // Map size is size of shadow map used to sample lights distance to closest occluder
 // Higher resolutions give better quality of shadows but greatly increases memory usage in GPU
 func NewDirectionalLight(baseLight vscene.DirectionalLight, mapSize uint32) *DirectionalLight {
-	return &DirectionalLight{key: vk.NewKey(), DirectionalLight: baseLight, mapSize: mapSize}
+	return &DirectionalLight{key: vk.NewKey(), DirectionalLight: baseLight, mapSize: mapSize, MaxShadowDistance: 100, CenterPoint: 0.99}
 }
 
 func (pl *DirectionalLight) Process(pi *vscene.ProcessInfo) {
 	pd, ok := pi.Phase.(*vscene.PredrawPhase)
 	if ok {
 		if pl.MaxShadowDistance == 0 {
-			pl.MaxShadowDistance = 100
+			return
 		}
 
 		_, ok := pi.Frame.(vscene.ImageFrame)
@@ -59,9 +77,8 @@ func (pl *DirectionalLight) Process(pi *vscene.ProcessInfo) {
 			return pl.makeRenderResources(ctx, pi.Frame.GetCache().Device)
 		}).(*renderResources)
 		imFrame, ok := pi.Frame.(vscene.ImageFrame)
-		eyePos, _ := vscene.GetEyePosition(pi.Frame)
 		l := vscene.Light{Intensity: pl.Intensity.Vec4(1), Direction: pl.Direction.Vec4(0), Attenuation: mgl32.Vec4{1, 0, 0, pl.MaxShadowDistance}}
-		l.Position = eyePos.Add(pl.Direction.Mul(-pl.MaxShadowDistance * 0.5)).Vec4(0)
+		l.Position = pl.GetShadowmapPos(pi.Frame)
 		var imIndex vmodel.ImageIndex
 		if ok && rsr.lastImage >= 0 {
 			imIndex = imFrame.AddFrameImage(rsr.shadowImages[rsr.lastImage].DefaultView(pi.Frame.GetCache().Ctx), rsr.sampler)
@@ -94,7 +111,7 @@ type dirShadowPass struct {
 	ctx         vk.APIContext
 	cmd         *vk.Command
 	maxDistance float32
-	pos         mgl32.Vec3
+	pos         mgl32.Vec4
 	dl          *vk.DrawList
 	pl          *vk.GraphicsPipeline
 	plSkin      *vk.GraphicsPipeline
@@ -115,7 +132,7 @@ func (s *dirShadowPass) BindFrame() *vk.DescriptorSet {
 	uc := vscene.GetUniformCache(s.rc)
 	if s.dsFrame == nil {
 		s.dsFrame, s.slFrame = uc.Alloc(s.ctx)
-		s.si = &shaderFrame{plane: QuoternionFromYUp(s.dir), lightPos: s.pos.Vec4(1),
+		s.si = &shaderFrame{plane: QuoternionFromYUp(s.dir), lightPos: s.pos,
 			maxShadow: s.maxDistance, minShadow: 0}
 
 	}
@@ -201,7 +218,7 @@ func (pl *DirectionalLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.
 	sp := &dirShadowPass{ctx: cache.Ctx, cmd: cmd, dl: &vk.DrawList{}, maxDistance: pl.MaxShadowDistance,
 		pl: gpl, plSkin: gSkinnedPl, rc: cache, renderer: pi.Frame.GetRenderer()}
 	sp.dir = pl.Direction
-	sp.pos = eyePos.Add(pl.Direction.Mul(-pl.MaxShadowDistance * 0.5))
+	sp.pos = pl.GetShadowmapPos(pi.Frame)
 
 	pd.Scene.Process(pi.Time, sp, sp)
 	sp.flush()
@@ -271,6 +288,19 @@ func (pl *DirectionalLight) makeRenderResources(ctx vk.APIContext, dev *vk.Devic
 		rsr.shadowViews = append(rsr.shadowViews, vk.NewImageView(ctx, rsr.shadowImages[idx], &rg))
 	}
 	return &rsr
+}
+
+func (pl *DirectionalLight) GetShadowmapPos(f vmodel.Frame) mgl32.Vec4 {
+	sf := vscene.GetSimpleFrame(f)
+	if sf == nil {
+		return mgl32.Vec4{}
+	}
+	v := sf.SSF.Projection.Inv().Mul4x1(mgl32.Vec4{0, 0, pl.CenterPoint, 1})
+	v = v.Mul(1 / v.W())
+	cp := sf.SSF.View.Inv().Mul4x1(v).Vec3()
+
+	pos := cp.Add(pl.Direction.Normalize().Mul(-pl.MaxShadowDistance * 0.5)).Vec4(0)
+	return pos
 }
 
 func makeDirFrameResource(cache *vk.RenderCache, rsr *renderResources, imageIndex int) *dirFrameResources {

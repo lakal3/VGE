@@ -4,7 +4,7 @@
 
 #define DYNAMIC_DESCRIPTORS 1
 
-#define MAX_INSTANCES 200
+#define MAX_INSTANCES 600
 
 #include "../../vscene/input.glsl"
 #include "../../forward/frame.glsl"
@@ -21,6 +21,7 @@ layout(set = 1, binding = 0) uniform INSTANCES {
 } instances;
 
 #ifdef SKINNED
+#define SKIN_SET 4
 #include "../../vscene/skin.glsl"
 #endif
 

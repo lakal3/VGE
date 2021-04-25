@@ -29,39 +29,6 @@ layout(set = 2, binding = 1) uniform sampler2D textures[8];
 
 #include "../decal/decal.glsl"
 
-layout(set=3, binding=0) uniform DECALS {
-    DECAL decals[256];
-} decals;
-
-vec3 lerp3(vec3 base, vec3 target, float factor) {
-    return base * (1 - factor) + target * factor;
-}
-
-void calcDecal(int idx, vec3 pos, inout vec3 albedo, inout vec3 normal, vec3 refNormal) {
-    DECAL d = decals.decals[idx];
-    vec4 dp = d.toDecalSpace * vec4(pos, 1);
-    if (dp.x < -1 || dp.x > 1 || dp.y < -1 || dp.y > 1 || dp.z < -1 || dp.z > 1) {
-        return;
-    }
-    vec3 dNormal = vec3(d.toDecalSpace * vec4(normal, 0));
-    vec4 aBase = d.albedoColor;
-    vec2 samplePoint = dp.xz * vec2(0.5) + vec2(0.5);
-    if (d.tx_albedo > 0) {
-        aBase = aBase * texture(frameImages2D[int(d.tx_albedo)], samplePoint);
-    }
-    float factor = aBase.a;
-    vec3 aNormal = vec3(0, 1, 0);
-    factor = dot(aNormal, refNormal) * d.normalAttenuation * factor + (1 - d.normalAttenuation) * factor;
-    if (factor < 0.01) {
-        return;
-    }
-    if (d.tx_normal > 0) {
-        aNormal = vec3(texture(frameImages2D[int(d.tx_normal)], samplePoint)) * vec3(2) - vec3(1);
-        aNormal = normalize(aNormal.xzy);   // Convert to Y - up
-    }
-    albedo = lerp3(albedo, vec3(aBase), factor);
-    normal = lerp3(normal, aNormal, factor);
-}
 
 vec3 calcNormal() {
     vec3 bNormal = vec3(0, 0, 1);
@@ -121,9 +88,12 @@ void main() {
     vec3 diffuseColor = vec3(diffuseAlphaColor);
     vec3 normal = calcNormal();
     vec3 refNormal = normalize(i_normalSpace * vec3(0,0,1));
+    float metallness = 0;
+    float roughness = 1;
     // Calc decals
-    for (int idx = i_decalIndex.x; idx < i_decalIndex.y; idx++) {
-        calcDecal(idx, i_position, diffuseColor, normal, refNormal);
+    int noDecals = int(decals.noDecals);
+    for (int idx = 0; idx < noDecals; idx++) {
+        calcDecal(idx, i_position, diffuseColor, normal, metallness, roughness, refNormal);
     }
     if (m == 2) {
         o_Color = vec4((normal * vec3(0.5) + vec3(0.5)) * i_modes.xyz,1);

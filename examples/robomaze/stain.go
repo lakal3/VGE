@@ -32,7 +32,7 @@ func (s *stainPainter) Process(pi *vscene.ProcessInfo) {
 			st.update(pi.Time)
 			if !st.removed {
 				lst = append(lst, st)
-				s.painter.AddDecal(app.stainSet, 0, st.location, mgl32.Vec4{1, 1, 1, 1})
+				s.painter.AddDecal(app.stainSet, 0, st.location)
 			}
 		}
 		s.m.stains = lst

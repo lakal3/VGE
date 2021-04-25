@@ -113,8 +113,17 @@ func (f *frameDescriptor) Dispose() {
 	}
 }
 
+var kFrameImages = vk.NewKey()
+
 // SetFrameImage sets image for whole frame (like environment) and returns its index. If imageIndex < 0 all image slots has been used
 func (f *Frame) SetFrameImage(rc *vk.RenderCache, view *vk.ImageView, sampler *vk.Sampler) (ii vmodel.ImageIndex) {
+	hm := rc.GetPerFrame(kFrameImages, func(ctx vk.APIContext) interface{} {
+		return make(map[uintptr]vmodel.ImageIndex)
+	}).(map[uintptr]vmodel.ImageIndex)
+	imageIndex, ok := hm[view.Handle()]
+	if ok {
+		return imageIndex
+	}
 	lt := GetFrameLayout(rc.Ctx, rc.Device)
 	ltDyn := GetDynamicFrameLayout(rc.Ctx, rc.Device)
 	fd := rc.Get(kBoundFrame, func(ctx vk.APIContext) interface{} {
@@ -136,6 +145,7 @@ func (f *Frame) SetFrameImage(rc *vk.RenderCache, view *vk.ImageView, sampler *v
 		ii = -1
 	}
 	if fdDyn == nil {
+		hm[view.Handle()] = ii
 		fi.idx++
 		return ii
 	}
@@ -148,6 +158,7 @@ func (f *Frame) SetFrameImage(rc *vk.RenderCache, view *vk.ImageView, sampler *v
 	} else {
 		ii = -1
 	}
+	hm[view.Handle()] = ii
 	fi.idx++
 	return
 }

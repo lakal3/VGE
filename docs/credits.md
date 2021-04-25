@@ -29,6 +29,12 @@ Single file C/C++ libraries used for png, jpg and hdr image decompression
 A superior tool to edit the 3D models. Although, not directly in the project, most of the assets models were post processed with
 Blender 2.9x.
 
+[Renderdoc](https://renderdoc.org/)
+
+A superior tool to debug GPU. Used so many times to debug what when wrong I can't even count.
+A must tool if you want to make more complex shaders.
+
+
 
 ## 2D and 3D assets
 

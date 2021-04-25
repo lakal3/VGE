@@ -15,7 +15,7 @@ import (
 	"github.com/lakal3/vge/vge/vscene"
 )
 
-const maxInstances = 200 // Must match shader value
+const maxInstances = 1000 // Must match shader value
 
 // MinEmission is minimum emission to interpret that material is emissive. Otherwise it is non emissive
 const MinEmission = 0.01

@@ -58,7 +58,7 @@ void main() {
         calcDecal(idx, i_position, albedo, normal, metallic, roughness, refNormal);
     }
 
-    if (emissiveColor.a > 0.1) {
+    if (emissiveColor.r + emissiveColor.g + emissiveColor.b > 0.01) {
         // We can only handle emissive or normal color
         o_Color = emissiveColor;
         o_Normal = vec4(0);

@@ -256,7 +256,7 @@ func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.Ren
 
 	join := &DrawLights{ds: dsLight, fb: fbFinal, rp: f.rpFinal, cache: rc, cmd: cmd, frame: frame, pipeline: f.joinPipeline}
 	// splitPhase := vscene.NewDrawPhase(rc, f.rpFinal, vscene.LAYER3D, cmd, nil, nil)
-	// dt := vscene.NewDrawPhase(rc, f.rpFinal, vscene.LAYERTransparent, cmd, nil, nil)
+	transparent := vscene.NewDrawPhase(frame, f.rpFinal, vscene.LAYERTransparent, cmd, nil, nil)
 	ui := vscene.NewDrawPhase(frame, f.rpFinal, vscene.LAYERUI, cmd, func() {
 	}, func() {
 
@@ -264,7 +264,7 @@ func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.Ren
 	})
 	ppPhase := &vscene.PredrawPhase{Scene: sc, Cmd: cmd}
 
-	sc.Process(sc.Time, frame, &vscene.AnimatePhase{}, ppPhase, bgPhase, splitPhase, join, ui)
+	sc.Process(sc.Time, frame, &vscene.AnimatePhase{}, ppPhase, bgPhase, splitPhase, join, transparent, ui)
 
 	// Complete pendings from predraw phase
 	for _, pd := range ppPhase.Pending {

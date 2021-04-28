@@ -22,6 +22,10 @@ New features:
 
 - VGE can now create Vulkan render pass with multiple or zero outputs.
 
+- You are now allowed to change content of model builder before loading model to GPU. 
+  This allows interpreting standard model like glTF and convert it to something that is not
+  directly supported by model format. (There will be an example about this later).
+
 Breaking changes:
 
 - Forward renderer has been moved to own module. There will be new advanced (deferred) renderer available.

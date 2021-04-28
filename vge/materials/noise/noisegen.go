@@ -1,6 +1,8 @@
 package noise
 
 import (
+	"github.com/lakal3/vge/vge/vk"
+	"github.com/lakal3/vge/vge/vmodel"
 	"math/rand"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -51,6 +53,19 @@ func (pn *PerlinNoise) ToBytes() (content []byte) {
 		result[idx] = byte(255 * (v - min) / d)
 	}
 	return result
+}
+
+func (pn *PerlinNoise) AddToModel(mb *vmodel.ModelBuilder, usage vk.ImageUsageFlags) vmodel.ImageIndex {
+	idx := mb.AddImage("raw", pn.ToBytes(), usage)
+	mb.Images[idx].Desc = vk.ImageDescription{
+		Width:     uint32(pn.size),
+		Height:    uint32(pn.size),
+		Depth:     1,
+		Format:    vk.FORMATR8Unorm,
+		Layers:    1,
+		MipLevels: 1,
+	}
+	return idx
 }
 
 func (pn *PerlinNoise) calcAt(corners []mgl32.Vec2, x int, y int, cn int, gridSize float32) float32 {

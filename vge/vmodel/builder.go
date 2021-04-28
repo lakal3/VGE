@@ -26,12 +26,11 @@ type ModelBuilder struct {
 	MipLevels     uint32
 	ShaderFactory ShaderFactory
 	white         *ImageBuilder
-	materials     []materialInfo
-	images        []*ImageBuilder
-	meshes        []*MeshBuilder
-	root          *NodeBuilder
-	nodeCount     uint32
-	skins         []Skin
+	Materials     []MaterialInfo
+	Images        []*ImageBuilder
+	Meshes        []*MeshBuilder
+	Root          *NodeBuilder
+	Skins         []Skin
 	wg            *sync.WaitGroup
 	// joints       []MJoint
 	// skins        []MSkin
@@ -40,41 +39,40 @@ type ModelBuilder struct {
 
 type ImageBuilder struct {
 	index       ImageIndex
-	kind        string
-	content     []byte
-	usage       vk.ImageUsageFlags
-	desc        vk.ImageDescription
+	Kind        string
+	Content     []byte
+	Usage       vk.ImageUsageFlags
+	Desc        vk.ImageDescription
 	orignalMips uint32
 }
 
 type NodeBuilder struct {
-	Index    NodeIndex
-	name     string
-	children []*NodeBuilder
-	location mgl32.Mat4
-	mesh     MeshIndex
-	material MaterialIndex
-	skin     SkinIndex
+	Name     string
+	Children []*NodeBuilder
+	Location mgl32.Mat4
+	Mesh     MeshIndex
+	Material MaterialIndex
+	Skin     SkinIndex
 }
 
 // SetMesh assign a mesh with material to node
 func (nb *NodeBuilder) SetMesh(m MeshIndex, mat MaterialIndex) *NodeBuilder {
-	nb.mesh = m
-	nb.material = mat
+	nb.Mesh = m
+	nb.Material = mat
 	return nb
 }
 
 // SetMesh assign a mesh with material and skin to node
 func (nb *NodeBuilder) SetSkinnedMesh(m MeshIndex, mat MaterialIndex, skin SkinIndex) *NodeBuilder {
-	nb.mesh = m
-	nb.material = mat
-	nb.skin = skin
+	nb.Mesh = m
+	nb.Material = mat
+	nb.Skin = skin
 	return nb
 }
 
 // Add childs adds child nodes to a node
 func (nb *NodeBuilder) AddChild(child ...*NodeBuilder) *NodeBuilder {
-	nb.children = append(nb.children, child...)
+	nb.Children = append(nb.Children, child...)
 	return nb
 }
 
@@ -82,24 +80,42 @@ func (nb *NodeBuilder) AddChild(child ...*NodeBuilder) *NodeBuilder {
 // to shader. Most of shader also build a descriptor set that links all static assets like color and textures
 // of a material to a single Vulkan descriptor set.
 func (mb *ModelBuilder) AddMaterial(name string, props MaterialProperties) MaterialIndex {
-	mi := MaterialIndex(len(mb.materials))
-	mb.materials = append(mb.materials, materialInfo{props: props, name: name})
+	mi := MaterialIndex(len(mb.Materials))
+	mb.Materials = append(mb.Materials, MaterialInfo{Props: props, Name: name})
 	return mi
 }
 
-// Add new decal material to model builders. For decal material model builder will not create a shader nor allocate any
+// FindMaterial retrieves converted named material. Return is -1, nil if no material was found
+func (mb *ModelBuilder) FindMaterial(name string) (index MaterialIndex) {
+	for idx, mi := range mb.Materials {
+		if mi.Name == name {
+			return MaterialIndex(idx)
+		}
+	}
+	return -1
+}
+
+// ForNodes recursively enumerates though all nodes child nodes
+func (nb *NodeBuilder) ForNodes(action func(n *NodeBuilder, parent *NodeBuilder, index int)) {
+	for idx, ch := range nb.Children {
+		action(ch, nb, idx)
+		ch.ForNodes(action)
+	}
+}
+
+// Add new Decal material to model builders. For Decal material model builder will not create a shader nor allocate any
 // descriptor sets.
 func (mb *ModelBuilder) AddDecalMaterial(name string, props MaterialProperties) MaterialIndex {
-	mi := MaterialIndex(len(mb.materials))
-	mb.materials = append(mb.materials, materialInfo{props: props, name: name, decal: true})
+	mi := MaterialIndex(len(mb.Materials))
+	mb.Materials = append(mb.Materials, MaterialInfo{Props: props, Name: name, Decal: true})
 	return mi
 }
 
 // Attach image to model. This image can be them bound to material using material properties
 func (mb *ModelBuilder) AddImage(kind string, content []byte, usage vk.ImageUsageFlags) ImageIndex {
 	_ = mb.AddWhite()
-	im := &ImageBuilder{kind: kind, content: content, index: ImageIndex(len(mb.images)), usage: usage}
-	mb.images = append(mb.images, im)
+	im := &ImageBuilder{Kind: kind, Content: content, index: ImageIndex(len(mb.Images)), Usage: usage}
+	mb.Images = append(mb.Images, im)
 	return im.index
 }
 
@@ -110,45 +126,31 @@ func (mb *ModelBuilder) AddImage(kind string, content []byte, usage vk.ImageUsag
 
 func (mb *ModelBuilder) AddWhite() ImageIndex {
 	if mb.white == nil {
-		mb.white = &ImageBuilder{kind: "dds", content: white_bin, index: ImageIndex(len(mb.images)),
-			usage: vk.IMAGEUsageSampledBit | vk.IMAGEUsageTransferDstBit}
-		mb.images = append(mb.images, mb.white)
+		mb.white = &ImageBuilder{Kind: "dds", Content: white_bin, index: ImageIndex(len(mb.Images)),
+			Usage: vk.IMAGEUsageSampledBit | vk.IMAGEUsageTransferDstBit}
+		mb.Images = append(mb.Images, mb.white)
 	}
 	return mb.white.index
 }
 
 // Add a mesh to model. Actual mesh content is built with MeshBuilder
 func (mb *ModelBuilder) AddMesh(mesh *MeshBuilder) MeshIndex {
-	mesh.buildUvs()
-	mesh.buildNormals()
-	mesh.buildTangets()
-	// mesh.buildQTangent()
-	hasWeights := mesh.buildWeights()
-	var aabb AABB
-	for idx, vb := range mesh.vextexies {
-		aabb.Add(idx == 0, vb.position)
-	}
-	mesh.aabb = aabb
-	if hasWeights {
-		mesh.kind = MESHKindSkinned
-	}
-	mesh.index = MeshIndex(len(mb.meshes))
-	mb.meshes = append(mb.meshes, mesh)
-	return mesh.index
+
+	index := MeshIndex(len(mb.Meshes))
+	mb.Meshes = append(mb.Meshes, mesh)
+	return index
 }
 
 // Add new node to model. If parent node is empty, predefined root node, named _root will be used.
 func (mb *ModelBuilder) AddNode(name string, parent *NodeBuilder, transform mgl32.Mat4) *NodeBuilder {
 	if parent == nil {
-		if mb.root == nil {
-			mb.root = &NodeBuilder{name: "_root", location: mgl32.Ident4(), Index: 0, mesh: -1, material: -1}
-			mb.nodeCount++
+		if mb.Root == nil {
+			mb.Root = &NodeBuilder{Name: "_root", Location: mgl32.Ident4(), Mesh: -1, Material: -1}
 		}
-		parent = mb.root
+		parent = mb.Root
 	}
-	n := &NodeBuilder{name: name, location: transform, Index: NodeIndex(mb.nodeCount), mesh: -1, material: -1}
-	mb.nodeCount++
-	parent.children = append(parent.children, n)
+	n := &NodeBuilder{Name: name, Location: transform, Mesh: -1, Material: -1}
+	parent.Children = append(parent.Children, n)
 	return n
 }
 
@@ -160,28 +162,47 @@ func (mb *ModelBuilder) ToModel(ctx vk.APIContext, dev *vk.Device) *Model {
 	mb.AddWhite()
 	m.memPool = vk.NewMemoryPool(dev)
 	m.owner.AddChild(m.memPool)
-	m.images = make([]*vk.Image, 0, len(mb.images))
+	m.images = make([]*vk.Image, 0, len(mb.Images))
 	var imMaxLen uint64
-	for _, ib := range mb.images {
-		vasset.DescribeImage(ctx, ib.kind, &ib.desc, ib.content)
-		imLen := ib.desc.ImageSize()
+	for _, ib := range mb.Images {
+		if ib.Kind != "raw" {
+			vasset.DescribeImage(ctx, ib.Kind, &ib.Desc, ib.Content)
+		} else {
+			if ib.Desc.Layers == 0 {
+				ctx.SetError(errors.New("Describe raw images before ToModel"))
+			}
+		}
+		imLen := ib.Desc.ImageSize()
 		if imLen > imMaxLen {
 			imMaxLen = imLen
 		}
-		desc := ib.desc
+		desc := ib.Desc
 		ib.orignalMips = desc.MipLevels
 		if desc.MipLevels < mb.MipLevels && mb.canDoMips(desc) {
 			desc.MipLevels = mb.MipLevels
-			ib.desc.MipLevels = mb.MipLevels
-			ib.usage |= vk.IMAGEUsageStorageBit
+			ib.Desc.MipLevels = mb.MipLevels
+			ib.Usage |= vk.IMAGEUsageStorageBit
 		}
-		img := m.memPool.ReserveImage(ctx, desc, ib.usage)
+		img := m.memPool.ReserveImage(ctx, desc, ib.Usage)
 		m.images = append(m.images, img)
 	}
 	var iLen [MESHMax]uint64
 	var vLen [MESHMax]uint64
 
-	for _, ms := range mb.meshes {
+	for _, ms := range mb.Meshes {
+		ms.buildUvs()
+		ms.buildNormals()
+		ms.buildTangets()
+		// mesh.buildQTangent()
+		hasWeights := ms.buildWeights()
+		var aabb AABB
+		for idx, vb := range ms.Vextexies {
+			aabb.Add(idx == 0, vb.Position)
+		}
+		ms.aabb = aabb
+		if hasWeights {
+			ms.kind = MESHKindSkinned
+		}
 		var vertexSize uint64
 		switch ms.kind {
 		case MESHKindNormal:
@@ -189,8 +210,8 @@ func (mb *ModelBuilder) ToModel(ctx vk.APIContext, dev *vk.Device) *Model {
 		case MESHKindSkinned:
 			vertexSize = uint64(unsafe.Sizeof(skinnedVertex{}))
 		}
-		iLen[ms.kind] += uint64(len(ms.incides)) * 4
-		vLen[ms.kind] += vertexSize * uint64(len(ms.vextexies))
+		iLen[ms.kind] += uint64(len(ms.Incides)) * 4
+		vLen[ms.kind] += vertexSize * uint64(len(ms.Vextexies))
 	}
 	for idx := 0; idx < MESHMax; idx++ {
 		if iLen[idx] > 0 {
@@ -208,33 +229,33 @@ func (mb *ModelBuilder) ToModel(ctx vk.APIContext, dev *vk.Device) *Model {
 
 	mb.copyNormalVertex(m, cp)
 	mb.copySkinnedVertex(m, cp)
-	for _, ib := range mb.images {
+	for _, ib := range mb.Images {
 		mb.wg.Add(1)
 		go mb.copyImage(m, ctx, dev, ib)
 	}
 	sampler := GetDefaultSampler(ctx, dev)
 	mb.wg.Wait()
 	mb.copyUbf(m, cp, ubfLen, sampler)
-	mb.addNodes(mb.root, m)
-	m.skins = mb.skins
+	mb.addNodes(mb.Root, m)
+	m.skins = mb.Skins
 	return m
 }
 
 func (mb *ModelBuilder) copyNormalVertex(m *Model, cp *Copier) {
 	var indices []uint32
 	var vertexies []normalVertex
-	for _, mesh := range mb.meshes {
+	for _, mesh := range mb.Meshes {
 		offset := uint32(len(vertexies))
 		iOffset := uint32(len(indices))
 		if mesh.kind == MESHKindNormal {
-			for _, vb := range mesh.vextexies {
-				vertexies = append(vertexies, normalVertex{position: vb.position, uv: vb.uv, normal: vb.normal, tangent: vb.tangent, color: vb.color})
+			for _, vb := range mesh.Vextexies {
+				vertexies = append(vertexies, normalVertex{position: vb.Position, uv: vb.Uv, normal: vb.Normal, tangent: vb.Tangent, color: vb.Color})
 			}
-			for _, idx := range mesh.incides {
+			for _, idx := range mesh.Incides {
 				indices = append(indices, idx+offset)
 			}
 			m.meshes = append(m.meshes, Mesh{Kind: MESHKindNormal, AABB: mesh.aabb,
-				Model: m, From: iOffset, Count: uint32(len(mesh.incides))})
+				Model: m, From: iOffset, Count: uint32(len(mesh.Incides))})
 		}
 	}
 	if len(indices) > 0 {
@@ -246,19 +267,19 @@ func (mb *ModelBuilder) copyNormalVertex(m *Model, cp *Copier) {
 func (mb *ModelBuilder) copySkinnedVertex(m *Model, cp *Copier) {
 	var indices []uint32
 	var vertexies []skinnedVertex
-	for _, mesh := range mb.meshes {
+	for _, mesh := range mb.Meshes {
 		offset := uint32(len(vertexies))
 		iOffset := uint32(len(indices))
 		if mesh.kind == MESHKindSkinned {
-			for _, vb := range mesh.vextexies {
-				vertexies = append(vertexies, skinnedVertex{position: vb.position, uv: vb.uv, normal: vb.normal, tangent: vb.tangent, color: vb.color,
-					weights: vb.weights, joints: vb.joints})
+			for _, vb := range mesh.Vextexies {
+				vertexies = append(vertexies, skinnedVertex{position: vb.Position, uv: vb.Uv, normal: vb.Normal, tangent: vb.Tangent, color: vb.Color,
+					weights: vb.Weights, joints: vb.Joints})
 			}
-			for _, idx := range mesh.incides {
+			for _, idx := range mesh.Incides {
 				indices = append(indices, idx+offset)
 			}
 			m.meshes = append(m.meshes, Mesh{Kind: MESHKindSkinned, AABB: mesh.aabb,
-				Model: m, From: iOffset, Count: uint32(len(mesh.incides))})
+				Model: m, From: iOffset, Count: uint32(len(mesh.Incides))})
 		}
 	}
 	if len(indices) > 0 {
@@ -273,40 +294,40 @@ func (mb *ModelBuilder) copyImage(m *Model, ctx vk.APIContext, dev *vk.Device, i
 	}()
 	cp := NewCopier(ctx, dev)
 	defer cp.Dispose()
-	if ib.desc.MipLevels > ib.orignalMips {
-		r := ib.desc.FullRange()
+	if ib.Desc.MipLevels > ib.orignalMips {
+		r := ib.Desc.FullRange()
 		cp.SetLayout(m.images[ib.index], r, vk.IMAGELayoutGeneral)
-		r = vk.ImageRange{LayerCount: ib.desc.Layers, LevelCount: 1}
-		cp.CopyToImage(m.images[ib.index], ib.kind, ib.content, r, vk.IMAGELayoutGeneral)
+		r = vk.ImageRange{LayerCount: ib.Desc.Layers, LevelCount: 1}
+		cp.CopyToImage(m.images[ib.index], ib.Kind, ib.Content, r, vk.IMAGELayoutGeneral)
 
 		comp := NewCompute(ctx, dev)
 		defer comp.Dispose()
 		for mip := ib.orignalMips; mip < mb.MipLevels; mip++ {
-			for l := uint32(0); l < ib.desc.Layers; l++ {
+			for l := uint32(0); l < ib.Desc.Layers; l++ {
 				comp.MipImage(m.images[ib.index], l, mip)
 			}
 		}
-		r = ib.desc.FullRange()
+		r = ib.Desc.FullRange()
 		r.Layout = vk.IMAGELayoutGeneral
 		cp.SetLayout(m.images[ib.index], r, vk.IMAGELayoutShaderReadOnlyOptimal)
 	} else {
-		cp.CopyToImage(m.images[ib.index], ib.kind, ib.content, ib.desc.FullRange(), vk.IMAGELayoutShaderReadOnlyOptimal)
+		cp.CopyToImage(m.images[ib.index], ib.Kind, ib.Content, ib.Desc.FullRange(), vk.IMAGELayoutShaderReadOnlyOptimal)
 	}
 }
 
 func (mb *ModelBuilder) buildMaterials(ctx vk.APIContext, dev *vk.Device, m *Model) uint64 {
 	mCounts := make(map[*vk.DescriptorLayout]int)
 	mPools := make(map[*vk.DescriptorLayout]*vk.DescriptorPool)
-	for idx, mt := range mb.materials {
-		if !mt.decal {
+	for idx, mt := range mb.Materials {
+		if !mt.Decal {
 			if mb.ShaderFactory == nil {
 				ctx.SetError(errors.New("Set ShaderFactory"))
 				return 0
 			}
-			mt.mat, mt.layout, mt.ubf, mt.images = mb.ShaderFactory(ctx, dev, mt.props)
+			mt.mat, mt.layout, mt.ubf, mt.images = mb.ShaderFactory(ctx, dev, mt.Props)
 			mCounts[mt.layout] = mCounts[mt.layout] + 1
 		}
-		mb.materials[idx] = mt
+		mb.Materials[idx] = mt
 
 	}
 
@@ -317,21 +338,21 @@ func (mb *ModelBuilder) buildMaterials(ctx vk.APIContext, dev *vk.Device, m *Mod
 	}
 
 	offset := uint64(0)
-	for idx, mi := range mb.materials {
-		if mi.decal {
-			m.materials = append(m.materials, Material{Props: mi.props, Name: mi.name})
+	for idx, mi := range mb.Materials {
+		if mi.Decal {
+			m.materials = append(m.materials, Material{Props: mi.Props, Name: mi.Name})
 			continue
 		}
 		mi.ds = mPools[mi.layout].Alloc(ctx)
 		mi.offset = offset
-		mb.materials[idx] = mi
+		mb.Materials[idx] = mi
 		rem := uint64(len(mi.ubf) % vk.MinUniformBufferOffsetAlignment)
 		if rem > 0 {
 			offset += uint64(len(mi.ubf)) + vk.MinUniformBufferOffsetAlignment - rem
 		} else {
 			offset += uint64(len(mi.ubf))
 		}
-		m.materials = append(m.materials, Material{Shader: mi.mat, Props: mi.props, Name: mi.name})
+		m.materials = append(m.materials, Material{Shader: mi.mat, Props: mi.Props, Name: mi.Name})
 	}
 	return offset
 }
@@ -341,8 +362,8 @@ func (mb *ModelBuilder) copyUbf(m *Model, cp *Copier, ubfLen uint64, sampler *vk
 		return
 	}
 	ubfs := make([]byte, ubfLen)
-	for mIndex, mi := range mb.materials {
-		if mi.decal {
+	for mIndex, mi := range mb.Materials {
+		if mi.Decal {
 			continue
 		}
 		copy(ubfs[mi.offset:], mi.ubf)
@@ -359,14 +380,14 @@ func (mb *ModelBuilder) addNodes(n *NodeBuilder, m *Model) NodeIndex {
 	if n == nil {
 		return -1
 	}
-	node := Node{Model: m, Name: n.name, Transform: n.location}
+	node := Node{Model: m, Name: n.Name, Transform: n.Location}
 	result := NodeIndex(len(m.nodes))
-	node.Mesh = n.mesh
-	node.Material = n.material
-	node.Skin = n.skin
+	node.Mesh = n.Mesh
+	node.Material = n.Material
+	node.Skin = n.Skin
 	m.nodes = append(m.nodes, node)
-	if len(n.children) > 0 {
-		for _, ch := range n.children {
+	if len(n.Children) > 0 {
+		for _, ch := range n.Children {
 			node.Children = append(node.Children, mb.addNodes(ch, m))
 		}
 		m.nodes[result] = node
@@ -376,8 +397,8 @@ func (mb *ModelBuilder) addNodes(n *NodeBuilder, m *Model) NodeIndex {
 
 // Add skin to model
 func (mb *ModelBuilder) AddSkin(skin Skin) SkinIndex {
-	mb.skins = append(mb.skins, skin)
-	idx := SkinIndex(len(mb.skins))
+	mb.Skins = append(mb.Skins, skin)
+	idx := SkinIndex(len(mb.Skins))
 	return idx
 }
 
@@ -386,23 +407,22 @@ func (mb *ModelBuilder) canDoMips(desc vk.ImageDescription) bool {
 	return (w>>mb.MipLevels) > 1 && (h>>mb.MipLevels) > 1
 }
 
-type materialInfo struct {
+type MaterialInfo struct {
+	Props  MaterialProperties
+	Name   string
+	Decal  bool
 	mat    Shader
 	offset uint64
 	ubf    []byte
 	images []ImageIndex
 	ds     *vk.DescriptorSet
 	layout *vk.DescriptorLayout
-	props  MaterialProperties
-	name   string
-	decal  bool
 }
 
 // MeshBuilder is used to construct one mesh. Mesh is then added to model builder
 type MeshBuilder struct {
-	index     MeshIndex
-	vextexies []*VertexBuilder
-	incides   []uint32
+	Vextexies []*VertexBuilder
+	Incides   []uint32
 	aabb      AABB
 	kind      MeshKind
 }
@@ -419,21 +439,21 @@ const (
 // Vertex builder builds one vertex of a mesh
 type VertexBuilder struct {
 	Index    uint32
-	position mgl32.Vec3
-	uv       mgl32.Vec2
-	normal   mgl32.Vec3
-	tangent  mgl32.Vec3
-	color    mgl32.Vec4
-	weights  mgl32.Vec4
+	Position mgl32.Vec3
+	Uv       mgl32.Vec2
+	Normal   mgl32.Vec3
+	Tangent  mgl32.Vec3
+	Color    mgl32.Vec4
+	Weights  mgl32.Vec4
 	// qtangent mgl32.Quat
-	joints [4]uint16
+	Joints [4]uint16
 	flags  VertexFlags
 }
 
 // Add new vertex to mesh. You must provide at least position of mesh
 func (mb *MeshBuilder) AddVertex(position mgl32.Vec3) *VertexBuilder {
-	vb := &VertexBuilder{position: position, Index: uint32(len(mb.vextexies))}
-	mb.vextexies = append(mb.vextexies, vb)
+	vb := &VertexBuilder{Position: position, Index: uint32(len(mb.Vextexies))}
+	mb.Vextexies = append(mb.Vextexies, vb)
 	return vb
 }
 
@@ -441,8 +461,8 @@ func (mb *MeshBuilder) AddVertex(position mgl32.Vec3) *VertexBuilder {
 // one triagle. VGE don't support any other modes to combine vertexes. Use indexes if you wan't to reuse same vertex multiple
 // times
 func (mb *MeshBuilder) AddIndex(points ...uint32) (index int) {
-	idx := len(mb.incides) / len(points)
-	mb.incides = append(mb.incides, points...)
+	idx := len(mb.Incides) / len(points)
+	mb.Incides = append(mb.Incides, points...)
 	return idx
 }
 
@@ -500,11 +520,11 @@ func (mb *MeshBuilder) addPos(tr mgl32.Mat4, v mgl32.Vec3, n mgl32.Vec3, uv mgl3
 }
 
 func (mb *MeshBuilder) buildUvs() {
-	for _, vb := range mb.vextexies {
+	for _, vb := range mb.Vextexies {
 		if vb.flags&VFUV != 0 {
 			continue
 		}
-		pos := vb.position
+		pos := vb.Position
 		if pos.Len() < 0.001 {
 			vb.AddUV(mgl32.Vec2{0, 0})
 		} else {
@@ -516,11 +536,11 @@ func (mb *MeshBuilder) buildUvs() {
 }
 
 func (mb *MeshBuilder) buildNormals() error {
-	for _, vb := range mb.vextexies {
+	for _, vb := range mb.Vextexies {
 		if vb.flags&VFNormal != 0 {
 			continue
 		}
-		pos := vb.position
+		pos := vb.Position
 
 		if pos.Len() < 0.001 {
 			vb.AddNormal(mgl32.Vec3{0, 1, 0})
@@ -533,25 +553,25 @@ func (mb *MeshBuilder) buildNormals() error {
 }
 
 func (mb *MeshBuilder) buildTangets() {
-	if len(mb.vextexies) == 0 || mb.vextexies[0].flags&VFTangent != 0 {
+	if len(mb.Vextexies) == 0 || mb.Vextexies[0].flags&VFTangent != 0 {
 		return
 	}
-	incides := mb.incides
-	bitangents := make([]mgl32.Vec3, len(mb.vextexies))
+	incides := mb.Incides
+	bitangents := make([]mgl32.Vec3, len(mb.Vextexies))
 	for x := 0; x < len(incides); x += 3 {
-		vb1 := mb.vextexies[incides[x]]
-		vb2 := mb.vextexies[incides[x+1]]
-		vb3 := mb.vextexies[incides[x+2]]
+		vb1 := mb.Vextexies[incides[x]]
+		vb2 := mb.Vextexies[incides[x+1]]
+		vb3 := mb.Vextexies[incides[x+2]]
 
-		deltuvs1 := vb2.uv.Sub(vb1.uv)
-		deltuvs2 := vb3.uv.Sub(vb1.uv)
-		deltpositions1 := vb2.position.Sub(vb1.position)
-		deltpositions2 := vb3.position.Sub(vb1.position)
+		deltuvs1 := vb2.Uv.Sub(vb1.Uv)
+		deltuvs2 := vb3.Uv.Sub(vb1.Uv)
+		deltpositions1 := vb2.Position.Sub(vb1.Position)
+		deltpositions2 := vb3.Position.Sub(vb1.Position)
 		r := 1.0 / (deltuvs1.X()*deltuvs2.Y() - deltuvs1.Y()*deltuvs2.X())
 		var tangent mgl32.Vec3
 		var bitangent mgl32.Vec3
 		if math.IsInf(float64(r), 0) {
-			pos1 := vb1.position
+			pos1 := vb1.Position
 			tangent = mgl32.Vec3{-pos1.Y(), pos1.Z(), pos1.X()}
 			bitangent = mgl32.Vec3{pos1.Z(), pos1.X(), -pos1.Y()}
 		} else {
@@ -559,17 +579,17 @@ func (mb *MeshBuilder) buildTangets() {
 			// bitangent = (deltpositions2 * deltuvs1.x   - deltpositions1 * deltuvs2.x)*r;
 			bitangent = deltpositions2.Mul(deltuvs1.X()).Sub(deltpositions1.Mul(deltuvs2.X())).Mul(r)
 		}
-		vb1.tangent = vb1.tangent.Add(tangent)
-		vb2.tangent = vb2.tangent.Add(tangent)
-		vb3.tangent = vb3.tangent.Add(tangent)
+		vb1.Tangent = vb1.Tangent.Add(tangent)
+		vb2.Tangent = vb2.Tangent.Add(tangent)
+		vb3.Tangent = vb3.Tangent.Add(tangent)
 		bitangents[incides[x]] = bitangents[incides[x]].Add(bitangent)
 		bitangents[incides[x+1]] = bitangents[incides[x+1]].Add(bitangent)
 		bitangents[incides[x+2]] = bitangents[incides[x+2]].Add(bitangent)
 	}
 
-	for idx, vb := range mb.vextexies {
-		n := vb.normal
-		t := vb.tangent
+	for idx, vb := range mb.Vextexies {
+		n := vb.Normal
+		t := vb.Tangent
 		// t = (t - n * dot(n, t)).normalize();
 		t2 := t.Sub(n.Mul(n.Dot(t))).Normalize()
 		// if (glm::dot(glm::cross(n, t), b) < 0.0f){
@@ -578,7 +598,7 @@ func (mb *MeshBuilder) buildTangets() {
 		if n.Cross(t).Dot(bitangents[idx]) > 0 {
 			t2 = t2.Mul(-1)
 		}
-		vb.tangent = t2
+		vb.Tangent = t2
 		vb.flags |= VFTangent
 	}
 }
@@ -622,16 +642,16 @@ func (mb *MeshBuilder) buildQTangent() {
 */
 
 func (mb *MeshBuilder) buildWeights() (hasWeights bool) {
-	for _, vb := range mb.vextexies {
+	for _, vb := range mb.Vextexies {
 		if vb.flags&VFWeights != 0 {
 			hasWeights = true
 			break
 		}
 	}
 	if hasWeights {
-		for idx, vb := range mb.vextexies {
-			w1 := 1 - vb.weights[1] + vb.weights[2] + vb.weights[3]
-			mb.vextexies[idx].weights[0] = w1
+		for idx, vb := range mb.Vextexies {
+			w1 := 1 - vb.Weights[1] + vb.Weights[2] + vb.Weights[3]
+			mb.Vextexies[idx].Weights[0] = w1
 		}
 	}
 	return
@@ -639,33 +659,33 @@ func (mb *MeshBuilder) buildWeights() (hasWeights bool) {
 
 // GetPosition retrieves all mesh positions as float32 array
 func (mb *MeshBuilder) GetPositions() (positions []float32) {
-	for _, vb := range mb.vextexies {
-		positions = append(positions, vb.position[:]...)
+	for _, vb := range mb.Vextexies {
+		positions = append(positions, vb.Position[:]...)
 	}
 	return
 }
 
 func (vb *VertexBuilder) AddUV(uv mgl32.Vec2) *VertexBuilder {
-	vb.uv = uv
+	vb.Uv = uv
 	vb.flags |= VFUV
 	return vb
 }
 
 func (vb *VertexBuilder) AddNormal(normal mgl32.Vec3) *VertexBuilder {
-	vb.normal = normal
+	vb.Normal = normal
 	vb.flags |= VFNormal
 	return vb
 }
 
 func (vb *VertexBuilder) AddTangent(tangent mgl32.Vec3) *VertexBuilder {
-	vb.tangent = tangent
+	vb.Tangent = tangent
 	vb.flags |= VFTangent
 	return vb
 }
 
 // AddColor adds vertex color. This is not used in current shaders but can be like an extra vec4 value is vertex input
 func (vb *VertexBuilder) AddColor(color mgl32.Vec4) *VertexBuilder {
-	vb.color = color
+	vb.Color = color
 	return vb
 }
 
@@ -673,8 +693,8 @@ func (vb *VertexBuilder) AddColor(color mgl32.Vec4) *VertexBuilder {
 // mesh to a skinned mesh. You must also provide Skin to model nodes that uses skinned mesh.
 // Skinned meshes won't be shown without skin and of cause normal meshes can't handle skins.
 func (vb *VertexBuilder) AddWeights(weights mgl32.Vec4, joints ...uint16) *VertexBuilder {
-	vb.weights = weights
-	copy(vb.joints[:], joints)
+	vb.Weights = weights
+	copy(vb.Joints[:], joints)
 	vb.flags |= VFWeights
 	return vb
 }

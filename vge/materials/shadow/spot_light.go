@@ -14,8 +14,17 @@ func NewSpotLight(base vscene.SpotLight, mapSize uint32) *SpotLight {
 
 type SpotLight struct {
 	vscene.SpotLight
-	key     vk.Key
-	mapSize uint32
+
+	// Number of frames to keep same shadow map
+	UpdateDelay int
+	key         vk.Key
+	mapSize     uint32
+}
+
+// SetUpdateDelay set delay between shadowmap updates. 0 - each frame, 1 - every second frame, 2 - every third frame...
+func (pl *SpotLight) SetUpdateDelay(delayFrames int) *SpotLight {
+	pl.UpdateDelay = delayFrames
+	return pl
 }
 
 func (pl *SpotLight) Process(pi *vscene.ProcessInfo) {
@@ -43,8 +52,11 @@ func (pl *SpotLight) Process(pi *vscene.ProcessInfo) {
 		rsr := pi.Frame.GetRenderer().GetPerRenderer(pl.key, func(ctx vk.APIContext) interface{} {
 			return pl.makeRenderResources(ctx, pi.Frame.GetCache().Device)
 		}).(*renderResources)
-
-		pl.renderShadowMap(pd, pi, rsr)
+		if rsr.updateCount > 0 {
+			rsr.updateCount--
+		} else {
+			pl.renderShadowMap(pd, pi, rsr)
+		}
 	}
 
 	lp, ok := pi.Phase.(vscene.LightPhase)
@@ -103,7 +115,7 @@ func (pl *SpotLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.Process
 		pd.Needeed = append(pd.Needeed, waitFor)
 		// cmd.Wait()
 	})
-	rsr.lastImage = imageIndex
+	rsr.lastImage, rsr.updateCount = imageIndex, pl.UpdateDelay
 	return sr
 }
 

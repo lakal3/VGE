@@ -28,6 +28,9 @@ type DirectionalLight struct {
 	// Default value for CenterPoint is 0.99
 	CenterPoint float32
 
+	// Number of frames to keep same shadow map
+	UpdateDelay int
+
 	key     vk.Key
 	mapSize uint32
 }
@@ -41,6 +44,12 @@ func (pl *DirectionalLight) SetMaxShadowDistance(maxDistance float32) *Direction
 // SetCenterPoint sets CenterPoint
 func (pl *DirectionalLight) SetCenterPoint(centerPoint float32) *DirectionalLight {
 	pl.CenterPoint = centerPoint
+	return pl
+}
+
+// SetUpdateDelay set delay between shadowmap updates. 0 - each frame, 1 - every second frame, 2 - every third frame...
+func (pl *DirectionalLight) SetUpdateDelay(delayFrames int) *DirectionalLight {
+	pl.UpdateDelay = delayFrames
 	return pl
 }
 
@@ -67,8 +76,11 @@ func (pl *DirectionalLight) Process(pi *vscene.ProcessInfo) {
 		rsr := pi.Frame.GetRenderer().GetPerRenderer(pl.key, func(ctx vk.APIContext) interface{} {
 			return pl.makeRenderResources(ctx, pi.Frame.GetCache().Device)
 		}).(*renderResources)
-
-		pl.renderShadowMap(pd, pi, rsr, eyePos)
+		if rsr.updateCount > 0 {
+			rsr.updateCount--
+		} else {
+			pl.renderShadowMap(pd, pi, rsr, eyePos)
+		}
 	}
 
 	lp, ok := pi.Phase.(vscene.LightPhase)
@@ -228,7 +240,7 @@ func (pl *DirectionalLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.
 		pd.Needeed = append(pd.Needeed, waitFor)
 		// cmd.Wait()
 	})
-	rsr.lastImage = imageIndex
+	rsr.lastImage, rsr.updateCount = imageIndex, pl.UpdateDelay
 	return
 }
 

@@ -32,6 +32,7 @@ var config struct {
 	devIndex       int
 	maxDescriptors int
 	dirShadow      bool
+	updateDelay    int
 	lights         string
 }
 
@@ -289,7 +290,8 @@ func (v *viewerApp) setLights() {
 		&vscene.RotateAnimate{Speed: 1.2, Axis: mgl32.Vec3{0, 1, 0}},
 		&vscene.TransformControl{mgl32.Translate3D(4.3, 3.5, 0)}),
 		&vscene.Node{
-			Ctrl: shadow.NewPointLight(vscene.PointLight{Intensity: mgl32.Vec3{0.2, 1.8, 0.2}, Attenuation: mgl32.Vec3{0, 0, 0.2}}, 512),
+			Ctrl: shadow.NewPointLight(vscene.PointLight{Intensity: mgl32.Vec3{0.2, 1.8, 0.2}, Attenuation: mgl32.Vec3{0, 0, 0.2}}, 512).
+				SetUpdateDelay(config.updateDelay),
 		}, vscene.NewNode(shadow.NoShadow{}, vscene.NodeFromModel(app.mLB, 1, false)))
 	nPoint2 := vscene.NewNode(vscene.NewMultiControl(
 		&vscene.RotateAnimate{Speed: 0.7, Axis: mgl32.Vec3{0, 1, 0}},
@@ -297,12 +299,12 @@ func (v *viewerApp) setLights() {
 		&vscene.Node{
 			Ctrl: shadow.NewSpotLight(vscene.SpotLight{Intensity: mgl32.Vec3{1.2, 1.2, 1.2}, Attenuation: mgl32.Vec3{0, 0, 0.32},
 				OuterAngle: 45, InnerAngle: 30, Direction: mgl32.Vec3{-0.4, -0.8, 0}.Normalize(),
-			}, 512),
+			}, 512).SetUpdateDelay(config.updateDelay),
 		}, vscene.NewNode(shadow.NoShadow{}, vscene.NodeFromModel(app.mLB, 2, false)))
 	dirLight := vscene.DirectionalLight{Intensity: mgl32.Vec3{0.3, 0.3, 0.8}, Direction: mgl32.Vec3{-0.1, -0.8, 0}}
 	dl := &vscene.Node{}
 	if config.dirShadow {
-		dl.Ctrl = shadow.NewDirectionalLight(dirLight, 512).SetMaxShadowDistance(20)
+		dl.Ctrl = shadow.NewDirectionalLight(dirLight, 512).SetMaxShadowDistance(20).SetUpdateDelay(config.updateDelay)
 	} else {
 		dl.Ctrl = &dirLight
 	}

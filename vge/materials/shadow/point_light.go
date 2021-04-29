@@ -17,8 +17,18 @@ type PointLight struct {
 	// Maximum distance we can see lights shadows from. If light is longer that this distance away for camera,
 	// we just turn shadows off
 	vscene.PointLight
+
+	// Number of frames to keep same shadow map
+	UpdateDelay int
+
 	key     vk.Key
 	mapSize uint32
+}
+
+// SetUpdateDelay set delay between shadowmap updates. 0 - each frame, 1 - every second frame, 2 - every third frame...
+func (pl *PointLight) SetUpdateDelay(delayFrames int) *PointLight {
+	pl.UpdateDelay = delayFrames
+	return pl
 }
 
 // Per renderer resources
@@ -217,8 +227,12 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 			return pl.makeRenderResources(ctx, pi.Frame.GetCache().Device)
 		}).(*renderResources)
 
-		pl.renderShadowMap(pd, pi, rsr, 0)
-		pl.renderShadowMap(pd, pi, rsr, 1)
+		if rsr.updateCount > 0 {
+			rsr.updateCount--
+		} else {
+			pl.renderShadowMap(pd, pi, rsr, 0)
+			pl.renderShadowMap(pd, pi, rsr, 1)
+		}
 	}
 
 	lp, ok := pi.Phase.(vscene.LightPhase)
@@ -283,6 +297,7 @@ func (pl *PointLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.Proces
 	})
 	if side == 1 {
 		rsr.lastImage = imageIndex
+		rsr.updateCount = pl.UpdateDelay
 	}
 	return sr
 }

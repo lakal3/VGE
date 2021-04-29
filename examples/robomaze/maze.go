@@ -264,7 +264,12 @@ func newLightNode(m *maze, onTime float64) *vscene.Node {
 	onOff := &lightOnOff{onTime: onTime}
 	tr := &vscene.TransformControl{Transform: mgl32.Translate3D(0.81, 1.85, -0.81)}
 	lp := shadow.NewPointLight(vscene.PointLight{Intensity: mgl32.Vec3{1, 1, 0.7}, Attenuation: mgl32.Vec3{0, 0, 0.3}}, 512)
-	lp.MaxDistance = 4
+	if app.slowShadows {
+		lp.MaxDistance, lp.UpdateDelay = 7, 15
+	} else {
+		lp.MaxDistance = 4
+	}
+
 	onOff.light = lp
 	// We must add NoShadow control to lamp light element, otherwise it will shadow all light coming from point light
 	return vscene.NewNode(vscene.NewMultiControl(onOff, tr, lp), vscene.NewNode(shadow.NoShadow{}, m.nLampLight))

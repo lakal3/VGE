@@ -38,6 +38,7 @@ var app struct {
 	predepth    bool
 	oil         bool
 	deferred    bool
+	slowShadows bool
 	video       bool
 	devIndex    int
 	fps         bool
@@ -53,6 +54,7 @@ func main() {
 	flag.BoolVar(&app.video, "video", false, "Set windows to video size 1280 x 768")
 	flag.BoolVar(&app.fps, "fps", false, "Add FPS debug control to window")
 	flag.BoolVar(&app.deferred, "deferred", false, "Use deferred renderer")
+	flag.BoolVar(&app.slowShadows, "Slow shadows", false, "Update shadow maps only ~4 times / second")
 	flag.Parse()
 
 	if app.devIndex >= 0 {

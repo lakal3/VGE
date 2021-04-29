@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/lakal3/vge/vge/materials/shadow"
 	"math"
 	"math/rand"
 
@@ -189,7 +190,12 @@ func addRobo(m *maze, at float64) {
 	m.robos = append(m.robos, rb)
 	rb.n = vscene.NodeFromModel(app.robotModel, app.robotModel.FindNode("droid"), true)
 	app.mainWnd.Scene.Update(func() {
-		m.nRobots.Children = append(m.nRobots.Children, vscene.NewNode(rb, rb.n))
+		if app.slowShadows {
+			// We turn off shadow casting from robots when shadows don't update every frame. Animated objects look terrible on slow shadows
+			m.nRobots.Children = append(m.nRobots.Children, vscene.NewNode(shadow.NoShadow{}, vscene.NewNode(rb, rb.n)))
+		} else {
+			m.nRobots.Children = append(m.nRobots.Children, vscene.NewNode(rb, rb.n))
+		}
 	})
 }
 

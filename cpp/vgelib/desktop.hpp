@@ -17,12 +17,15 @@ namespace vge {
 		void PullEvent(RawEvent* ev);
 		void GetKeyName(uint32_t keyCode, uint8_t* name, size_t name_len, uint32_t &strLen);
 		void GetMonitor(uint32_t monitor, WindowPos* info);
+		vk::ImageUsageFlags get_flags() {
+			return _flags;
+		}
 	private:
-		Desktop(Application *app): _app(app) {
+		Desktop(Application *app): _app(app), _flags(vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc) {
 			_app->addInstanceExtension(this);
 			_app->addDeviceExtension(this);
 		}
-		void init();
+		void init(vk::ImageUsageFlags flags);
 
 		static void runThread(Desktop* desktop);
 		bool runActions();
@@ -43,6 +46,7 @@ namespace vge {
 		std::deque<std::function<void()>> actions;
 		std::deque<RawEvent> events;
 		Application* const _app;
+		vk::ImageUsageFlags _flags;
 		bool stopped = false;
 	};
 

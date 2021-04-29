@@ -80,11 +80,12 @@ void vge::Desktop::GetMonitor(uint32_t monitor, WindowPos* info)
 
 }
 
-void vge::Desktop::init()
+void vge::Desktop::init(vk::ImageUsageFlags flags)
 {
 	if (!glfwInit()) {
 		throw std::runtime_error("GLFW init failed");
 	}
+	_flags = flags;
 	winLoop = new std::thread(runThread, this);
 }
 
@@ -297,7 +298,7 @@ void vge::Window::createSwapchain(Device *dev)
 		_crInfo.imageArrayLayers = 1;
 		_crInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
 		_crInfo.presentMode = vk::PresentModeKHR::eFifo;
-		_crInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eTransferSrc;
+		_crInfo.imageUsage = _desktop->get_flags();
 		_crInfo.clipped = 1;
 		_crInfo.surface = _surface;
 		_crInfo.preTransform = sfCap.currentTransform;

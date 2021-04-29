@@ -26,6 +26,8 @@ const (
 )
 
 type Desktop struct {
+	// ImageUsage flags for main swapchain images. Default is IMAGEUsageColorAttachmentBit | IMAGEUsageTransferSrcBit
+	ImageUsage vk.ImageUsageFlags
 }
 
 var winCount int
@@ -116,7 +118,11 @@ func (d Desktop) InitApp() {
 		}
 		return false
 	})
-	appStatic.desktop = vk.NewDesktop(Ctx, App)
+	if d.ImageUsage != 0 {
+		appStatic.desktop = vk.NewDesktopWithSettings(Ctx, App, vk.DesktopSettings{ImageUsage: d.ImageUsage})
+	} else {
+		appStatic.desktop = vk.NewDesktop(Ctx, App)
+	}
 }
 
 func (d Desktop) TerminateApp() {

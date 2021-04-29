@@ -62,7 +62,7 @@ DLLEXPORT Exception * Instance_NewDevice(Instance* instance, int32_t index, Devi
 DLLEXPORT Exception * MemoryBlock_Allocate(MemoryBlock* memBlock);
 DLLEXPORT Exception * MemoryBlock_Reserve(MemoryBlock* memBlock, MemoryObject* memObject, bool& suitable);
 DLLEXPORT Exception * NewApplication(char * name, size_t name_len, Application*& app);
-DLLEXPORT Exception * NewDesktop(Application* app, Desktop*& desktop);
+DLLEXPORT Exception * NewDesktop(Application* app, int32_t imageUsage, Desktop*& desktop);
 DLLEXPORT Exception * NewImageLoader(ImageLoader*& loader);
 DLLEXPORT Exception * NewRenderPass(Device* dev, RenderPass*& rp, bool depthAttachment, AttachmentInfo* attachments, size_t attachments_len);
 DLLEXPORT Exception * Pipeline_AddDescriptorLayout(Pipeline* pl, DescriptorLayout* dsLayout);
@@ -576,9 +576,9 @@ Exception * NewApplication(char * name, size_t name_len, Application*& app) {
     return Exception::getValidationError();
 }
 
-Exception * NewDesktop(Application* app, Desktop*& desktop) {
+Exception * NewDesktop(Application* app, int32_t imageUsage, Desktop*& desktop) {
     try {
-        Static::NewDesktop (app, desktop);
+        Static::NewDesktop (app, vk::ImageUsageFlags(imageUsage), desktop);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }

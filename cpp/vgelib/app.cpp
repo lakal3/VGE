@@ -434,10 +434,10 @@ void vge::Static::NewApplication(char* name, size_t name_len, Application*& app)
 
 }
 
-void vge::Static::NewDesktop(Application *app, Desktop*& desktop)
+void vge::Static::NewDesktop(Application *app, vk::ImageUsageFlags flags, Desktop*& desktop)
 {
 	desktop = new Desktop(app);
-	desktop->init();
+	desktop->init(flags);
 }
 
 void vge::Static::AddValidation(Application* app)

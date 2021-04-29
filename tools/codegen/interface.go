@@ -75,8 +75,9 @@ type MainLib interface {
 		app hApplication
 	})
 	NewDesktop(struct {
-		app     hApplication
-		desktop *hDesktop
+		app        hApplication
+		imageUsage vk.ImageUsageFlags
+		desktop    *hDesktop
 	})
 	DebugPoint(struct{ point string }) Void
 	Desktop_CreateWindow(struct {

@@ -814,12 +814,12 @@ func call_NewApplication(ctx APIContext, name []byte, app *hApplication) {
 	rc := dldyn.Invoke(libcall.t_NewApplication, 3, byteArrayToUintptr(name), uintptr(len(name)), uintptr(unsafe.Pointer(app)))
 	handleError(ctx, rc)
 }
-func call_NewDesktop(ctx APIContext, app hApplication, desktop *hDesktop) {
+func call_NewDesktop(ctx APIContext, app hApplication, imageUsage ImageUsageFlags, desktop *hDesktop) {
 	atEnd := ctx.Begin("NewDesktop")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke(libcall.t_NewDesktop, 2, uintptr(app), uintptr(unsafe.Pointer(desktop)), 0)
+	rc := dldyn.Invoke(libcall.t_NewDesktop, 3, uintptr(app), uintptr(imageUsage), uintptr(unsafe.Pointer(desktop)))
 	handleError(ctx, rc)
 }
 func call_NewImageLoader(ctx APIContext, loader *hImageLoader) {

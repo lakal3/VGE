@@ -14,12 +14,23 @@ type Window struct {
 	images     []*Image
 }
 
+// NewDesktop will initialize application with swap chain.
 func NewDesktop(ctx APIContext, app *Application) *Desktop {
+	return NewDesktopWithSettings(ctx, app, DesktopSettings{ImageUsage: IMAGEUsageColorAttachmentBit | IMAGEUsageTransferSrcBit})
+}
+
+type DesktopSettings struct {
+	ImageUsage ImageUsageFlags
+}
+
+// NewDesktopWithSettings will initialize application with swap chain. You can set requested flags for image usage for main image when
+// VGElib constructs new swapchain for Windows. Default settings are IMAGEUsageColorAttachmentBit | IMAGEUsageTransferSrcBit
+func NewDesktopWithSettings(ctx APIContext, app *Application, settings DesktopSettings) *Desktop {
 	if app.hInst != 0 {
 		ctx.SetError(ErrInitialized)
 	}
 	d := &Desktop{windows: &sync.Map{}}
-	call_NewDesktop(ctx, app.hApp, &d.hDesk)
+	call_NewDesktop(ctx, app.hApp, settings.ImageUsage, &d.hDesk)
 	return d
 }
 

@@ -213,7 +213,7 @@ namespace vge {
 
 	struct Static {
 		static void NewApplication(char* name, size_t name_len, Application*& app);
-		static void NewDesktop(Application* app, Desktop*& desktop);
+		static void NewDesktop(Application* app, vk::ImageUsageFlags usage, Desktop*& desktop);
 		static void AddValidation(Application *app);
 		// static void NewForwardRenderPass(Device* dev, vk::ImageLayout finalLayout, vk::Format mainImageFormat, vk::Format depthImageFormat, RenderPass*& rp);
 		// static void NewDepthRenderPass(Device* dev, vk::ImageLayout finalLayout, vk::Format depthImageFormat, RenderPass*& rp);

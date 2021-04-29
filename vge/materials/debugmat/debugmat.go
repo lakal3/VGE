@@ -50,7 +50,7 @@ type DebugMaterial struct {
 
 func (u *DebugMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, aniMatrix []mgl32.Mat4,
 	extra vmodel.ShaderExtra) {
-	ff, ok := dc.Frame.(*forward.Frame)
+	ff, ok := dc.Frame.(forward.ForwardFrame)
 	if !ok {
 		return // Not supported
 	}
@@ -88,7 +88,7 @@ func (u *DebugMaterial) SetDescriptor(dsMat *vk.DescriptorSet) {
 }
 
 func (u *DebugMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, extra vmodel.ShaderExtra) {
-	ff, ok := dc.Frame.(*forward.Frame)
+	ff, ok := dc.Frame.(forward.ForwardFrame)
 	if !ok {
 		return // Not supported
 	}

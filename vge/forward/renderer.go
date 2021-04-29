@@ -152,7 +152,7 @@ func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.Ren
 	if f.depthPrePass {
 		pdp := &predepth.PreDepthPass{Cmd: cmd, DC: vmodel.DrawContext{Frame: frame, Pass: f.frp}}
 		pdp.BindFrame = func() *vk.DescriptorSet {
-			return frame.BindFrame()
+			return frame.BindForwardFrame()
 		}
 		pdp.OnBegin = func() {
 			cmd.BeginRenderPass(f.frp, fb)

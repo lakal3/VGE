@@ -45,7 +45,7 @@ type PhongMaterial struct {
 
 func (u *PhongMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4,
 	aniMatrix []mgl32.Mat4, extra vmodel.ShaderExtra) {
-	ff, ok := dc.Frame.(*forward.Frame)
+	ff, ok := dc.Frame.(forward.ForwardFrame)
 	if !ok {
 		// Unsupported
 		return
@@ -55,7 +55,7 @@ func (u *PhongMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, wo
 		return u.NewPipeline(ctx, dc)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := ff.BindFrame()
+	dsFrame := ff.BindForwardFrame()
 	uli := rc.GetPerFrame(kPhongInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &phongInstance{ds: ds, sl: sl}
@@ -77,7 +77,7 @@ func (u *PhongMaterial) SetDescriptor(dsMat *vk.DescriptorSet) {
 }
 
 func (u *PhongMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, extra vmodel.ShaderExtra) {
-	ff, ok := dc.Frame.(*forward.Frame)
+	ff, ok := dc.Frame.(forward.ForwardFrame)
 	if !ok {
 		// Unsupported
 		return
@@ -87,7 +87,7 @@ func (u *PhongMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl
 		return u.NewPipeline(ctx, dc)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := ff.BindFrame()
+	dsFrame := ff.BindForwardFrame()
 	uli := rc.GetPerFrame(kPhongInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &phongInstance{ds: ds, sl: sl}

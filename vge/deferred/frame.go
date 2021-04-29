@@ -14,11 +14,17 @@ const (
 	MAX_LIGHTS = 64
 )
 
-// DrawFrame are frame settings sent to first Phase (draw geomety)
+// DrawFrame are frame settings sent to first Phase (draw geometry)
 type DrawFrame struct {
 	Projection mgl32.Mat4
 	View       mgl32.Mat4
 	EyePos     mgl32.Vec4
+}
+
+// DeferredLayout indicates that frame is compatible with deferred layout
+type DeferredLayout interface {
+	// Bind frame and return descriptor set containing frames UBF and textures
+	BindDeferredFrame() *vk.DescriptorSet
 }
 
 type Probe struct {
@@ -66,7 +72,7 @@ func (d *DeferredFrame) GetCache() *vk.RenderCache {
 	return d.cache
 }
 
-func (d *DeferredFrame) BindFrame() *vk.DescriptorSet {
+func (d *DeferredFrame) BindDeferredFrame() *vk.DescriptorSet {
 	if !d.drawUpdated {
 		d.writeDrawFrame()
 		d.drawUpdated = true

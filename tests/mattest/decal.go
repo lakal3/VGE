@@ -1,12 +1,12 @@
 package main
 
 import (
+	"github.com/lakal3/vge/vge/materials/decal"
 	"log"
 	"path/filepath"
 
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/materials/debugmat"
-	"github.com/lakal3/vge/vge/materials/decal"
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vasset"
 	"github.com/lakal3/vge/vge/vk"
@@ -15,19 +15,19 @@ import (
 	"github.com/lakal3/vge/vge/vscene"
 )
 
-func loadDecals() (set *decal.Set) {
+func loadDecals() (set *vmodel.Model) {
 	// Add decals
 	rs, err := vapp.AM.Get("asset/decal/stain", func(path string) (asset interface{}, err error) {
 		abContent, err := vasset.Load("assets/decals/stain_albedo.png", vapp.AM.Loader)
 		if err != nil {
 			return nil, err
 		}
-		b := &decal.Builder{}
+		b := &vmodel.ModelBuilder{}
 		stAlbedo := b.AddImage("png", abContent, vk.IMAGEUsageSampledBit|vk.IMAGEUsageTransferDstBit)
 		props := vmodel.NewMaterialProperties().SetImage(vmodel.TxAlbedo, stAlbedo)
-		b.AddDecal("stain", props)
+		b.AddDecalMaterial("stain", props)
 		props = vmodel.NewMaterialProperties().SetImage(vmodel.TxAlbedo, stAlbedo).SetColor(vmodel.CAlbedo, mgl32.Vec4{0.7, 0.7, 0.7, 0.5}).SetFactor(vmodel.FNormalAttenuation, 0)
-		b.AddDecal("stain2", props)
+		b.AddDecalMaterial("stain2", props)
 		abContent, err = vasset.Load("assets/decals/stone_albedo.png", vapp.AM.Loader)
 		if err != nil {
 			return nil, err
@@ -39,7 +39,7 @@ func loadDecals() (set *decal.Set) {
 		}
 		stoneNormal := b.AddImage("png", normalContent, vk.IMAGEUsageSampledBit|vk.IMAGEUsageTransferDstBit)
 		props = vmodel.NewMaterialProperties().SetImage(vmodel.TxAlbedo, stoneAlbedo).SetImage(vmodel.TxBump, stoneNormal)
-		b.AddDecal("stone", props)
+		b.AddDecalMaterial("stone", props)
 		abContent, err = vasset.Load("assets/decals/uc_albedo.png", vapp.AM.Loader)
 		if err != nil {
 			return nil, err
@@ -51,13 +51,13 @@ func loadDecals() (set *decal.Set) {
 		}
 		ucNormal := b.AddImage("png", normalContent, vk.IMAGEUsageSampledBit|vk.IMAGEUsageTransferDstBit)
 		props = vmodel.NewMaterialProperties().SetImage(vmodel.TxAlbedo, ucAlbedo).SetImage(vmodel.TxBump, ucNormal)
-		b.AddDecal("underconstruction", props)
-		return b.Build(vapp.Ctx, vapp.Dev), nil
+		b.AddDecalMaterial("underconstruction", props)
+		return b.ToModel(vapp.Ctx, vapp.Dev), nil
 	})
 	if err != nil {
 		log.Fatal("Load decals failed ", err)
 	}
-	return rs.(*decal.Set)
+	return rs.(*vmodel.Model)
 }
 
 func openDecalTest() {
@@ -70,12 +70,12 @@ func openDecalTest() {
 
 	dSet := loadDecals()
 
-	nModelRool.Ctrl = vscene.NewMultiControl(
-		dSet.NewInstance("stone", mgl32.Ident4()),
-		dSet.NewInstance("underconstruction", mgl32.Translate3D(2, 0, 2).Mul4(mgl32.Scale3D(1.5, 5, 1.5))),
-		dSet.NewInstance("stain", mgl32.Translate3D(2, 0, -2).Mul4(mgl32.HomogRotate3DX(-1))),
-		dSet.NewInstance("stain2", mgl32.Translate3D(-2, 0, -2).Mul4(mgl32.Scale3D(1.5, 1.5, 1.5))),
-	)
+	lp := &decal.LocalPainter{}
+	lp.AddDecal(dSet, dSet.FindMaterial("stone"), mgl32.Ident4())
+	lp.AddDecal(dSet, dSet.FindMaterial("underconstruction"), mgl32.Translate3D(2, 0, 2).Mul4(mgl32.Scale3D(1.5, 5, 1.5)))
+	lp.AddDecal(dSet, dSet.FindMaterial("stain"), mgl32.Translate3D(2, 0, -2).Mul4(mgl32.HomogRotate3DX(-1)))
+	lp.AddDecal(dSet, dSet.FindMaterial("stain2"), mgl32.Translate3D(-2, 0, -2).Mul4(mgl32.Scale3D(1.5, 1.5, 1.5)))
+	nModelRool.Ctrl = lp
 
 	app.rw.Scene.Update(func() {
 		app.cam.Position = mgl32.Vec3{1, 2, 5}

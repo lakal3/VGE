@@ -23,6 +23,17 @@ type ShaderFrame struct {
 	Lights     [MAX_LIGHTS]vscene.Light
 }
 
+type ForwardFrame interface {
+	vmodel.Frame
+
+	// Bind stadard forward frame to descriptor set. See frame.glsl for standard layout
+	BindForwardFrame() *vk.DescriptorSet
+
+	// Bind forward frame with descriptor that has images bound to dynamic descriptor set.
+	// This may return nil if dynamic descriptor sets are not enabled
+	BindDynamicFrame() *vk.DescriptorSet
+}
+
 type Frame struct {
 	SF        ShaderFrame
 	ds        *vk.DescriptorSet
@@ -194,7 +205,7 @@ func (f *Frame) writeDynamicFrame() {
 	}).(*vk.DescriptorSet)
 }
 
-func (f *Frame) BindFrame() *vk.DescriptorSet {
+func (f *Frame) BindForwardFrame() *vk.DescriptorSet {
 	if f.ds == nil {
 		f.writeFrame()
 	}

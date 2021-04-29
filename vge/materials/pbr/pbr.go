@@ -53,7 +53,7 @@ func (u *PbrMaterial) SetDescriptor(dsMat *vk.DescriptorSet) {
 
 func (u *PbrMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, aniMatrix []mgl32.Mat4,
 	extra vmodel.ShaderExtra) {
-	ff, ok := dc.Frame.(*forward.Frame)
+	ff, ok := dc.Frame.(forward.ForwardFrame)
 	if !ok {
 		// Unsupported
 		return
@@ -63,7 +63,7 @@ func (u *PbrMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, worl
 		return u.NewPipeline(ctx, dc, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := ff.BindFrame()
+	dsFrame := ff.BindForwardFrame()
 	uli := rc.GetPerFrame(kPbrSkinnedInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &pbrInstance{ds: ds, sl: sl}
@@ -80,7 +80,7 @@ func (u *PbrMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, worl
 }
 
 func (u *PbrMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, extra vmodel.ShaderExtra) {
-	ff, ok := dc.Frame.(*forward.Frame)
+	ff, ok := dc.Frame.(forward.ForwardFrame)
 	if !ok {
 		// Unsupported
 		return
@@ -90,7 +90,7 @@ func (u *PbrMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32
 		return u.NewPipeline(ctx, dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := ff.BindFrame()
+	dsFrame := ff.BindForwardFrame()
 	uli := rc.GetPerFrame(kPbrInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &pbrInstance{ds: ds, sl: sl}

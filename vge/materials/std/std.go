@@ -65,7 +65,7 @@ var ErrNoDynamicFrame = errors.New("STD material required dynamic descriptor sup
 
 func (u *Material) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, aniMatrix []mgl32.Mat4,
 	extra vmodel.ShaderExtra) {
-	ff, ok := dc.Frame.(*forward.Frame)
+	ff, ok := dc.Frame.(forward.ForwardFrame)
 	if !ok {
 		u.drawSkinnedDeferred(dc, mesh, world, aniMatrix, extra)
 		return
@@ -98,7 +98,7 @@ func (u *Material) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world m
 }
 
 func (u *Material) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, extra vmodel.ShaderExtra) {
-	ff, ok := dc.Frame.(*forward.Frame)
+	ff, ok := dc.Frame.(forward.ForwardFrame)
 	if !ok {
 		u.drawDeferred(dc, mesh, world, extra)
 		return
@@ -129,7 +129,7 @@ func (u *Material) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Ma
 }
 
 func (u *Material) drawDeferred(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, extra vmodel.ShaderExtra) {
-	frame, ok := dc.Frame.(*deferred.DeferredFrame)
+	frame, ok := dc.Frame.(deferred.DeferredLayout)
 	if !ok {
 		return
 	}
@@ -138,7 +138,7 @@ func (u *Material) drawDeferred(dc *vmodel.DrawContext, mesh vmodel.Mesh, world 
 		return u.NewDeferredPipeline(ctx, dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := frame.BindFrame()
+	dsFrame := frame.BindDeferredFrame()
 	uli := rc.GetPerFrame(kStdInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &stdInstance{ds: ds, sl: sl}
@@ -155,7 +155,7 @@ func (u *Material) drawDeferred(dc *vmodel.DrawContext, mesh vmodel.Mesh, world 
 
 func (u *Material) drawSkinnedDeferred(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Mat4, aniMatrix []mgl32.Mat4,
 	extra vmodel.ShaderExtra) {
-	frame, ok := dc.Frame.(*deferred.DeferredFrame)
+	frame, ok := dc.Frame.(deferred.DeferredLayout)
 	if !ok {
 		return
 	}
@@ -164,7 +164,7 @@ func (u *Material) drawSkinnedDeferred(dc *vmodel.DrawContext, mesh vmodel.Mesh,
 		return u.NewDeferredPipeline(ctx, dc, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
-	dsFrame := frame.BindFrame()
+	dsFrame := frame.BindDeferredFrame()
 	uli := rc.GetPerFrame(kStdInstances, func(ctx vk.APIContext) interface{} {
 		ds, sl := uc.Alloc(ctx)
 		return &stdInstance{ds: ds, sl: sl}

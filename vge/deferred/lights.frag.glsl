@@ -2,6 +2,7 @@
 #extension GL_EXT_nonuniform_qualifier: require
 #extension GL_GOOGLE_include_directive: require
 
+// #define INCL_DEBUG 1
 #define TX_WHITE 0
 #define TX_ALBEDO 1
 #define TX_NORMAL 2
@@ -239,6 +240,7 @@ void main() {
     float metalness = float(i_material.r) / 255;
     float roughness = float(i_material.g) / 255;
     uint probe = i_material.b;
+#ifdef INCL_DEBUG
     if (frame.debugMode == 1) {
         o_Color = albedo;
         return;
@@ -257,11 +259,13 @@ void main() {
         o_Color = vec4((1 - z) * 5.0, i_position, 1);
         return;
     }
+#endif
     o_Color = albedo;
     if (rawNormal.a < 0.5) {
         // Emissive color
         return;
     }
+
     vec3 screenPos =  getScreenPosition(i_position, texelPosition);
     vec3 viewPos = getViewPosition(screenPos);
     vec3 worldPosition = getWorldPosition(viewPos);
@@ -270,6 +274,11 @@ void main() {
     vec3 viewDir = normalize(eyePos - worldPosition);
     float normalDView = max(dot(normal, viewDir), 0.0);
 
+#ifdef INCL_DEBUG
+    if (frame.debugMode == 11) {
+        o_Color = vec4(worldPosition.x * 0.2, worldPosition.y * 0.2, -worldPosition.z * 0.2 , 1);
+        return;
+    }
     if (frame.debugMode == 5) {
         o_Color = vec4((worldPosition + vec3(5,0,5)) * vec3(0.1, 0.3, 0.1),1);
         return;
@@ -287,6 +296,7 @@ void main() {
         o_Color = vec4(debugSpecularIBL(roughness, normal, viewDir, probe), 1);
         return;
     }
+#endif
     float reflectance = 0.5;
     vec3 diffuseColor = (1.0 - metalness) * albedo.rgb;
     vec3 f0 = 0.16 * reflectance * reflectance * (1.0 - metalness) + albedo.rgb * metalness;
@@ -297,6 +307,7 @@ void main() {
     vec3 lightColors = vec3(0);
 
     uint noLight;
+#ifdef INCL_DEBUG
     if (frame.debugMode == 10) {
         for (noLight = 0; noLight < frame.noLights; noLight++) {
             LIGHT l = frame.lights[noLight];
@@ -306,6 +317,7 @@ void main() {
         o_Color = vec4(lightColors, 1);
         return;
     }
+#endif
     for (noLight = 0; noLight < frame.noLights; noLight++) {
         LIGHT l = frame.lights[noLight];
         float shadowFactor = getShadowFactor(l, worldPosition);
@@ -313,9 +325,11 @@ void main() {
         f0  * shadowFactor, metalness, roughness, dfg) : vec3(0);
         lightColors += lightOut;
     }
+#ifdef INCL_DEBUG
     if (frame.debugMode == 9) {
         o_Color = vec4(lightColors, 1);
         return;
     }
+#endif
     o_Color = vec4(iblColor + lightColors, 1);
 }

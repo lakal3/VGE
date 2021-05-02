@@ -63,7 +63,11 @@ void calcDecal(int idx, vec3 pos, inout vec3 albedo, inout vec3 normal, inout fl
         aRoughness = mrColor.g * aRoughness;
     }
     albedo = lerp3(albedo, vec3(aBase), factor);
-    normal = lerp3(normal, aNormal, factor);
+    // adjust normal if decal has bump map
+    if (d.tx_normal > 0) {
+        vec3 wNormal = vec3(inverse(d.toDecalSpace) * vec4(aNormal, 0));
+        normal = lerp3(normal, aNormal, factor);
+    }
     metallic = lerp1(metallic,aMetallic,factor);
     roughness = lerp1(roughness,aRoughness,factor);
 }

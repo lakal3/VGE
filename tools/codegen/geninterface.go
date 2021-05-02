@@ -272,7 +272,6 @@ import (
 	"unsafe"
 )
 
-var VGEDllPath string
 var libcall struct {
     h_lib syscall.Handle
 `)
@@ -282,14 +281,11 @@ var libcall struct {
 	})
 	g.emitLn(`}
 
-func loadLib() (err error) {
-	if len(VGEDllPath) == 0 {
-        VGEDllPath = "vgelib.dll"
-    }
+func loadLib() (err error) {	
 	if libcall.h_lib != 0 {
 		return nil
 	}
-	libcall.h_lib, err = syscall.LoadLibrary(VGEDllPath)
+	libcall.h_lib, err = syscall.LoadLibrary(GetDllPath())
 	if err != nil {
 		return err
 	}
@@ -324,7 +320,6 @@ import (
 	"unsafe"
 )
 
-var VGEDllPath string
 var libcall struct {
     h_lib dldyn.Handle
 `)
@@ -335,13 +330,10 @@ var libcall struct {
 	g.emitLn(`}
 
 func loadLib() (err error) {
-	if len(VGEDllPath) == 0 {
-        VGEDllPath = "libVGELib.so"
-    }
 	if libcall.h_lib != 0 {
 		return nil
 	}
-	libcall.h_lib, err = dldyn.DLOpen(VGEDllPath)
+	libcall.h_lib, err = dldyn.DLOpen(GetDllPath())
 	if err != nil {
 		return err
 	}

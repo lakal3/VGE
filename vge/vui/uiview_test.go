@@ -16,7 +16,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	vk.VGEDllPath = "vgelibd.dll"
+	// vk.VGEDllPath = "vgelibd.dll"
 	m.Run()
 }
 

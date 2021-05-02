@@ -2,6 +2,8 @@ package vk
 
 import (
 	"errors"
+	"runtime"
+	"strings"
 	"sync"
 )
 
@@ -35,6 +37,19 @@ func (d DebugContext) Begin(callName string) (atEnd func()) {
 
 func DebugPoint(point string) {
 	call_DebugPoint([]byte(point))
+}
+
+// VGEDllPath sets name of default VGELib path.
+var VGEDllPath string = "VGELib.dll"
+
+// GetDllPath gets full path of VGELib.dll (.so). You can override this function to match your preferences / OS.
+// By default in Windows file name is kept as is. In linux -> VGELib will be converted to libVGElib and .dll -> .so
+var GetDllPath = func() string {
+	if runtime.GOOS == "linux" {
+		p := strings.ReplaceAll(VGEDllPath, "VGELib", "libVGELib")
+		return strings.ReplaceAll(p, ".dll", ".so")
+	}
+	return VGEDllPath
 }
 
 // AddValidationException register validation exception to ignore. Normally validation errors cause Vulkan API call to fail if

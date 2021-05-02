@@ -12,3 +12,4 @@ examples/webview/webview
 examples/ui/ui
 examples/gltfviewer/gltfviewer
 examples/model/model
+tools/codegen/codegen

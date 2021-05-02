@@ -53,7 +53,11 @@ func main() {
 }
 
 func usage() {
-	fmt.Println("codegen option")
-	fmt.Println("  gointerface - Generate Go interface from ")
+	fmt.Println("codegen -out {outpath} generator")
+	fmt.Println("  gointerface - Generate Go/Windows interface")
+	fmt.Println("  gointerface2 - Generate Go/Linux interface")
+	fmt.Println("  goenums - Generate selected enums from Vulkan headers")
+	fmt.Println("  cppinterface - Generate C++ interface")
+
 	os.Exit(1)
 }

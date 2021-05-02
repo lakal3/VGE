@@ -6,8 +6,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/lakal3/vge/vge/forward"
 	"log"
+
+	"github.com/lakal3/vge/vge/forward"
 
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/materials/env"
@@ -50,7 +51,7 @@ func main() {
 	}
 	if app.debug {
 		vapp.AddOption(vapp.Validate{})
-		vk.VGEDllPath = "VGELibd.dll"
+		// vk.VGEDllPath = "VGELibd.dll"
 	}
 
 	var err error

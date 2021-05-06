@@ -6,11 +6,12 @@
 
 layout(location = 0) out vec3 o_position;
 layout(location = 1) out vec2 o_uv0;
+layout(location = 2) out flat int o_index;
 
 #include "shadowframe.glsl"
 
 #ifdef SKINNED
-#define SKIN_SET 1
+#define SKIN_SET 2
 #include "../../vscene/skin.glsl"
 #endif
 
@@ -19,7 +20,8 @@ vec3 qtransform( vec4 q, vec3 v ){
 }
 
 void main() {
-    mat4 world = frame.instances[gl_InstanceIndex];
+    o_index = gl_InstanceIndex;
+    mat4 world = instances.instances[gl_InstanceIndex].world;
     #ifdef SKINNED
     world = world * skinMatrix();
     #endif

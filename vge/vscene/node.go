@@ -106,7 +106,7 @@ func (m *MeshNodeControl) Process(pi *ProcessInfo) {
 	}
 	sd, ok := phase.(ShadowPhase)
 	if ok {
-		sd.DrawShadow(m.Mesh, pi.World, 0)
+		sd.DrawShadow(m.Mesh, pi.World, m.Mat)
 	}
 }
 

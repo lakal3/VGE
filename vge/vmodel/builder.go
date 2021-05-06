@@ -233,9 +233,15 @@ func (mb *ModelBuilder) ToModel(ctx vk.APIContext, dev *vk.Device) *Model {
 		mb.wg.Add(1)
 		go mb.copyImage(m, ctx, dev, ib)
 	}
-	sampler := GetDefaultSampler(ctx, dev)
+	m.sampler = GetDefaultSampler(ctx, dev)
 	mb.wg.Wait()
-	mb.copyUbf(m, cp, ubfLen, sampler)
+	if len(m.images) > 0 {
+		m.views = make([]*vk.ImageView, len(m.images))
+		for idx, img := range m.images {
+			m.views[idx] = img.DefaultView(ctx)
+		}
+	}
+	mb.copyUbf(m, cp, ubfLen)
 	mb.addNodes(mb.Root, m)
 	m.skins = mb.Skins
 	return m
@@ -357,7 +363,7 @@ func (mb *ModelBuilder) buildMaterials(ctx vk.APIContext, dev *vk.Device, m *Mod
 	return offset
 }
 
-func (mb *ModelBuilder) copyUbf(m *Model, cp *Copier, ubfLen uint64, sampler *vk.Sampler) {
+func (mb *ModelBuilder) copyUbf(m *Model, cp *Copier, ubfLen uint64) {
 	if ubfLen == 0 {
 		return
 	}
@@ -369,8 +375,12 @@ func (mb *ModelBuilder) copyUbf(m *Model, cp *Copier, ubfLen uint64, sampler *vk
 		copy(ubfs[mi.offset:], mi.ubf)
 		mi.ds.WriteSlice(cp.ctx, 0, 0, m.bUbf.Slice(cp.ctx, mi.offset, mi.offset+uint64(len(mi.ubf))))
 		for idx, ib := range mi.images {
-			mi.ds.WriteImage(cp.ctx, 1, uint32(idx), m.images[ib].DefaultView(cp.ctx), sampler)
+			mi.ds.WriteImage(cp.ctx, 1, uint32(idx), m.views[ib], m.sampler)
 			m.materials[mIndex].Shader.SetDescriptor(mi.ds)
+			sm, ok := m.materials[mIndex].Shader.(BoundShader)
+			if ok {
+				sm.SetModel(m)
+			}
 		}
 	}
 	cp.CopyToBuffer(m.bUbf, ubfs)

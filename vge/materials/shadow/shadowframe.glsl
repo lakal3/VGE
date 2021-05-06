@@ -1,5 +1,13 @@
 
-layout(constant_id = 0) const int MAX_INSTANCES = 1000;
+layout(constant_id = 0) const int MAX_INSTANCES = 800;
+
+struct INSTANCE {
+    mat4 world;
+    float tx_albedo;
+    float alphaCutoff;
+    float filler1;
+    float filler2;
+};
 
 layout(set=0, binding=0) uniform FRAME {
 // From camera to light
@@ -9,5 +17,13 @@ layout(set=0, binding=0) uniform FRAME {
     float maxShadow;
     float yFactor;
     float dummy2;
-    mat4 [MAX_INSTANCES]instances;
 } frame;
+
+#ifdef DYNAMIC_DESCRIPTORS
+layout(set=0, binding=1) uniform sampler2D frameImages2D[];
+#endif
+
+layout(set=1, binding=0) uniform INSTANCES {
+    INSTANCE [MAX_INSTANCES]instances;
+} instances;
+

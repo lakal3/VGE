@@ -35,6 +35,7 @@ func Factory(ctx vk.APIContext, dev *vk.Device, props vmodel.MaterialProperties)
 		emissiveColor:   props.GetColor(vmodel.CEmissive, getColorFactor(tx_emissive)),
 		metalnessFactor: props.GetFactor(vmodel.FMetalness, mf),
 		roughnessFactor: props.GetFactor(vmodel.FRoughness, 1),
+		alphaCut:        props.GetFactor(vmodel.FAlphaCutoff, 0),
 	}
 	if tx_normal > 0 {
 		ub.normalMap = 1
@@ -43,7 +44,7 @@ func Factory(ctx vk.APIContext, dev *vk.Device, props vmodel.MaterialProperties)
 		ub.emissiveColor = mgl32.Vec4{}
 	}
 	b := *(*[unsafe.Sizeof(stdMaterial{})]byte)(unsafe.Pointer(&ub))
-	return &Material{}, getStdLayout(ctx, dev), b[:], []vmodel.ImageIndex{tx_diffuse, tx_normal, tx_metalRoughness, tx_emissive}
+	return &Material{alphaCut: ub.alphaCut, albedoTexture: tx_diffuse}, getStdLayout(ctx, dev), b[:], []vmodel.ImageIndex{tx_diffuse, tx_normal, tx_metalRoughness, tx_emissive}
 }
 
 func getColorFactor(imIndex vmodel.ImageIndex) mgl32.Vec4 {
@@ -54,7 +55,22 @@ func getColorFactor(imIndex vmodel.ImageIndex) mgl32.Vec4 {
 }
 
 type Material struct {
-	dsMat *vk.DescriptorSet
+	dsMat         *vk.DescriptorSet
+	alphaCut      float32
+	albedoTexture vmodel.ImageIndex
+	model         *vmodel.Model
+}
+
+func (u *Material) GetAlphaTexture() (cutoff float32, view *vk.ImageView, sampler *vk.Sampler) {
+	if u.alphaCut > 0 && u.albedoTexture > 0 && u.model != nil {
+		view, sampler = u.model.GetImageView(u.albedoTexture)
+		return u.alphaCut, view, sampler
+	}
+	return 0, nil, nil
+}
+
+func (u *Material) SetModel(model *vmodel.Model) {
+	u.model = model
 }
 
 func (u *Material) SetDescriptor(dsMat *vk.DescriptorSet) {
@@ -254,6 +270,7 @@ type stdMaterial struct {
 	metalnessFactor float32
 	roughnessFactor float32
 	normalMap       float32
+	alphaCut        float32
 }
 
 type stdInstance struct {

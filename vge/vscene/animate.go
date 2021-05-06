@@ -59,7 +59,7 @@ func (a *AnimatedNodeControl) Process(pi *ProcessInfo) {
 
 	sd, ok := phase.(ShadowPhase)
 	if ok {
-		sd.DrawSkinnedShadow(a.Mesh, pi.World, 0, a.mxAnims)
+		sd.DrawSkinnedShadow(a.Mesh, pi.World, a.Mat, a.mxAnims)
 	}
 }
 

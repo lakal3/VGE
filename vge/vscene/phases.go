@@ -28,8 +28,8 @@ type DrawPhase interface {
 
 type ShadowPhase interface {
 	Phase
-	DrawShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoTexture vmodel.ImageIndex)
-	DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoTexture vmodel.ImageIndex, aniMatrix []mgl32.Mat4)
+	DrawShadow(mesh vmodel.Mesh, world mgl32.Mat4, material vmodel.Shader)
+	DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, material vmodel.Shader, aniMatrix []mgl32.Mat4)
 }
 
 func NewDrawPhase(frame vmodel.Frame, pass vk.RenderPass, layer Layer, cmd *vk.Command, begin func(), commit func()) DrawPhase {

@@ -6,6 +6,7 @@
 
 layout(location = 0) out vec3 o_position;
 layout(location = 1) out vec2 o_uv0;
+layout(location = 2) out flat int o_index;
 
 #include "shadowframe.glsl"
 
@@ -24,7 +25,8 @@ float centerAdjust(float f) {
 }
 
 void main() {
-    mat4 world = frame.instances[gl_InstanceIndex];
+    o_index = gl_InstanceIndex;
+    mat4 world = instances.instances[gl_InstanceIndex].world;
     #ifdef SKINNED
     world = world * skinMatrix();
     #endif

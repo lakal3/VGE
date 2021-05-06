@@ -25,6 +25,7 @@ layout(set = 2, binding = 0) uniform MATERIAL {
     float metallicFactor;
     float roughnessFactor;
     float normalMap;
+    float alphaCutoff;
 } material;
 
 #define TX_ALBEDO 0

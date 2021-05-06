@@ -13,9 +13,13 @@ import _ "embed"
 //go:generate glslangValidator -V dir_shadow.vert.glsl -o dir_shadow.vert.spv
 //go:generate glslangValidator -V -DSKINNED=1 dir_shadow.vert.glsl -o dir_shadow.vert_skin.spv
 //go:generate glslangValidator -V point_shadow.frag.glsl -o point_shadow.frag.spv
+//go:generate glslangValidator -V -DDYNAMIC_DESCRIPTORS=1 point_shadow.frag.glsl -o point_shadow_dyn.frag.spv
 
 //go:embed point_shadow.frag.spv
 var point_shadow_frag_spv []byte
+
+//go:embed point_shadow_dyn.frag.spv
+var point_shadow_dyn_frag_spv []byte
 
 //go:embed point_shadow.vert.spv
 var point_shadow_vert_spv []byte

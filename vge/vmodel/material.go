@@ -25,9 +25,11 @@ const (
 	// For decals to specify if normal difference from surface to decal will attenuate decal effect.
 	// 0 - No attanuation, 1 - Full attenuation (factor = dot(normal, decalNormal))
 	FNormalAttenuation = Factor + 4
-	Special            = Property(0xFF000000)
-	SMaxIndex          = Special + 1
-	PropertyKind       = Property(0xFF000000)
+	// Max level of alpha to discard pixel.
+	FAlphaCutoff = Factor + 5
+	Special      = Property(0xFF000000)
+	SMaxIndex    = Special + 1
+	PropertyKind = Property(0xFF000000)
 )
 
 type MaterialProperties map[Property]interface{}
@@ -116,6 +118,11 @@ type Shader interface {
 	SetDescriptor(dsMat *vk.DescriptorSet)
 	Draw(ctx *DrawContext, mesh Mesh, world mgl32.Mat4, extra ShaderExtra)
 	DrawSkinned(ctx *DrawContext, mesh Mesh, world mgl32.Mat4, aniMatrix []mgl32.Mat4, extra ShaderExtra)
+}
+
+type BoundShader interface {
+	Shader
+	SetModel(model *Model)
 }
 
 type ShaderFactory func(ctx vk.APIContext, dev *vk.Device, propSet MaterialProperties) (

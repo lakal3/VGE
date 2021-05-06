@@ -206,6 +206,10 @@ func (cc *GLTF2Loader) mapMaterial(m *Material) (vmodel.MaterialIndex, error) {
 	var col mgl32.Vec4
 	var txIndex vmodel.ImageIndex
 	var err error
+	switch m.AlphaMode {
+	case "MASK":
+		props.SetFactor(vmodel.FAlphaCutoff, m.AlphaCutoff)
+	}
 	if m.PbrMetallicRoughness != nil {
 		pbr := m.PbrMetallicRoughness
 		txIndex, err = cc.loadImage(pbr.BaseColorTexture)

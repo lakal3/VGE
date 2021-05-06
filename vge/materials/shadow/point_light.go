@@ -3,8 +3,6 @@
 package shadow
 
 import (
-	"unsafe"
-
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
@@ -40,6 +38,9 @@ type renderResources struct {
 	lastImage    int
 	updateCount  int
 	rp           *vk.GeneralRenderPass
+	dpFrame      *vk.DescriptorPool
+	dsFrame      []*vk.DescriptorSet
+	slFrame      []*vk.Slice
 }
 
 type plFrameResources struct {
@@ -62,18 +63,30 @@ func (r *renderResources) Dispose() {
 		r.pool.Dispose()
 		r.pool = nil
 	}
+	if r.dpFrame != nil {
+		r.dpFrame.Dispose()
+		r.dsFrame, r.dpFrame, r.slFrame = nil, nil, nil
+	}
 }
 
 type plResources struct {
 	cmd []*vk.Command
 }
 
-const maxInstances = 1000
+const maxInstances = 800
 
 func QuoternionFromYUp(direction mgl32.Vec3) mgl32.Vec4 {
 	q := mgl32.QuatBetweenVectors(mgl32.Vec3{0, 1, 0}, direction)
 	q = q.Normalize()
 	return mgl32.Vec4{q.V[0], q.V[1], q.V[2], q.W}
+}
+
+type shaderInstance struct {
+	world       mgl32.Mat4
+	tx_albedo   float32
+	alphaCutoff float32
+	filler1     float32
+	filler2     float32
 }
 
 type shaderFrame struct {
@@ -83,49 +96,10 @@ type shaderFrame struct {
 	maxShadow float32
 	yFactor   float32
 	dummy2    float32
-
-	instances [maxInstances]mgl32.Mat4
 }
 
-type plShadowPass struct {
-	ctx         vk.APIContext
-	cmd         *vk.Command
-	maxDistance float32
-	pos         mgl32.Vec3
-	dl          *vk.DrawList
-	pl          *vk.GraphicsPipeline
-	plSkin      *vk.GraphicsPipeline
-	rc          *vk.RenderCache
-	dsFrame     *vk.DescriptorSet
-	slFrame     *vk.Slice
-	si          *shaderFrame
-	siCount     int
-	renderer    vmodel.Renderer
-	dir         mgl32.Vec3
-	yFactor     float32
-}
-
-func (s *plShadowPass) GetRenderer() vmodel.Renderer {
-	return s.renderer
-}
-
-func (s *plShadowPass) BindFrame() *vk.DescriptorSet {
-	uc := vscene.GetUniformCache(s.rc)
-	if s.dsFrame == nil {
-		s.dsFrame, s.slFrame = uc.Alloc(s.ctx)
-		s.si = &shaderFrame{lightPos: s.pos.Vec4(1), maxShadow: s.maxDistance, minShadow: 0}
-		if s.yFactor != 0 {
-			s.si.yFactor = s.yFactor
-		} else {
-			s.si.plane = QuoternionFromYUp(s.dir)
-		}
-
-	}
-	return s.dsFrame
-}
-
-func (s *plShadowPass) GetCache() *vk.RenderCache {
-	return s.rc
+type shaderInstances struct {
+	instances [maxInstances]shaderInstance
 }
 
 // Objects under this node will not cast shadow!
@@ -133,57 +107,15 @@ type NoShadow struct {
 }
 
 func (n NoShadow) Process(pi *vscene.ProcessInfo) {
-	_, ok := pi.Phase.(*plShadowPass)
+	_, ok := pi.Phase.(*shadowPass)
 	if ok {
 		pi.Visible = false
 	}
-	_, ok = pi.Phase.(*dirShadowPass)
-	if ok {
-		pi.Visible = false
-	}
+
 	_, ok = pi.Phase.(*cubeShadowPass)
 	if ok {
 		pi.Visible = false
 	}
-}
-
-func (s *plShadowPass) Begin() (atEnd func()) {
-	return nil
-}
-
-func (s *plShadowPass) DrawShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoTexture vmodel.ImageIndex) {
-	s.BindFrame()
-	s.si.instances[s.siCount] = world
-	s.dl.DrawIndexed(s.pl, mesh.From, mesh.Count).AddDescriptors(s.dsFrame).
-		AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindNormal)...).SetInstances(uint32(s.siCount), 1)
-	s.siCount++
-	if s.siCount >= maxInstances {
-		s.flush()
-	}
-}
-
-func (s *plShadowPass) DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoTexture vmodel.ImageIndex, aniMatrix []mgl32.Mat4) {
-	s.BindFrame()
-	uc := vscene.GetUniformCache(s.rc)
-	s.si.instances[s.siCount] = world
-	dsMesh, slMesh := uc.Alloc(s.ctx)
-	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
-	s.dl.DrawIndexed(s.plSkin, mesh.From, mesh.Count).AddDescriptors(s.dsFrame, dsMesh).
-		AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindSkinned)...).SetInstances(uint32(s.siCount), 1)
-	s.siCount++
-	if s.siCount >= maxInstances {
-		s.flush()
-	}
-}
-
-func (s *plShadowPass) flush() {
-	if s.siCount > 0 {
-		b := *(*[unsafe.Sizeof(shaderFrame{})]byte)(unsafe.Pointer(s.si))
-		copy(s.slFrame.Content, b[:])
-		s.cmd.Draw(s.dl)
-		s.dl = &vk.DrawList{}
-	}
-	s.si, s.dsFrame, s.slFrame, s.siCount = nil, nil, nil, 0
 }
 
 func (s *plResources) Dispose() {
@@ -278,10 +210,11 @@ func (pl *PointLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.Proces
 	}).(*plFrameResources)
 	fb := fbs.fbs[side]
 	cmd.BeginRenderPass(rsr.rp, fb)
-	sp := &plShadowPass{ctx: cache.Ctx, cmd: cmd, dl: &vk.DrawList{}, maxDistance: pl.MaxDistance,
-		pl: gpl, plSkin: gSkinnedPl, rc: cache, renderer: pi.Frame.GetRenderer()}
+	sp := &shadowPass{ctx: cache.Ctx, cmd: cmd, dl: &vk.DrawList{}, maxDistance: pl.MaxDistance,
+		rc: cache, renderer: pi.Frame.GetRenderer(), pl: gpl, plSkin: gSkinnedPl, sampler: rsr.sampler,
+		dsFrame: rsr.dsFrame[imageIndex*2+side], slFrame: rsr.slFrame[2*imageIndex+side]}
 	lightPos := pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1})
-	sp.pos = lightPos.Vec3()
+	sp.pos = lightPos
 	sp.yFactor = -1
 	if side == 1 {
 		sp.yFactor = 1
@@ -321,9 +254,15 @@ func (pl *PointLight) makeResources(ctx vk.APIContext, dev *vk.Device, rp *vk.De
 func makePlShadowPipeline(ctx vk.APIContext, dev *vk.Device, rp *vk.GeneralRenderPass) *vk.GraphicsPipeline {
 	gp := vk.NewGraphicsPipeline(ctx, dev)
 	vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
+	gp.AddLayout(ctx, getShadowFrameLayout(ctx, dev))
 	gp.AddLayout(ctx, vscene.GetUniformLayout(ctx, dev))
 	gp.AddShader(ctx, vk.SHADERStageVertexBit, point_shadow_vert_spv)
-	gp.AddShader(ctx, vk.SHADERStageFragmentBit, point_shadow_frag_spv)
+	if vscene.FrameMaxDynamicSamplers > 0 {
+		gp.AddShader(ctx, vk.SHADERStageFragmentBit, point_shadow_dyn_frag_spv)
+
+	} else {
+		gp.AddShader(ctx, vk.SHADERStageFragmentBit, point_shadow_frag_spv)
+	}
 	gp.AddDepth(ctx, true, true)
 	gp.Create(ctx, rp)
 	return gp
@@ -332,10 +271,16 @@ func makePlShadowPipeline(ctx vk.APIContext, dev *vk.Device, rp *vk.GeneralRende
 func makePlSkinnedShadowPipeline(ctx vk.APIContext, dev *vk.Device, rp *vk.DepthRenderPass) *vk.GraphicsPipeline {
 	gp := vk.NewGraphicsPipeline(ctx, dev)
 	vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)
+	gp.AddLayout(ctx, getShadowFrameLayout(ctx, dev))
 	gp.AddLayout(ctx, vscene.GetUniformLayout(ctx, dev))
 	gp.AddLayout(ctx, vscene.GetUniformLayout(ctx, dev))
 	gp.AddShader(ctx, vk.SHADERStageVertexBit, point_shadow_vert_skin_spv)
-	gp.AddShader(ctx, vk.SHADERStageFragmentBit, point_shadow_frag_spv)
+	if vscene.FrameMaxDynamicSamplers > 0 {
+		gp.AddShader(ctx, vk.SHADERStageFragmentBit, point_shadow_dyn_frag_spv)
+
+	} else {
+		gp.AddShader(ctx, vk.SHADERStageFragmentBit, point_shadow_frag_spv)
+	}
 	gp.AddDepth(ctx, true, true)
 	gp.Create(ctx, rp)
 	return gp
@@ -347,19 +292,33 @@ func (pl *PointLight) makeRenderResources(ctx vk.APIContext, dev *vk.Device) *re
 	rsr.pool = vk.NewMemoryPool(dev)
 	desc := vk.ImageDescription{Width: pl.mapSize, Height: pl.mapSize, Depth: 1, Layers: 2, MipLevels: 1,
 		Format: vk.FORMATD32Sfloat}
+	var buffers []*vk.Buffer
 	for idx := 0; idx < 2; idx++ {
 		rsr.shadowImages = append(rsr.shadowImages, rsr.pool.ReserveImage(ctx, desc, vk.IMAGEUsageDepthStencilAttachmentBit|
 			vk.IMAGEUsageSampledBit))
+		buffers = append(buffers,
+			rsr.pool.ReserveBuffer(ctx, vk.MinUniformBufferOffsetAlignment, true, vk.BUFFERUsageUniformBufferBit))
+		buffers = append(buffers,
+			rsr.pool.ReserveBuffer(ctx, vk.MinUniformBufferOffsetAlignment, true, vk.BUFFERUsageUniformBufferBit))
 	}
 	rsr.pool.Allocate(ctx)
+	rsr.dpFrame = vk.NewDescriptorPool(ctx, getShadowFrameLayout(ctx, dev), 4)
 	rsr.sampler = vmodel.GetDefaultSampler(ctx, dev)
 	for idx := 0; idx < 2; idx++ {
+		rsr.dsFrame = append(rsr.dsFrame, rsr.dpFrame.Alloc(ctx), rsr.dpFrame.Alloc(ctx))
+		sl := buffers[idx*2].Slice(ctx, 0, vk.MinUniformBufferOffsetAlignment)
+		rsr.dsFrame[idx*2].WriteSlice(ctx, 0, 0, sl)
+		rsr.slFrame = append(rsr.slFrame, sl)
+		sl = buffers[idx*2+1].Slice(ctx, 0, vk.MinUniformBufferOffsetAlignment)
+		rsr.dsFrame[idx*2+1].WriteSlice(ctx, 0, 0, sl)
+		rsr.slFrame = append(rsr.slFrame, sl)
 		rg := vk.ImageRange{FirstLayer: 0, LayerCount: 1, LevelCount: 1}
 		rsr.shadowViews = append(rsr.shadowViews, vk.NewImageView(ctx, rsr.shadowImages[idx], &rg))
 		rg2 := rg
 		rg2.FirstLayer = 1
 		rsr.shadowViews = append(rsr.shadowViews, vk.NewImageView(ctx, rsr.shadowImages[idx], &rg2))
 	}
+
 	return &rsr
 }
 

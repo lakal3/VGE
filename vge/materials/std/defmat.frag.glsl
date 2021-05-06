@@ -18,6 +18,7 @@ layout(set = 2, binding = 0) uniform MATERIAL {
     float metallicFactor;
     float roughnessFactor;
     float normalMap;
+    float alphaCutoff;
 } material;
 
 #define TX_ALBEDO 0
@@ -64,6 +65,9 @@ void main() {
         o_Normal = vec4(0);
         o_Material = uvec4(0,0,0,0);
     } else {
+        if (albedoColor.a < material.alphaCutoff) {
+            discard;
+        }
         o_Color = vec4(albedo, 1);
         o_Normal = vec4(normal, 1.0);
         o_Material = uvec4(metallic * 255, roughness * 255, 1, 0);

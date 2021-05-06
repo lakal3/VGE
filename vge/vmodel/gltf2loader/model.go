@@ -136,6 +136,8 @@ type Material struct {
 	OcclusionTexture     *Texture              `json:"occlusionTexture"`
 	EmissiveFactor       []float32             `json:"emissiveFactor"`
 	EmissiveTexture      *Texture              `json:"emissiveTexture"`
+	AlphaMode            string                `json:"alphaMode,omitempty"`
+	AlphaCutoff          float32               `json:"alphaCutoff"`
 	Name                 string                `json:"name"`
 }
 

@@ -88,7 +88,7 @@ func (s *cubeShadowPass) Begin() (atEnd func()) {
 	return nil
 }
 
-func (s *cubeShadowPass) DrawShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoTexture vmodel.ImageIndex) {
+func (s *cubeShadowPass) DrawShadow(mesh vmodel.Mesh, world mgl32.Mat4, material vmodel.Shader) {
 	s.BindFrame()
 	s.si.instances[s.siCount] = world
 	s.dl.DrawIndexed(s.pl, mesh.From, mesh.Count).AddDescriptors(s.ds).
@@ -99,7 +99,7 @@ func (s *cubeShadowPass) DrawShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoTe
 	}
 }
 
-func (s *cubeShadowPass) DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoTexture vmodel.ImageIndex, aniMatrix []mgl32.Mat4) {
+func (s *cubeShadowPass) DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, material vmodel.Shader, aniMatrix []mgl32.Mat4) {
 	s.BindFrame()
 	uc := vscene.GetUniformCache(s.rc)
 	s.si.instances[s.siCount] = world

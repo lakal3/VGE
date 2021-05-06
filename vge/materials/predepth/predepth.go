@@ -31,7 +31,7 @@ func (p *PreDepthPass) Begin() (atEnd func()) {
 	}
 }
 
-func (p *PreDepthPass) DrawShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoTexture vmodel.ImageIndex) {
+func (p *PreDepthPass) DrawShadow(mesh vmodel.Mesh, world mgl32.Mat4, material vmodel.Shader) {
 	rc := p.DC.Frame.GetCache()
 	gp := p.DC.Pass.Get(rc.Ctx, kPreDepthPipeline, func(ctx vk.APIContext) interface{} {
 		return p.newPipeline(ctx, false)
@@ -51,7 +51,7 @@ func (p *PreDepthPass) DrawShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoText
 	}
 }
 
-func (p *PreDepthPass) DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, albedoTexture vmodel.ImageIndex, aniMatrix []mgl32.Mat4) {
+func (p *PreDepthPass) DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, material vmodel.Shader, aniMatrix []mgl32.Mat4) {
 	rc := p.DC.Frame.GetCache()
 	gp := p.DC.Pass.Get(rc.Ctx, kPreDepthSkinnedPipeline, func(ctx vk.APIContext) interface{} {
 		return p.newPipeline(ctx, true)

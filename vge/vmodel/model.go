@@ -34,6 +34,8 @@ type Model struct {
 	materials []Material
 	nodes     []Node
 	images    []*vk.Image
+	sampler   *vk.Sampler
+	views     []*vk.ImageView
 	bUbf      *vk.Buffer
 	memPool   *vk.MemoryPool
 	skins     []Skin
@@ -76,6 +78,10 @@ func (m *Model) GetMaterial(idx MaterialIndex) Material {
 
 func (m *Model) GetImage(idx ImageIndex) *vk.Image {
 	return m.images[idx]
+}
+
+func (m *Model) GetImageView(idx ImageIndex) (view *vk.ImageView, sampler *vk.Sampler) {
+	return m.views[idx], m.sampler
 }
 
 // FindMaterial finds material index for named material. Return is -1 if material was not found

@@ -183,7 +183,9 @@ func (v *cubeApp) renderLoop(w *vk.Window) {
 		if imageIndex < 0 {
 			// Reset all render caches
 			for _, ca := range caches {
-				ca.Dispose()
+				if ca != nil {
+					ca.Dispose()
+				}
 			}
 			caches = nil
 			continue
@@ -231,7 +233,9 @@ func (v *cubeApp) renderLoop(w *vk.Window) {
 		cmd.Wait()
 	}
 	for _, ca := range caches {
-		ca.Dispose()
+		if ca != nil {
+			ca.Dispose()
+		}
 	}
 }
 

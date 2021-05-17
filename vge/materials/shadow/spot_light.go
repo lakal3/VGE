@@ -8,6 +8,8 @@ import (
 	"github.com/lakal3/vge/vge/vscene"
 )
 
+// NewSpotLight will construct a spot light that has a shadow. MapSize parameter sets size of parabloid shadow map.
+// Higher resolution will produce more accurate shadow but will have higher memory and GPU rendering cost.
 func NewSpotLight(base vscene.SpotLight, mapSize uint32) *SpotLight {
 	return &SpotLight{SpotLight: base, key: vk.NewKey(), mapSize: mapSize}
 }
@@ -17,8 +19,9 @@ type SpotLight struct {
 
 	// Number of frames to keep same shadow map
 	UpdateDelay int
-	key         vk.Key
-	mapSize     uint32
+
+	key     vk.Key
+	mapSize uint32
 }
 
 // SetUpdateDelay set delay between shadowmap updates. 0 - each frame, 1 - every second frame, 2 - every third frame...

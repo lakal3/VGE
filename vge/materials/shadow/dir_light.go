@@ -17,8 +17,6 @@ type AlphaTexture interface {
 }
 
 type DirectionalLight struct {
-	// Maximum distance we can see lights shadows from. If light is longer that this distance away for camera,
-	// we just turn shadows off
 	vscene.DirectionalLight
 
 	// MaxShadowDistance determines how large area shadow map will cover. Everything outside if will be fully lit.

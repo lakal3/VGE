@@ -1,16 +1,18 @@
 # Change history
 
-## Version 0.20.1 (beta)
-This version is bigger improvement and unfortunately there are some breaking changes.
+## Version 0.20.1 
+
+This version contains several improvement and unfortunately there are also some breaking changes.
 
 New features:
 - Experimental version of deferred renderer that uses [Deferred shading](https://en.wikipedia.org/wiki/Deferred_shading) to
-  render views instead of initial forward renderer.
+  render views instead of initial forward renderer. Some examples like robomaze has been upgraded to support deferred shader. 
+  Use command line switch -deferred to test
 
 - Better support different kind of renderers. Frame is now interface and not a default forward.Frame
-  Renderer type is indicate by Frame that is available for all Phases through PhaseInfo. Frame is allow passed to DrawContext so that material can access it more easilly
+  Renderer type is indicate by Frame that is available for all Phases through PhaseInfo. Frame is also passed to DrawContext so that material can access it more easilly. Some material like std can support multiple renderers (using different pipelines).
 
-- More complex frames should support SimpleFrame that allows some node types and materials to work with different Renderers
+- More complex frames should support SimpleFrame that allows some basic types and materials to work with different Renderers
 
 - All basic light types, spot light (**new**), directional light and point light are now supported
 
@@ -18,7 +20,7 @@ New features:
   Shadow maps uses now Parabloid mapping that reduces number of point light shadow maps from 6 to 2 and
   allows support for spotlights using same mapping but with only one map.
 
-- Some forward Frame methods have been change to interface so that for example Lights works on all renderer supporting LightPhase interface
+- Some Frame methods have been change to interface so that for example Lights works on all renderer supporting LightPhase interface
 
 - VGE can now create Vulkan render pass with multiple or zero outputs.
 
@@ -26,13 +28,16 @@ New features:
   This allows interpreting standard model like glTF and convert it to something that is not
   directly supported by model format. (There will be an example about this later).
 
+- Decals has beed refactor and now supports standard shader both in forward and deferred rendering mode. 
+  Decal no longer require special decal builder. Instead they can use images from [model](vmodel.md). See robomaze/stain.go for an example of how to use decal painter.
+
 Breaking changes:
 
 - Forward renderer has been moved to own module. There will be new advanced (deferred) renderer available.
 
 - Frame that is related to renderer is now an interface. Each node can check if renderer is supported by checking if frame can be cast to suitable type.
 
-TODO: Add example from cube
+- Decal builder has beed removed. Use vmodel.ModelBuilder instead to upload images for decals. Decal painter API is also different from previus experimental Decal module.  (Compare file with version 0.14.1 to see API changes)
 
   
 

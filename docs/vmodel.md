@@ -18,9 +18,12 @@ Nodes may additionally have a mesh and material. Rigged meshes will also have a 
 
 Materials typically need textures (images) to represent color, normal changes, metallicity, roughness etc.. You can add these images to ModelBuilder.
 
+You can also manually add / edit entries to build custom models. Some "models" may for example contain only images needed for 
+other things like decals.
+
 ### Materials
 
-ModelBuilder needs a ShaderFactory. The VGE contains several standard shader factories (unlit, Phong, pbr, std).
+ModelBuilder with materials need a ShaderFactory. The VGE contains several standard shader factories (unlit, Phong, pbr, std). Standard shader (std) is the most cabable of standard material but will require Dynamic descriptor (that should be available on all latest drivers in Windows / Linux)
 
 ShaderFactory is responsible for converting material properties to a Shader that can be used to actually render 3D meshes.
 

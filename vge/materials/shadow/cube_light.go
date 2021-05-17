@@ -142,6 +142,8 @@ var kSkinnedDepthPipeline = vk.NewKey()
 var kDepthInstance = vk.NewKey()
 var kShadowSampler = vk.NewKey()
 
+// NewCubePointLight creates a shadow casting point light that uses cube map to draw shadows
+// New point light uses a parabolic shadow map that reduces rendered sides from 6 to 2. It is recommeded to use s
 func NewCubePointLight(baseLight vscene.PointLight, mapSize uint32) *CubePointLight {
 	return &CubePointLight{key: vk.NewKey(), PointLight: baseLight, mapSize: mapSize}
 }

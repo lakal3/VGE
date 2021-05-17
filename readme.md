@@ -16,8 +16,9 @@ func main() {
 	// Initialize the application framework. Add validate options to check Vulkan calls and desktop to enable windowing.
 	vapp.Init("hello", vapp.Validate{}, vapp.Desktop{})
 
-	// Create a new window. The window will have its own scene that will be rendered using ForwardRenderer.
-	rw := vapp.NewRenderWindow("hello", vapp.NewForwardRenderer(true))
+	// Create a new window. The window will have its own scene that will be rendered using forward renderer.
+	rw := vapp.NewRenderWindow("hello", forward.NewRenderer(true))
+
 	// Build scene
 	buildScene(rw)
 	// Wait until the application is shut down (event Queue is stopped)

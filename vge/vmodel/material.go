@@ -78,7 +78,8 @@ func (mp MaterialProperties) GetImage(prop Property) ImageIndex {
 }
 
 type Renderer interface {
-	// GetPerRenderer allows phases share item for whole renderer
+	// GetPerRenderer allows nodes to store information that is shared between all frames of renderer. Typically each frame has it's own render
+	// cache where you can store frame relevant assets. Each image of swapchain will get it's own frame.
 	GetPerRenderer(key vk.Key, ctor func(ctx vk.APIContext) interface{}) interface{}
 }
 

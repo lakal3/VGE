@@ -13,6 +13,9 @@ import (
 	"github.com/lakal3/vge/vge/vscene"
 )
 
+// Renderer is forward renderer that handles individual phases of rendering and also gathers frame relevant settings like camera position
+// Renderer has quite limitted options. If you want different phases etc, you should copy renderer logic and match it to your needs.
+// See example webview on how to implement custom renderer.
 type Renderer struct {
 	// RenderDone is an optional function that is called each time after completing rendering of scene
 	RenderDone func(started time.Time)
@@ -36,10 +39,15 @@ func (f *Renderer) GetPerRenderer(key vk.Key, ctor func(ctx vk.APIContext) inter
 	return f.owner.Get(f.Ctx, key, ctor)
 }
 
+// SetTimedOutput allow you to set function that is called after each frame. Started will be Go time when frame rendering was started
+// GPU times will contain gpu timer as start, before main render pass and after rendering all phases.
 func (f *Renderer) SetTimedOutput(output func(started time.Time, gpuTimes []float64)) {
 	f.timedOutput = output
 }
 
+// NewRenderer create new forward renderer.
+// DepthBuffer settings will if renderer uses depth buffer to limit visibility of objects behind other objects. This should be false only if you try
+// to render something more or less 2D
 func NewRenderer(depthBuffer bool) *Renderer {
 	return &Renderer{depth: depthBuffer}
 }
@@ -64,6 +72,10 @@ func (f *Renderer) GetRenderPass() vk.RenderPass {
 	return f.frp
 }
 
+// AddDepthPrePass will render z-buffer with very slight offset back before rendering scene. This should speed up
+// rendering scene with lots of lights as we don't calculate expensive light calculation for most of pixel that will be culled of by depth check
+// (they are behind an other object).
+// Alternatively you can try new deferred.Renderer for scenes with lots of lights
 func (f *Renderer) AddDepthPrePass() *Renderer {
 	f.depthPrePass = true
 	return f

@@ -21,13 +21,13 @@ Please follow your distribution specific instructions on how to install shared l
 
 ### Wayland (display server protocol)
 
-Wayland is not yet supported, only X11 works for now!
+Wayland is not yet supported, but some users have reported that they have been able to compile and run VGE using Wayland display server so you may try it and post your finding to VGE site.
 
 ## Testing
 
 Try to run hello.go `go run hello.go` in examples/basic directory. If that works, try logo.go.
-If it fails (you don't see logo), you may have the same bug that I encountered.
-The driver can only draw a very small indirect mesh (which makes it kind of impossible to run more complex demos)
+
+Unfortunately there are still bugs (or subtle differences) in GPU drivers where exactly same GPU performs perfectly on Windows and will have some issues like flickering on Linux.
 
 Laptops you mostly have two GPU:s, one integrated and one dedicated. Most samples support -dev switch to pic the best suited one.
 

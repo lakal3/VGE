@@ -14,6 +14,10 @@ import (
 const LAYER3DSplit = vscene.LAYER3D + 1
 const ShadowPoints = 1024 * 1024
 
+// Renderer implement deferred shading that first render all objects into G-buffer. Light calculations are done from G-buffer
+// data after all objects have been rendered to G-buffers.
+// Deferred rendering uses much more resources from GPU than forward shader but it should be faster with scenes that have lots of light (that don't cast shadows).
+// Deferred rendering may also later support post processing effects that are not easily done with forward shader but currently they both have nearly same features.
 type Renderer struct {
 	// RenderDone is an optional function that is called each time after completing rendering of scene
 	RenderDone func(started time.Time)
@@ -97,10 +101,6 @@ func (f *Renderer) Dispose() {
 
 func (f *Renderer) GetRenderPass() vk.RenderPass {
 	return f.rpFinal
-}
-
-func (f *Renderer) SetDebugMode(mode int) {
-	f.debugMode = mode
 }
 
 func (f *Renderer) Setup(ctx vk.APIContext, dev *vk.Device, mainImage vk.ImageDescription, images int) {

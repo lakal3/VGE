@@ -12,8 +12,6 @@ import (
 const ShadowFormat = vk.FORMATD32Sfloat
 
 type PointLight struct {
-	// Maximum distance we can see lights shadows from. If light is longer that this distance away for camera,
-	// we just turn shadows off
 	vscene.PointLight
 
 	// Number of frames to keep same shadow map
@@ -129,6 +127,8 @@ func (s *plResources) Dispose() {
 var kShadowLayout = vk.NewKey()
 var kFrameBuffer = vk.NewKeys(2)
 
+// NewPointLight will construct a point light that has a shadow. MapSize parameter sets size of parabloid shadow map.
+// Higher resolution will produce more accurate shadow but will have higher memory and GPU rendering cost.
 func NewPointLight(baseLight vscene.PointLight, mapSize uint32) *PointLight {
 	return &PointLight{key: vk.NewKey(), PointLight: baseLight, mapSize: mapSize}
 }

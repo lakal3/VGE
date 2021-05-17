@@ -71,7 +71,7 @@ _Currently, only one probe per node tree is supported. This will be changed late
 
 _Probe and ambient light are exclusive. Ambient light is actually zeroth order of spherical harmonic_
 
-#### Decal (experimental)
+#### Decal (experimental, new decal painter in 0.20.1)
 
 Only Std shader supports decals. Decals can render a 2D image, placed in 3D world over a 3D mesh.
 
@@ -114,10 +114,10 @@ A typical rendering of scene looks like the following:
     ui := vscene.NewDrawPhase(rc, f.frp, vscene.LAYERUI, cmd, nil, func() {
         cmd.EndRenderPass()
     })
-    frame := vscene.GetFrame(rc)
+    frame := &Frame{cache: rc, renderer: f}
     ppPhase := &vscene.PredrawPhase{Scene: sc, F: frame, Cache: rc, Cmd: cmd}
 
-    sc.Process(sc.Time, ppPhase, bg, dp, dt, ui)
+    sc.Process(sc.Time, frame, ppPhase, bg, dp, dt, ui)
     // Complete pendings from predraw phase
     for _, pd := range ppPhase.Pending {
         pd()
@@ -134,11 +134,14 @@ Predraw phases submit rendering but do not necessarily wait for them to complete
 In order to ensure that all previous work has been done, the implementation must call all pending methods of the predraw phase and also
 include all necessary submit infos when submitting the main rendering command. For example, see the  shadow.PointLight implementation.
 
-Draw phases will draw the different layers of scene. Layers are background, main 3D, transparent (not yet supported) and UI.
+Draw phases will draw the different layers of scene. Layers are background, main 3D, transparent (not yet supported), lights and UI.
 You may add a custom phases if necessary.
 
+## Premade renderer
 
-_You can usually use the premade implementation ForwardRenderer in vapp module to handle rendering a scene_
+You can usually use the premade implementation Renderer instread of building on from scratch. Default renderer is forward renderer implemented in forward module.
+
+Version 0.20.1 adds an alternative deferred (experimental) renderer in deferred module that first renders all meshes of scene to several images (G-buffers). Affect of lights are computed later after we have first rendered all meshes. 
 
 
 

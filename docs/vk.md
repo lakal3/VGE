@@ -83,13 +83,14 @@ Also note that you cannot dispose individual images or buffers. You must dispose
 
 Vulkan handles rendering in render passes. See [https://vulkan-tutorial.com/Drawing_a_triangle/Graphics_pipeline_basics/Render_passes].
 
-Render passes are fairly complex to setup. So the VGE offers a few prebuilt render passes with some options.
-If you need a new kind of render pass, you must implement that in VGELib (C++ part).
-
 #### Standard render passes
 
 - ForwardRenderPass with or without depth buffer. Forward render pass supports one output (main image)
 - DepthRenderPass supports rendering with depth buffer only. Used in shadow rendering.
+- GeneralRenderPass added in 0.20.1 supports multiple (even zero) output attachments. This should cover most of
+setups without subpasses. 
+
+_Vulkan also supports render subpasses. I believe that they are more useful in resource constrained tiled GPUs in mobile devices, therefore VGE will not support subpasses_
 
 ## Pipelines
 

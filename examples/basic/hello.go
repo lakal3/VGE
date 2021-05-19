@@ -5,6 +5,7 @@ package main
 import (
 	"image"
 
+	"github.com/lakal3/vge/vge/forward"
 	"github.com/lakal3/vge/vge/materials/env"
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vasset"
@@ -22,7 +23,7 @@ func main() {
 
 	// Create a new window. Window will has it's own scene that will be rendered using ForwardRenderer.
 	// This first demo is only showing UI so we don't need depth buffer
-	rw := vapp.NewRenderWindow("VGE Logo", vapp.NewForwardRenderer(false))
+	rw := vapp.NewRenderWindow("VGE Logo", forward.NewRenderer(false))
 	// Build scene
 	buildScene(rw)
 	// Wait until application is shut down (event Queue is stopped)

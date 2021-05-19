@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/lakal3/vge/vge/forward"
 	"github.com/lakal3/vge/vge/materials/env"
 	"github.com/lakal3/vge/vge/materials/shadow"
 	"github.com/lakal3/vge/vge/vapp"

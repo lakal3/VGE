@@ -36,9 +36,9 @@ void vge::GraphicsPipeline::Create(RenderPass* renderPass)
 		case 1:
 			st.blendEnable = true;
 			st.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
-			st.srcAlphaBlendFactor = vk::BlendFactor::eZero;
+			st.srcAlphaBlendFactor = vk::BlendFactor::eOneMinusDstAlpha;
 			st.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
-			st.dstAlphaBlendFactor = vk::BlendFactor::eOne;
+			st.dstAlphaBlendFactor = vk::BlendFactor::eDstAlpha;
 			st.colorBlendOp = vk::BlendOp::eAdd;
 			st.alphaBlendOp = vk::BlendOp::eAdd;
 			break;

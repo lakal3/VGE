@@ -35,6 +35,7 @@ func NewMainImage() *MainImage {
 	m.Image = m.pool.ReserveImage(TestApp.Ctx, m.Desc, vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageColorAttachmentBit)
 	m.pool.Allocate(TestApp.Ctx)
 	m.Root.Init()
+	AddChild(m)
 	return m
 }
 
@@ -60,7 +61,10 @@ func (m *MainImage) ForwardRender(depth bool, render func(cmd *vk.Command, dc *v
 	fp := vk.NewForwardRenderPass(TestApp.Ctx, TestApp.Dev, m.Desc.Format, vk.IMAGELayoutTransferSrcOptimal, df)
 	defer fp.Dispose()
 	dc.Pass = fp
-	dc.Frame = &vscene.SimpleFrame{Cache: vk.NewRenderCache(TestApp.Ctx, TestApp.Dev)}
+	rc := vk.NewRenderCache(TestApp.Ctx, TestApp.Dev)
+	defer rc.Dispose()
+	dc.Frame = &vscene.SimpleFrame{Cache: rc}
+
 	cmd := vk.NewCommand(TestApp.Ctx, TestApp.Dev, vk.QUEUEGraphicsBit, true)
 	defer cmd.Dispose()
 	cmd.Begin()

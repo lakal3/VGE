@@ -119,6 +119,10 @@ func (o *Owner) Get(ctx APIContext, key Key, cons Constructor) interface{} {
 		if !ok {
 			v = cons(ctx)
 			o.keyMap[key] = v
+			disp, okDisp := v.(Disposable)
+			if okDisp {
+				o.children = append(o.children, disp)
+			}
 		}
 		return v
 	} else {

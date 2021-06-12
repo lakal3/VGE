@@ -45,7 +45,7 @@ func GetUniformCache(cache *vk.RenderCache) *UniformCache {
 	}).(*UniformCache)
 	cache.GetPerFrame(ucKey, func(ctx vk.APIContext) interface{} {
 		ddc.pos = 0
-		return ddc
+		return struct{}{}
 	})
 	return ddc
 }
@@ -58,7 +58,7 @@ func GetSmallUniformCache(cache *vk.RenderCache) *UniformCache {
 	}).(*UniformCache)
 	cache.GetPerFrame(ucSmallKey, func(ctx vk.APIContext) interface{} {
 		ddc.pos = 0
-		return ddc
+		return struct{}{}
 	})
 	return ddc
 }

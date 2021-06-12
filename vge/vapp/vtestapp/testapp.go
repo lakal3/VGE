@@ -38,7 +38,7 @@ type TestOption interface {
 
 func Init(ctx TestContext, name string, options ...TestOption) {
 	TestApp.Ctx = ctx
-	TestApp.options = append(TestApp.options, options...)
+	TestApp.options = options
 	TestApp.App = vk.NewApplication(ctx, name)
 	if !TestApp.NoValidation {
 		TestApp.App.AddValidation(ctx)

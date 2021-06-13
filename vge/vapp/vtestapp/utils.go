@@ -2,16 +2,24 @@ package vtestapp
 
 import (
 	"errors"
+	"github.com/lakal3/vge/vge/vasset/pngloader"
+	"github.com/lakal3/vge/vge/vk"
+	"github.com/lakal3/vge/vge/vmodel"
+	"github.com/lakal3/vge/vge/vscene"
 	"image"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-
-	"github.com/lakal3/vge/vge/vk"
-	"github.com/lakal3/vge/vge/vmodel"
-	"github.com/lakal3/vge/vge/vscene"
 )
+
+// PngSupport option register PNG handler that can load and save images in PNG format
+type PngSupport struct {
+}
+
+func (p PngSupport) InitOption() {
+	pngloader.RegisterPngLoader()
+}
 
 type MainImage struct {
 	Image  *vk.Image
@@ -28,11 +36,18 @@ func (m *MainImage) Dispose() {
 	}
 }
 
+// NewMainImage construct new MainImage that you can use to render test scene. Image size is 1024*768
 func NewMainImage() *MainImage {
+	return NewMainImageDesc(vk.ImageDescription{Width: 1024, Height: 768, Depth: 1, Format: vk.FORMATR8g8b8a8Unorm, MipLevels: 1, Layers: 1},
+		vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageColorAttachmentBit)
+}
+
+// NewMainImageDesc construct new MainImage in given format.
+func NewMainImageDesc(desc vk.ImageDescription, usage vk.ImageUsageFlags) *MainImage {
 	m := &MainImage{}
 	m.pool = vk.NewMemoryPool(TestApp.Dev)
-	m.Desc = vk.ImageDescription{Width: 1024, Height: 768, Depth: 1, Format: vk.FORMATR8g8b8a8Unorm, MipLevels: 1, Layers: 1}
-	m.Image = m.pool.ReserveImage(TestApp.Ctx, m.Desc, vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageColorAttachmentBit)
+	m.Desc = desc
+	m.Image = m.pool.ReserveImage(TestApp.Ctx, m.Desc, usage)
 	m.pool.Allocate(TestApp.Ctx)
 	m.Root.Init()
 	AddChild(m)
@@ -41,6 +56,10 @@ func NewMainImage() *MainImage {
 
 func (m *MainImage) Save(testName string, layout vk.ImageLayout) {
 	SaveImage(m.Image, testName, layout)
+}
+
+func (m *MainImage) SaveKind(kind string, testName string, layout vk.ImageLayout) {
+	SaveImageKind(m.Image, kind, testName, layout)
 }
 
 func (m *MainImage) ForwardRender(depth bool, render func(cmd *vk.Command, dc *vmodel.DrawContext)) {
@@ -81,11 +100,10 @@ func (m *MainImage) ForwardRender(depth bool, render func(cmd *vk.Command, dc *v
 
 }
 
-var kFpTest = vk.NewKey()
-
 func (m *MainImage) RenderScene(time float64, depth bool) {
 	m.RenderSceneAt(time, depth, nil)
 }
+
 func (m *MainImage) RenderSceneAt(time float64, depth bool, camera vscene.Camera) {
 	rc := vk.NewRenderCache(TestApp.Ctx, TestApp.Dev)
 	defer rc.Dispose()
@@ -127,18 +145,24 @@ func (m *MainImage) RenderSceneAt(time float64, depth bool, camera vscene.Camera
 	cmd.Wait()
 }
 
+// SaveImage image to test dir using DDS format
 func SaveImage(image *vk.Image, testName string, layout vk.ImageLayout) {
+	SaveImageKind(image, "dds", testName, layout)
+}
+
+// SaveImageKind saves image to test dir using kind format. You must ensure that proper image decoder has been registered
+func SaveImageKind(image *vk.Image, kind string, testName string, layout vk.ImageLayout) {
 	cp := vmodel.NewCopier(TestApp.Ctx, TestApp.Dev)
 	defer cp.Dispose()
 	ir := image.FullRange()
 	ir.Layout = layout
-	content := cp.CopyFromImage(image, ir, "dds", vk.IMAGELayoutTransferSrcOptimal)
+	content := cp.CopyFromImage(image, ir, kind, vk.IMAGELayoutTransferSrcOptimal)
 	testDir := os.Getenv("VGE_TEST_DIR")
 	if len(testDir) == 0 {
 		TestApp.Ctx.T.Log("Unable to save test image, missing environment variable VGE_TEST_DIR")
 		return
 	}
-	fPath := filepath.Join(testDir, testName+".dds")
+	fPath := filepath.Join(testDir, testName+"."+kind)
 	err := ioutil.WriteFile(fPath, content, 0660)
 	if err != nil {
 		TestApp.Ctx.SetError(err)

@@ -5,13 +5,19 @@ import (
 	"errors"
 	"image"
 	"image/png"
+	"sync"
 
 	"github.com/lakal3/vge/vge/vasset"
 	"github.com/lakal3/vge/vge/vk"
 )
 
+var register = &sync.Once{}
+
+// Register PNG loader that support saving and loading PNG images using Go's image/png package
 func RegisterPngLoader() {
-	vasset.RegisterImageLoader(PngLoader{})
+	register.Do(func() {
+		vasset.RegisterImageLoader(PngLoader{})
+	})
 }
 
 type PngLoader struct {

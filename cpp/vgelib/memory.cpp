@@ -12,6 +12,22 @@ void vge::Buffer::GetPtr(void*& boundMemory)
 	boundMemory = memPtr + _offset;
 }
 
+void vge::Buffer::CopyFrom(size_t offset, void* ptr, size_t size)
+{
+	char* memPtr = nullptr;
+	if (_owner != nullptr) {
+		memPtr = static_cast<char*>(_owner->get_memPtr());
+	}
+	if (memPtr == nullptr) {
+		throw std::runtime_error("Buffer memory not bound");
+	}
+	if (_offset + offset + size > _size) {
+		throw std::out_of_range("Size + offset larger that buffer size");
+	}
+	std::memcpy(memPtr + _offset + offset, ptr, size);
+}
+
+
 void vge::Buffer::NewView(vk::Format format, uint64_t offset, uint64_t size, BufferView*& view)
 {
 	view = new BufferView(_dev, _buffer, format);

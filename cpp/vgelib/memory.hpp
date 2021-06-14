@@ -25,6 +25,7 @@ namespace vge {
 		friend class Command;
 	public:
 		void GetPtr(void*& boundMemory);
+		void CopyFrom(size_t offset, void* ptr, size_t size);
 		void NewView(vk::Format format, uint64_t offset, uint64_t size, BufferView*& view);
 		vk::Buffer get_buffer() const {
 			return _buffer;

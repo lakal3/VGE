@@ -131,6 +131,16 @@ func (b *Buffer) Slice(ctx APIContext, from uint64, to uint64) *Slice {
 	return s
 }
 
+// CopyFrom copies content from Go memory to buffer. Offset is starting point inside buffer where to copy memory
+// CopyFrom should be used only when size of copied item is large (>64k). For small items call overhead outweighs performance gain
+func (b *Buffer) CopyFrom(ctx APIContext, offset uint64, ptr unsafe.Pointer, size uint64) {
+	b.IsValid(ctx)
+	if !ctx.IsValid() {
+		return
+	}
+	call_Buffer_CopyFrom(ctx, b.hBuf, offset, uintptr(ptr), size)
+}
+
 func (s *Slice) IsValid(ctx APIContext) bool {
 	return s.buffer.IsValid(ctx)
 }

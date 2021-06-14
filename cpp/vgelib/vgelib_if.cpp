@@ -9,6 +9,7 @@ DLLEXPORT Exception * AddDynamicDescriptors(Application* app);
 DLLEXPORT Exception * AddValidation(Application* app);
 DLLEXPORT Exception * AddValidationException(int32_t msgId);
 DLLEXPORT Exception * Application_Init(Application* app, Instance*& inst);
+DLLEXPORT Exception * Buffer_CopyFrom(Buffer* buffer, uint64_t offset, void * ptr, uint64_t size);
 DLLEXPORT Exception * Buffer_GetPtr(Buffer* buffer, void *& ptr);
 DLLEXPORT Exception * Buffer_NewView(Buffer* buffer, int32_t format, uint64_t offset, uint64_t size, BufferView*& view);
 DLLEXPORT Exception * Command_Begin(Command* cmd);
@@ -108,6 +109,15 @@ Exception * AddValidationException(int32_t msgId) {
 Exception * Application_Init(Application* app, Instance*& inst) {
     try {
         app->Init(inst);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Buffer_CopyFrom(Buffer* buffer, uint64_t offset, void * ptr, uint64_t size) {
+    try {
+        buffer->CopyFrom(offset, ptr, size);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }

@@ -167,6 +167,13 @@ type MainLib interface {
 		buffer hBuffer
 		ptr    *uintptr
 	})
+	Buffer_CopyFrom(struct {
+		buffer hBuffer
+		offset uint64
+		ptr    uintptr
+		size   uint64
+	})
+
 	Buffer_NewView(struct {
 		buffer hBuffer
 		format vk.Format

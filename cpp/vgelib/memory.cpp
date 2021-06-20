@@ -21,7 +21,7 @@ void vge::Buffer::CopyFrom(size_t offset, void* ptr, size_t size)
 	if (memPtr == nullptr) {
 		throw std::runtime_error("Buffer memory not bound");
 	}
-	if (_offset + offset + size > _size) {
+	if (offset + size > _size) {
 		throw std::out_of_range("Size + offset larger that buffer size");
 	}
 	std::memcpy(memPtr + _offset + offset, ptr, size);

@@ -116,7 +116,7 @@ Running logo.go with `go run logo.go` should produce something like.
 
 ![alt text](docs/logo_example.png "Logo example")
 
-In Linux use `GODEBUG=cgocheck=0 go run logo.go` (*VGE will pass raw pointer to its support library libVGELib.so for performance reasons. See [Architecture](docs/achiteture.md) for more info*)
+In Linux use `GODEBUG=cgocheck=0 go run logo.go` (*VGE will pass raw pointer to its support library libvgelib.so for performance reasons. See [Architecture](docs/achiteture.md) for more info*)
 
 ## Sample videos
 
@@ -142,10 +142,10 @@ Note **Only 64bit (amd64) Windows (only tested on Windows 10) or Linux (experime
 
 Some lower level functions are implemented in C++. See [VGE architecture](docs/architecture.md) for more description of why and how VGE is implemented.
 
-On Windows, you do not have to install the C/C++ compiler. You can use a prebuilt C++ VGELib.dll. Windows implementation does not use the CGO at all!
+On Windows, you do not have to install the C/C++ compiler. You can use a prebuilt C++ vgelib.dll. Windows implementation does not use the CGO at all!
 
-Copy prebuilt/win_amd64/VGELib.dll to some directory in your search PATH or update searchpath to include prebuilt directory.
-Alternatively you can [build VGELib](docs/build_vgelib.md) VGELib.dll yourself.
+Copy prebuilt/win_amd64/vgelib.dll to some directory in your search PATH or update searchpath to include prebuilt directory.
+Alternatively you can [build vgelib](docs/build_vgelib.md) vgelib.dll yourself.
 
 If you plan to do any additional projects with Vulkan or the VGE, I also recommend you to install [Vulkan SDK](https://www.lunarg.com/vulkan-sdk/).
 Vulkan SDK also contains the SPIR-V compiler that you will need when developing your own shaders.

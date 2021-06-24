@@ -48,8 +48,8 @@ func main() {
 	}
 	if app.debug {
 		vapp.AddOption(vapp.Validate{})
-		// Uncommment next line to run with debug version on VGELib. NOTE! Debug versions are not included in prebuilt. You must build one yourself
-		// vk.VGEDllPath = "VGELibd.dll"
+		// Uncommment next line to run with debug version on vgelib. NOTE! Debug versions are not included in prebuilt. You must build one yourself
+		// vk.VGEDllPath = "vgelibd.dll"
 	}
 	vasset.DefaultLoader = vasset.DirectoryLoader{Directory: "../../assets"}
 

@@ -51,7 +51,7 @@ func main() {
 	}
 	if app.debug {
 		vapp.AddOption(vapp.Validate{})
-		// vk.VGEDllPath = "VGELibd.dll"
+		// vk.VGEDllPath = "vgelibd.dll"
 	}
 
 	var err error

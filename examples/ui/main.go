@@ -65,7 +65,7 @@ func main() {
 	flag.Parse()
 	if config.debug {
 		// Comment out if you wan't to test app with debug library
-		//vk.VGEDllPath = "VGELibd.dll"
+		//vk.VGEDllPath = "vgelibd.dll"
 	}
 	app.init()
 	defer app.Dispose()

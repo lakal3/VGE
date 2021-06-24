@@ -58,7 +58,7 @@ func main() {
 	flag.Parse()
 
 	if config.debug {
-		// vk.VGEDllPath = "VGELibd.dll"
+		// vk.VGEDllPath = "vgelibd.dll"
 	}
 	app.init()
 	defer app.Dispose()

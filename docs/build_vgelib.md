@@ -1,8 +1,8 @@
-# Build VGELib.dll (libVGELib.so)
+# Build vgelib.dll (libvgelib.so)
 
 ## Depencendicies
 
-VGELib uses [GLFW](https://www.glfw.org/) library to handle native UI / event handling in a platform independent manner.
+vgelib uses [GLFW](https://www.glfw.org/) library to handle native UI / event handling in a platform independent manner.
 GLFW is included in the VGE project as a git submodule.
 
 You must update submodules to download the actual GLTW code using the git submodule command.
@@ -17,7 +17,7 @@ Other dependencies (std_image.h) are included in the VGE project.
 
 Download and install [Vulkan SDK](https://vulkan.lunarg.com/). 
 
-Default VGELib.dll has been built with SDK version 1.2.170. 
+Default vgelib.dll has been built with SDK version 1.2.170.
 
 Optionally: Run vkcube example from SDK to check that your display drivers support Vulkan.
 
@@ -27,13 +27,13 @@ VGE is fairly standard C++ code and does not use advanced C++ concepts. However,
 
 ## CMake
 
-VGELib uses CMake build system.
+vgelib uses CMake build system.
 In addition to the normal CMake parameters you must define the VULKAN_SDK cache variable
 that must point to the directory where you installed Vulkan SDK
 
 `cmake -DVULKAN_SDK={Vulkan SDK install path} ...`
 
-Installing release mode binaries should install a new version of VGELib.dll (libVGELib.so)
+Installing release mode binaries should install a new version of vgelib.dll (libvgelib.so)
 
 ## Linux build
 
@@ -50,7 +50,7 @@ Linux needs additional libraries to build GLWF. You should have at least install
 
 See their documentation about the requirements (or just run make and install what is missing).
 
-Also, make sure that you place your shared library (libVGELib.so) where the OS will be able to locate it.
+Also, make sure that you place your shared library (libvgelib.so) where the OS will be able to locate it.
 
 ## Windows build
 

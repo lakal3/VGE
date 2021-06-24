@@ -56,7 +56,7 @@ import (
 
 type Handle uintptr
 
-// DLOpen opens libVGElib.so.
+// DLOpen opens libvgelib.so.
 func DLOpen(libraryPath string) (Handle, error) {
 	if strings.HasSuffix(strings.ToLower(libraryPath), ".dll") {
 		// Convert Windows dll name to Linux equivalent
@@ -79,7 +79,7 @@ func GetProcAddress(libHandle Handle, exportName string) (trap uintptr, err erro
 	return uintptr(mh), nil
 }
 
-// DLClose closes libVGElib.so
+// DLClose closes libvgelib.so
 func DLClose(libHandle Handle) {
 	// FreeLibrary releases previously loaded library
 	C.dlclose(unsafe.Pointer(libHandle))

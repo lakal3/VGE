@@ -38,7 +38,7 @@ func TestAddDynamicDescriptors(t *testing.T) {
 }
 
 func TestNewApplication(t *testing.T) {
-	// VGEDllPath = "VGELibd.dll"
+	// VGEDllPath = "vgelibd.dll"
 	tc := &testContext{t: t}
 	a := NewApplication(tc, "Test")
 	a.AddValidation(tc)

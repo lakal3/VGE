@@ -59,7 +59,7 @@ func main() {
 	if app.debug {
 		vapp.AddOption(vapp.Validate{})
 		// Uncomment to use C++ debug library
-		// vk.VGEDllPath = "VGELibd.dll"
+		// vk.VGEDllPath = "vgelibd.dll"
 	}
 	if app.deferred {
 		// Deferred shaders requires dynamic descriptors

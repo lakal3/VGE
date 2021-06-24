@@ -62,7 +62,7 @@ func main() {
 	}
 	if debug {
 		vapp.AddOption(vapp.Validate{})
-		// vk.VGEDllPath = "VGELibd.dll"
+		// vk.VGEDllPath = "vgelibd.dll"
 	}
 	if app.oil || app.deferred {
 		// Add dynamics descriptor support.

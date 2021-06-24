@@ -67,7 +67,7 @@ func RegisterImageLoader(loader vk.ImageLoader) {
 	imageLoaders = append([]vk.ImageLoader{loader}, imageLoaders...)
 }
 
-// RegisterNativeImageLoader register loader implemented in VGELib (using stb_image.h image loaders)
+// RegisterNativeImageLoader register loader implemented in vgelib (using stb_image.h image loaders)
 func RegisterNativeImageLoader(ctx vk.APIContext, app *vk.Application) {
 	ld := vk.NewNativeImageLoader(ctx, app)
 	if ld != nil {

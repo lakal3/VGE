@@ -7,8 +7,8 @@ These examples will use the vapp package to setup, for example, the Vulkan appli
 have to take care of the many details you would normally have to setup when creating a Vulkan application.
 
 To run the examples, just use go run. Ensure that you have either:
-- Built and installed VGELib.dll (.so) package
-- Copied this dll from {rootdir}/prebuild/{win/linux}/VGELib.dll
+- Built and installed vgelib.dll (.so) package
+- Copied this dll from {rootdir}/prebuild/{win/linux}/vgelib.dll
 
 ## Examples in this directory
 
@@ -18,7 +18,7 @@ To run the examples, just use go run. Ensure that you have either:
 
 ## Troubleshooting
 
-Check that VGELib.dll (.so) is accessible using the path.
+Check that vgelib.dll (.so) is accessible using the path.
 
 Check that GOARCH is amd64. This is the only supported architecture.
 

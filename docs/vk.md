@@ -1,7 +1,7 @@
 # VGE core object (Module vk)
 
 This module contains the lower levels of VGE objects written in Go.
-The Vk module is also the only module that directly calls C++ library VGELib.dll (libVGELib.so)
+The Vk module is also the only module that directly calls C++ library vgelib.dll (libvgelib.so)
 
 Main objects in code module:
 

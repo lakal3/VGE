@@ -37,14 +37,14 @@ If we consider languages that have a reasonable user base, this only leaves few 
 
 In reality all operating system APIs, the Vulkan API, and most graphics libraries, algorithms etc. have been written in C/C++. All API:s use C ABI conventions. In some way, you must be able to consume .h(.hpp) files or write lots and lots of things from scratch.
 
-So the lowest level of the VGE is a shader library VGELib written in C++. It incorporates some really fine libraries that makes the graphics engine design easier.
+So the lowest level of the VGE is a shader library vgelib written in C++. It incorporates some really fine libraries that makes the graphics engine design easier.
 VGE only uses C/C++ libraries if no equivalent pure Go library is available (with exception of reading JPEG images. The Go standard implementation was incredibly slow).
 
-If you want to manually build the C++ library see [building VGELib](build_vgelib.md).
+If you want to manually build the C++ library see [building vgelib](build_vgelib.md).
 
 ### C++ but, no CGO (or very little in Linux)
 
-To make using VGE easier, no C++ compiler is required when running VGE on Windows. VGE only uses syscall to load VGELib shared library.
+To make using VGE easier, no C++ compiler is required when running VGE on Windows. VGE only uses syscall to load vgelib shared library.
 This also means that VGE in Windows is not an CGO program.
 
 Unfortunately, in Linux there is no way (that I am aware of) to load a shared library
@@ -56,9 +56,9 @@ You do not to know anything about this tool unless you plan to change the Go/C++
 
 ### GODEBUG=cgocheck=0
 
-For performance reason VGE will pass pointers to Go memory. VGE support library VGELib.dll (libVGELib.so) is aware of Golangs carbage collector and will not hold pointer to memory after call to library completed. As long as Golang don't implement moving carbage collector this is safe! 
+For performance reason VGE will pass pointers to Go memory. VGE support library vgelib.dll (libvgelib.so) is aware of Golangs carbage collector and will not hold pointer to memory after call to library completed. As long as Golang don't implement moving carbage collector this is safe!
 
-In Windows this works out of box. However in Linux we must use short CGO module to invoke libVGELib.so. 
+In Windows this works out of box. However in Linux we must use short CGO module to invoke libvgelib.so.
 Unfortunately current implementation of CGO will check that we will not send pointers from Go's heap to CGO calls :(. cgocheck=0 will disable this check.
 
 **Go 1.17 will most like support new Handle type that solves this problem!**

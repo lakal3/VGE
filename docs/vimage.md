@@ -31,7 +31,7 @@ PNG images have two loaders available: PngLoader and NativeLoader.
 PngLoader is using Go's image and png packages. Register this loader using pngloader.RegisterPngLoader.
 Go's implementation of PNG loader can both read and write png images, but reading might be a bit slower than when using NativeLoader.
 
-NativeLoader is implemented in C++ VGELib and uses internally stb_image.h image loaders.
+NativeLoader is implemented in C++ vgelib and uses internally stb_image.h image loaders.
 NativeLoader is registered with vasset.RegisterNativeImageLoader. NativeLoader can only read PNG images.
 
 You can use PngLoader to write images and NativeLoader to load images if you register PngLoader before.

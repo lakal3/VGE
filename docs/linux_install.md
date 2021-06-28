@@ -12,10 +12,10 @@ Getting a working Vulkan driver on Linux machine seems bit more involved process
 
 This step is optional but recommended.
 
-## libVGELib.so
+## libvgelib.so
 
-Place prebuilt libVGELib.so so that Linux loader can find it.
-Alternatively [build](build_vgelib.md) libVGELib.so yourself.
+Place prebuilt libvgeLib.so so that Linux loader can find it.
+Alternatively [build](build_vgelib.md) libvgelib.so yourself.
 
 Please follow your distribution specific instructions on how to install shared libraries.
 

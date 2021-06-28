@@ -39,14 +39,14 @@ func DebugPoint(point string) {
 	call_DebugPoint([]byte(point))
 }
 
-// VGEDllPath sets name of default VGELib path.
-var VGEDllPath string = "VGELib.dll"
+// VGEDllPath sets name of default vgelib path.
+var VGEDllPath string = "vgelib.dll"
 
-// GetDllPath gets full path of VGELib.dll (.so). You can override this function to match your preferences / OS.
-// By default in Windows file name is kept as is. In linux -> VGELib will be converted to libVGElib and .dll -> .so
+// GetDllPath gets full path of vgelib.dll (.so). You can override this function to match your preferences / OS.
+// By default in Windows file name is kept as is. In linux -> vgelib will be converted to libvgelib and .dll -> .so
 var GetDllPath = func() string {
 	if runtime.GOOS == "linux" {
-		p := strings.ReplaceAll(VGEDllPath, "VGELib", "libVGELib")
+		p := strings.ReplaceAll(VGEDllPath, "vgelib", "libvgelib")
 		return strings.ReplaceAll(p, ".dll", ".so")
 	}
 	return VGEDllPath

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-project(VGELib C CXX)
+project(vgelib C CXX)
 
 if(NOT CMAKE_DEBUG_POSTFIX)
   set(CMAKE_DEBUG_POSTFIX d)
@@ -46,7 +46,7 @@ else()
     set(VGELIB_OS_SRC "vgelib/common/stb_image.cpp" )
 endif()
 
-add_library(VGELib SHARED ${VGELIB_SRC} ${VGELIB_SRCH} ${VGELIB_OS_SRC})
-target_link_libraries(VGELib ${VULKAN_LIB} glfw)
+add_library(vgelib SHARED ${VGELIB_SRC} ${VGELIB_SRCH} ${VGELIB_OS_SRC})
+target_link_libraries(vgelib ${VULKAN_LIB} glfw)
 
-install(TARGETS VGELib DESTINATION "bin")
+install(TARGETS vgelib DESTINATION "bin")

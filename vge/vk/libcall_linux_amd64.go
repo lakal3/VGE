@@ -399,12 +399,14 @@ func call_AddValidationException(ctx APIContext, msgId int32) {
 	handleError(ctx, rc)
 }
 func call_Application_Init(ctx APIContext, app hApplication, inst *hInstance) {
+	var _tmp_inst hInstance
 	atEnd := ctx.Begin("Application_Init")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke(libcall.t_Application_Init, 2, uintptr(app), uintptr(unsafe.Pointer(inst)), 0)
+	rc := dldyn.Invoke(libcall.t_Application_Init, 2, uintptr(app), uintptr(unsafe.Pointer(&_tmp_inst)), 0)
 	handleError(ctx, rc)
+	*inst = _tmp_inst
 }
 func call_Buffer_CopyFrom(ctx APIContext, buffer hBuffer, offset uint64, ptr uintptr, size uint64) {
 	atEnd := ctx.Begin("Buffer_CopyFrom")
@@ -415,20 +417,24 @@ func call_Buffer_CopyFrom(ctx APIContext, buffer hBuffer, offset uint64, ptr uin
 	handleError(ctx, rc)
 }
 func call_Buffer_GetPtr(ctx APIContext, buffer hBuffer, ptr *uintptr) {
+	var _tmp_ptr uintptr
 	atEnd := ctx.Begin("Buffer_GetPtr")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke(libcall.t_Buffer_GetPtr, 2, uintptr(buffer), uintptr(unsafe.Pointer(ptr)), 0)
+	rc := dldyn.Invoke(libcall.t_Buffer_GetPtr, 2, uintptr(buffer), uintptr(unsafe.Pointer(&_tmp_ptr)), 0)
 	handleError(ctx, rc)
+	*ptr = _tmp_ptr
 }
 func call_Buffer_NewView(ctx APIContext, buffer hBuffer, format Format, offset uint64, size uint64, view *hBufferView) {
+	var _tmp_view hBufferView
 	atEnd := ctx.Begin("Buffer_NewView")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke6(libcall.t_Buffer_NewView, 5, uintptr(buffer), uintptr(format), uintptr(offset), uintptr(size), uintptr(unsafe.Pointer(view)), 0)
+	rc := dldyn.Invoke6(libcall.t_Buffer_NewView, 5, uintptr(buffer), uintptr(format), uintptr(offset), uintptr(size), uintptr(unsafe.Pointer(&_tmp_view)), 0)
 	handleError(ctx, rc)
+	*view = _tmp_view
 }
 func call_Command_Begin(ctx APIContext, cmd hCommand) {
 	atEnd := ctx.Begin("Command_Begin")
@@ -538,20 +544,24 @@ func call_DebugPoint(point []byte) {
 	_ = dldyn.Invoke(libcall.t_DebugPoint, 2, byteArrayToUintptr(point), uintptr(len(point)), 0)
 }
 func call_DescriptorLayout_NewPool(ctx APIContext, layout hDescriptorLayout, size uint32, pool *hDescriptorPool) {
+	var _tmp_pool hDescriptorPool
 	atEnd := ctx.Begin("DescriptorLayout_NewPool")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke(libcall.t_DescriptorLayout_NewPool, 3, uintptr(layout), uintptr(size), uintptr(unsafe.Pointer(pool)))
+	rc := dldyn.Invoke(libcall.t_DescriptorLayout_NewPool, 3, uintptr(layout), uintptr(size), uintptr(unsafe.Pointer(&_tmp_pool)))
 	handleError(ctx, rc)
+	*pool = _tmp_pool
 }
 func call_DescriptorPool_Alloc(ctx APIContext, pool hDescriptorPool, ds *hDescriptorSet) {
+	var _tmp_ds hDescriptorSet
 	atEnd := ctx.Begin("DescriptorPool_Alloc")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke(libcall.t_DescriptorPool_Alloc, 2, uintptr(pool), uintptr(unsafe.Pointer(ds)), 0)
+	rc := dldyn.Invoke(libcall.t_DescriptorPool_Alloc, 2, uintptr(pool), uintptr(unsafe.Pointer(&_tmp_ds)), 0)
 	handleError(ctx, rc)
+	*ds = _tmp_ds
 }
 func call_DescriptorSet_WriteBuffer(ctx APIContext, ds hDescriptorSet, binding uint32, at uint32, buffer hBuffer, from uint64, size uint64) {
 	atEnd := ctx.Begin("DescriptorSet_WriteBuffer")
@@ -578,12 +588,14 @@ func call_DescriptorSet_WriteImage(ctx APIContext, ds hDescriptorSet, binding ui
 	handleError(ctx, rc)
 }
 func call_Desktop_CreateWindow(ctx APIContext, desktop hDesktop, title []byte, pos *WindowPos, win *hWindow) {
+	var _tmp_win hWindow
 	atEnd := ctx.Begin("Desktop_CreateWindow")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke6(libcall.t_Desktop_CreateWindow, 5, uintptr(desktop), byteArrayToUintptr(title), uintptr(len(title)), uintptr(unsafe.Pointer(pos)), uintptr(unsafe.Pointer(win)), 0)
+	rc := dldyn.Invoke6(libcall.t_Desktop_CreateWindow, 5, uintptr(desktop), byteArrayToUintptr(title), uintptr(len(title)), uintptr(unsafe.Pointer(pos)), uintptr(unsafe.Pointer(&_tmp_win)), 0)
 	handleError(ctx, rc)
+	*win = _tmp_win
 }
 func call_Desktop_GetKeyName(ctx APIContext, desktop hDesktop, keyCode uint32, name []uint8, strLen *uint32) {
 	atEnd := ctx.Begin("Desktop_GetKeyName")
@@ -610,84 +622,104 @@ func call_Desktop_PullEvent(ctx APIContext, desktop hDesktop, ev *RawEvent) {
 	handleError(ctx, rc)
 }
 func call_Device_NewBuffer(ctx APIContext, dev hDevice, size uint64, hostMemory bool, usage BufferUsageFlags, buffer *hBuffer) {
+	var _tmp_buffer hBuffer
 	atEnd := ctx.Begin("Device_NewBuffer")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke6(libcall.t_Device_NewBuffer, 5, uintptr(dev), uintptr(size), boolToUintptr(hostMemory), uintptr(usage), uintptr(unsafe.Pointer(buffer)), 0)
+	rc := dldyn.Invoke6(libcall.t_Device_NewBuffer, 5, uintptr(dev), uintptr(size), boolToUintptr(hostMemory), uintptr(usage), uintptr(unsafe.Pointer(&_tmp_buffer)), 0)
 	handleError(ctx, rc)
+	*buffer = _tmp_buffer
 }
 func call_Device_NewCommand(ctx APIContext, dev hDevice, queueType QueueFlags, once bool, command *hCommand) {
+	var _tmp_command hCommand
 	atEnd := ctx.Begin("Device_NewCommand")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke6(libcall.t_Device_NewCommand, 4, uintptr(dev), uintptr(queueType), boolToUintptr(once), uintptr(unsafe.Pointer(command)), 0, 0)
+	rc := dldyn.Invoke6(libcall.t_Device_NewCommand, 4, uintptr(dev), uintptr(queueType), boolToUintptr(once), uintptr(unsafe.Pointer(&_tmp_command)), 0, 0)
 	handleError(ctx, rc)
+	*command = _tmp_command
 }
 func call_Device_NewComputePipeline(ctx APIContext, dev hDevice, cp *hComputePipeline) {
+	var _tmp_cp hComputePipeline
 	atEnd := ctx.Begin("Device_NewComputePipeline")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke(libcall.t_Device_NewComputePipeline, 2, uintptr(dev), uintptr(unsafe.Pointer(cp)), 0)
+	rc := dldyn.Invoke(libcall.t_Device_NewComputePipeline, 2, uintptr(dev), uintptr(unsafe.Pointer(&_tmp_cp)), 0)
 	handleError(ctx, rc)
+	*cp = _tmp_cp
 }
 func call_Device_NewDescriptorLayout(ctx APIContext, dev hDevice, descriptorType DescriptorType, stages ShaderStageFlags, element uint32, flags DescriptorBindingFlagBitsEXT, prevLayout hDescriptorLayout, dsLayout *hDescriptorLayout) {
+	var _tmp_dsLayout hDescriptorLayout
 	atEnd := ctx.Begin("Device_NewDescriptorLayout")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke9(libcall.t_Device_NewDescriptorLayout, 7, uintptr(dev), uintptr(descriptorType), uintptr(stages), uintptr(element), uintptr(flags), uintptr(prevLayout), uintptr(unsafe.Pointer(dsLayout)), 0, 0)
+	rc := dldyn.Invoke9(libcall.t_Device_NewDescriptorLayout, 7, uintptr(dev), uintptr(descriptorType), uintptr(stages), uintptr(element), uintptr(flags), uintptr(prevLayout), uintptr(unsafe.Pointer(&_tmp_dsLayout)), 0, 0)
 	handleError(ctx, rc)
+	*dsLayout = _tmp_dsLayout
 }
 func call_Device_NewGraphicsPipeline(ctx APIContext, dev hDevice, gp *hGraphicsPipeline) {
+	var _tmp_gp hGraphicsPipeline
 	atEnd := ctx.Begin("Device_NewGraphicsPipeline")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke(libcall.t_Device_NewGraphicsPipeline, 2, uintptr(dev), uintptr(unsafe.Pointer(gp)), 0)
+	rc := dldyn.Invoke(libcall.t_Device_NewGraphicsPipeline, 2, uintptr(dev), uintptr(unsafe.Pointer(&_tmp_gp)), 0)
 	handleError(ctx, rc)
+	*gp = _tmp_gp
 }
 func call_Device_NewImage(ctx APIContext, dev hDevice, usage ImageUsageFlags, desc *ImageDescription, image *hImage) {
+	var _tmp_image hImage
 	atEnd := ctx.Begin("Device_NewImage")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke6(libcall.t_Device_NewImage, 4, uintptr(dev), uintptr(usage), uintptr(unsafe.Pointer(desc)), uintptr(unsafe.Pointer(image)), 0, 0)
+	rc := dldyn.Invoke6(libcall.t_Device_NewImage, 4, uintptr(dev), uintptr(usage), uintptr(unsafe.Pointer(desc)), uintptr(unsafe.Pointer(&_tmp_image)), 0, 0)
 	handleError(ctx, rc)
+	*image = _tmp_image
 }
 func call_Device_NewMemoryBlock(ctx APIContext, dev hDevice, memBlock *hMemoryBlock) {
+	var _tmp_memBlock hMemoryBlock
 	atEnd := ctx.Begin("Device_NewMemoryBlock")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke(libcall.t_Device_NewMemoryBlock, 2, uintptr(dev), uintptr(unsafe.Pointer(memBlock)), 0)
+	rc := dldyn.Invoke(libcall.t_Device_NewMemoryBlock, 2, uintptr(dev), uintptr(unsafe.Pointer(&_tmp_memBlock)), 0)
 	handleError(ctx, rc)
+	*memBlock = _tmp_memBlock
 }
 func call_Device_NewSampler(ctx APIContext, dev hDevice, repeatMode SamplerAddressMode, sampler *hSampler) {
+	var _tmp_sampler hSampler
 	atEnd := ctx.Begin("Device_NewSampler")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke(libcall.t_Device_NewSampler, 3, uintptr(dev), uintptr(repeatMode), uintptr(unsafe.Pointer(sampler)))
+	rc := dldyn.Invoke(libcall.t_Device_NewSampler, 3, uintptr(dev), uintptr(repeatMode), uintptr(unsafe.Pointer(&_tmp_sampler)))
 	handleError(ctx, rc)
+	*sampler = _tmp_sampler
 }
 func call_Device_NewTimestampQuery(ctx APIContext, dev hDevice, size uint32, qp *hQueryPool) {
+	var _tmp_qp hQueryPool
 	atEnd := ctx.Begin("Device_NewTimestampQuery")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke(libcall.t_Device_NewTimestampQuery, 3, uintptr(dev), uintptr(size), uintptr(unsafe.Pointer(qp)))
+	rc := dldyn.Invoke(libcall.t_Device_NewTimestampQuery, 3, uintptr(dev), uintptr(size), uintptr(unsafe.Pointer(&_tmp_qp)))
 	handleError(ctx, rc)
+	*qp = _tmp_qp
 }
 func call_Device_Submit(ctx APIContext, dev hDevice, cmd hCommand, priority uint32, info []hSubmitInfo, waitStage PipelineStageFlags, waitInfo *hSubmitInfo) {
+	var _tmp_waitInfo hSubmitInfo
 	atEnd := ctx.Begin("Device_Submit")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke9(libcall.t_Device_Submit, 7, uintptr(dev), uintptr(cmd), uintptr(priority), sliceToUintptr(info), uintptr(len(info)), uintptr(waitStage), uintptr(unsafe.Pointer(waitInfo)), 0, 0)
+	rc := dldyn.Invoke9(libcall.t_Device_Submit, 7, uintptr(dev), uintptr(cmd), uintptr(priority), sliceToUintptr(info), uintptr(len(info)), uintptr(waitStage), uintptr(unsafe.Pointer(&_tmp_waitInfo)), 0, 0)
 	handleError(ctx, rc)
+	*waitInfo = _tmp_waitInfo
 }
 func call_Disposable_Dispose(disp hDisposable) {
 	_ = dldyn.Invoke(libcall.t_Disposable_Dispose, 1, uintptr(disp), 0, 0)
@@ -776,12 +808,14 @@ func call_ImageLoader_Supported(ctx APIContext, loader hImageLoader, kind []byte
 	handleError(ctx, rc)
 }
 func call_Image_NewView(ctx APIContext, image hImage, imRange *ImageRange, imageView *hImageView, cube bool) {
+	var _tmp_imageView hImageView
 	atEnd := ctx.Begin("Image_NewView")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke6(libcall.t_Image_NewView, 4, uintptr(image), uintptr(unsafe.Pointer(imRange)), uintptr(unsafe.Pointer(imageView)), boolToUintptr(cube), 0, 0)
+	rc := dldyn.Invoke6(libcall.t_Image_NewView, 4, uintptr(image), uintptr(unsafe.Pointer(imRange)), uintptr(unsafe.Pointer(&_tmp_imageView)), boolToUintptr(cube), 0, 0)
 	handleError(ctx, rc)
+	*imageView = _tmp_imageView
 }
 func call_Instance_GetPhysicalDevice(ctx APIContext, instance hInstance, index int32, info *DeviceInfo) {
 	atEnd := ctx.Begin("Instance_GetPhysicalDevice")
@@ -792,12 +826,14 @@ func call_Instance_GetPhysicalDevice(ctx APIContext, instance hInstance, index i
 	handleError(ctx, rc)
 }
 func call_Instance_NewDevice(ctx APIContext, instance hInstance, index int32, pd *hDevice) {
+	var _tmp_pd hDevice
 	atEnd := ctx.Begin("Instance_NewDevice")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke(libcall.t_Instance_NewDevice, 3, uintptr(instance), uintptr(index), uintptr(unsafe.Pointer(pd)))
+	rc := dldyn.Invoke(libcall.t_Instance_NewDevice, 3, uintptr(instance), uintptr(index), uintptr(unsafe.Pointer(&_tmp_pd)))
 	handleError(ctx, rc)
+	*pd = _tmp_pd
 }
 func call_MemoryBlock_Allocate(ctx APIContext, memBlock hMemoryBlock) {
 	atEnd := ctx.Begin("MemoryBlock_Allocate")
@@ -816,36 +852,44 @@ func call_MemoryBlock_Reserve(ctx APIContext, memBlock hMemoryBlock, memObject h
 	handleError(ctx, rc)
 }
 func call_NewApplication(ctx APIContext, name []byte, app *hApplication) {
+	var _tmp_app hApplication
 	atEnd := ctx.Begin("NewApplication")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke(libcall.t_NewApplication, 3, byteArrayToUintptr(name), uintptr(len(name)), uintptr(unsafe.Pointer(app)))
+	rc := dldyn.Invoke(libcall.t_NewApplication, 3, byteArrayToUintptr(name), uintptr(len(name)), uintptr(unsafe.Pointer(&_tmp_app)))
 	handleError(ctx, rc)
+	*app = _tmp_app
 }
 func call_NewDesktop(ctx APIContext, app hApplication, imageUsage ImageUsageFlags, desktop *hDesktop) {
+	var _tmp_desktop hDesktop
 	atEnd := ctx.Begin("NewDesktop")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke(libcall.t_NewDesktop, 3, uintptr(app), uintptr(imageUsage), uintptr(unsafe.Pointer(desktop)))
+	rc := dldyn.Invoke(libcall.t_NewDesktop, 3, uintptr(app), uintptr(imageUsage), uintptr(unsafe.Pointer(&_tmp_desktop)))
 	handleError(ctx, rc)
+	*desktop = _tmp_desktop
 }
 func call_NewImageLoader(ctx APIContext, loader *hImageLoader) {
+	var _tmp_loader hImageLoader
 	atEnd := ctx.Begin("NewImageLoader")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke(libcall.t_NewImageLoader, 1, uintptr(unsafe.Pointer(loader)), 0, 0)
+	rc := dldyn.Invoke(libcall.t_NewImageLoader, 1, uintptr(unsafe.Pointer(&_tmp_loader)), 0, 0)
 	handleError(ctx, rc)
+	*loader = _tmp_loader
 }
 func call_NewRenderPass(ctx APIContext, dev hDevice, rp *hRenderPass, depthAttachment bool, attachments []AttachmentInfo) {
+	var _tmp_rp hRenderPass
 	atEnd := ctx.Begin("NewRenderPass")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke6(libcall.t_NewRenderPass, 5, uintptr(dev), uintptr(unsafe.Pointer(rp)), boolToUintptr(depthAttachment), sliceToUintptr(attachments), uintptr(len(attachments)), 0)
+	rc := dldyn.Invoke6(libcall.t_NewRenderPass, 5, uintptr(dev), uintptr(unsafe.Pointer(&_tmp_rp)), boolToUintptr(depthAttachment), sliceToUintptr(attachments), uintptr(len(attachments)), 0)
 	handleError(ctx, rc)
+	*rp = _tmp_rp
 }
 func call_Pipeline_AddDescriptorLayout(ctx APIContext, pl hPipeline, dsLayout hDescriptorLayout) {
 	atEnd := ctx.Begin("Pipeline_AddDescriptorLayout")
@@ -872,28 +916,36 @@ func call_QueryPool_Get(ctx APIContext, qp hQueryPool, values []uint64, timestam
 	handleError(ctx, rc)
 }
 func call_RenderPass_NewFrameBuffer(ctx APIContext, rp hRenderPass, attachments []hImageView, fb *hFramebuffer) {
+	var _tmp_fb hFramebuffer
 	atEnd := ctx.Begin("RenderPass_NewFrameBuffer")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke6(libcall.t_RenderPass_NewFrameBuffer, 4, uintptr(rp), sliceToUintptr(attachments), uintptr(len(attachments)), uintptr(unsafe.Pointer(fb)), 0, 0)
+	rc := dldyn.Invoke6(libcall.t_RenderPass_NewFrameBuffer, 4, uintptr(rp), sliceToUintptr(attachments), uintptr(len(attachments)), uintptr(unsafe.Pointer(&_tmp_fb)), 0, 0)
 	handleError(ctx, rc)
+	*fb = _tmp_fb
 }
 func call_RenderPass_NewNullFrameBuffer(ctx APIContext, rp hRenderPass, width uint32, height uint32, fb *hFramebuffer) {
+	var _tmp_fb hFramebuffer
 	atEnd := ctx.Begin("RenderPass_NewNullFrameBuffer")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke6(libcall.t_RenderPass_NewNullFrameBuffer, 4, uintptr(rp), uintptr(width), uintptr(height), uintptr(unsafe.Pointer(fb)), 0, 0)
+	rc := dldyn.Invoke6(libcall.t_RenderPass_NewNullFrameBuffer, 4, uintptr(rp), uintptr(width), uintptr(height), uintptr(unsafe.Pointer(&_tmp_fb)), 0, 0)
 	handleError(ctx, rc)
+	*fb = _tmp_fb
 }
 func call_Window_GetNextFrame(ctx APIContext, win hWindow, image *hImage, submitInfo *hSubmitInfo, viewIndex *int32) {
+	var _tmp_image hImage
+	var _tmp_submitInfo hSubmitInfo
 	atEnd := ctx.Begin("Window_GetNextFrame")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke6(libcall.t_Window_GetNextFrame, 4, uintptr(win), uintptr(unsafe.Pointer(image)), uintptr(unsafe.Pointer(submitInfo)), uintptr(unsafe.Pointer(viewIndex)), 0, 0)
+	rc := dldyn.Invoke6(libcall.t_Window_GetNextFrame, 4, uintptr(win), uintptr(unsafe.Pointer(&_tmp_image)), uintptr(unsafe.Pointer(&_tmp_submitInfo)), uintptr(unsafe.Pointer(viewIndex)), 0, 0)
 	handleError(ctx, rc)
+	*image = _tmp_image
+	*submitInfo = _tmp_submitInfo
 }
 func call_Window_GetPos(ctx APIContext, win hWindow, pos *WindowPos) {
 	atEnd := ctx.Begin("Window_GetPos")

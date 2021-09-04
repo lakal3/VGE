@@ -143,6 +143,13 @@ func (g *generator) emitGoBody(mi reflect.Method) error {
 		return nil
 	})
 	g.emitLn(") {")
+	g.eachParam(mi, func(idx int, p reflect.StructField) error {
+		if isHandlePtr(p) {
+			// Make temporary variable
+			g.emitLn("    var _tmp_" + p.Name + " " + p.Type.Elem().Name())
+		}
+		return nil
+	})
 	if !isVoid(mi) {
 		g.emitLn("    atEnd := ctx.Begin(\"" + mi.Name + "\")")
 		g.emitLn("    if atEnd != nil {")
@@ -205,8 +212,22 @@ func (g *generator) emitGoBody(mi reflect.Method) error {
 	if !isVoid(mi) {
 		g.emitLn("    handleError(ctx, rc)")
 	}
+	g.eachParam(mi, func(idx int, p reflect.StructField) error {
+		if isHandlePtr(p) {
+			// Assign temporary variable
+			g.emitLn("    *" + p.Name + " = _tmp_" + p.Name)
+		}
+		return nil
+	})
 	g.emitLn("}")
 	return g.err
+}
+
+func isHandlePtr(p reflect.StructField) bool {
+	if p.Type.Kind() == reflect.Ptr && p.Type.Elem().Kind() == reflect.Uintptr {
+		return true
+	}
+	return false
 }
 
 func goToCpp(p reflect.StructField) string {
@@ -224,9 +245,8 @@ func goToCpp(p reflect.StructField) string {
 }
 
 func goPtrToCpp(p reflect.StructField) string {
-	switch p.Type.Kind() {
-	case reflect.String:
-		return "uintptr(unsafe.Pointer(" + p.Name + "))"
+	if isHandlePtr(p) {
+		return "uintptr(unsafe.Pointer(&_tmp_" + p.Name + "))"
 	}
 	return "uintptr(unsafe.Pointer(" + p.Name + "))"
 }

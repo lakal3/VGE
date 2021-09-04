@@ -9,7 +9,7 @@ Planned VGE features (not in priority order)
    - Depth effects like the fog
 - [x] Shadows for directional lights (in version 0.20.1)
 - [x] Spot lights (with shadows) (in version 0.20.1)
-- [ ] Deferred renderer (experimental version available in 0.20.1)
+- [x] Deferred renderer (experimental version available in 0.20.1)
 - [ ] Improved decals in deferred shader
 - [ ] Basic dialogs like yes/no
 - [ ] Water shader (Needs Forward+ render pass)
@@ -20,6 +20,7 @@ Planned VGE features (not in priority order)
 
 
 ### Complex, longer term goals
+- [ ] Use SDFs (signed distance fields) for shadow calculation (replaces shadow maps)
 - [ ] Example of a large open world scene (most likely a separate project)
 - [ ] Real time ray tracing using NVidia's Vulkan extensions (Standard extensions in Vulkan 1.2)
 - [ ] Less 'game' UI support including:

@@ -31,6 +31,8 @@ New features:
 - Decals has beed refactor and now supports standard shader both in forward and deferred rendering mode. 
   Decal no longer require special decal builder. Instead they can use images from [model](vmodel.md). See robomaze/stain.go for an example of how to use decal painter.
 
+- Go 1.17 is required to build VGE (VGE needs new runtime/cgo.Handle in Linux)
+
 Breaking changes:
 
 - Forward renderer has been moved to own module. There will be new advanced (deferred) renderer available.
@@ -39,6 +41,7 @@ Breaking changes:
 
 - Decal builder has beed removed. Use vmodel.ModelBuilder instead to upload images for decals. Decal painter API is also different from previus experimental Decal module.  (Compare file with version 0.14.1 to see API changes)
 
+- Linux precompiled C++ .so lib has been removed. You must compile libvgelib.so yourself.
   
 
 ## Version 0.14.1

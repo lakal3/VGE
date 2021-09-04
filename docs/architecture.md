@@ -54,17 +54,6 @@ The VGE project contains its own interface generation tool that will write the r
 This tool also builds one C++ file to implement the call endpoint.
 You do not to know anything about this tool unless you plan to change the Go/C++ interface.
 
-### GODEBUG=cgocheck=0
-
-For performance reason VGE will pass pointers to Go memory. VGE support library vgelib.dll (libvgelib.so) is aware of Golangs carbage collector and will not hold pointer to memory after call to library completed. As long as Golang don't implement moving carbage collector this is safe!
-
-In Windows this works out of box. However in Linux we must use short CGO module to invoke libvgelib.so.
-Unfortunately current implementation of CGO will check that we will not send pointers from Go's heap to CGO calls :(. cgocheck=0 will disable this check.
-
-**Go 1.17 will most like support new Handle type that solves this problem!**
-
-VGE will support handles when they are available. See more from Golang issue 37033.
-
 
 
 

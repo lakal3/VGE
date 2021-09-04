@@ -399,7 +399,7 @@ func call_AddValidationException(ctx APIContext, msgId int32) {
 	handleError(ctx, rc)
 }
 func call_Application_Init(ctx APIContext, app hApplication, inst *hInstance) {
-	var _tmp_inst hInstance
+	_tmp_inst := *inst
 	atEnd := ctx.Begin("Application_Init")
 	if atEnd != nil {
 		defer atEnd()
@@ -417,7 +417,7 @@ func call_Buffer_CopyFrom(ctx APIContext, buffer hBuffer, offset uint64, ptr uin
 	handleError(ctx, rc)
 }
 func call_Buffer_GetPtr(ctx APIContext, buffer hBuffer, ptr *uintptr) {
-	var _tmp_ptr uintptr
+	_tmp_ptr := *ptr
 	atEnd := ctx.Begin("Buffer_GetPtr")
 	if atEnd != nil {
 		defer atEnd()
@@ -427,7 +427,7 @@ func call_Buffer_GetPtr(ctx APIContext, buffer hBuffer, ptr *uintptr) {
 	*ptr = _tmp_ptr
 }
 func call_Buffer_NewView(ctx APIContext, buffer hBuffer, format Format, offset uint64, size uint64, view *hBufferView) {
-	var _tmp_view hBufferView
+	_tmp_view := *view
 	atEnd := ctx.Begin("Buffer_NewView")
 	if atEnd != nil {
 		defer atEnd()
@@ -453,12 +453,14 @@ func call_Command_BeginRenderPass(ctx APIContext, cmd hCommand, rp hRenderPass, 
 	handleError(ctx, rc)
 }
 func call_Command_ClearImage(ctx APIContext, cmd hCommand, dst hImage, imRange *ImageRange, layout ImageLayout, color float32, alpha float32) {
+	_tmp_imRange := *imRange
 	atEnd := ctx.Begin("Command_ClearImage")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_Command_ClearImage, 6, uintptr(cmd), uintptr(dst), uintptr(unsafe.Pointer(imRange)), uintptr(layout), uintptr(color), uintptr(alpha))
+	rc, _, _ := syscall.Syscall6(libcall.t_Command_ClearImage, 6, uintptr(cmd), uintptr(dst), uintptr(unsafe.Pointer(&_tmp_imRange)), uintptr(layout), uintptr(color), uintptr(alpha))
 	handleError(ctx, rc)
+	*imRange = _tmp_imRange
 }
 func call_Command_Compute(ctx APIContext, hCmd hCommand, hPl hComputePipeline, x uint32, y uint32, z uint32, descriptors []hDescriptorSet) {
 	atEnd := ctx.Begin("Command_Compute")
@@ -477,20 +479,24 @@ func call_Command_CopyBuffer(ctx APIContext, cmd hCommand, src hBuffer, dst hBuf
 	handleError(ctx, rc)
 }
 func call_Command_CopyBufferToImage(ctx APIContext, cmd hCommand, src hBuffer, dst hImage, imRange *ImageRange, offset uint64) {
+	_tmp_imRange := *imRange
 	atEnd := ctx.Begin("Command_CopyBufferToImage")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_Command_CopyBufferToImage, 5, uintptr(cmd), uintptr(src), uintptr(dst), uintptr(unsafe.Pointer(imRange)), uintptr(offset), 0)
+	rc, _, _ := syscall.Syscall6(libcall.t_Command_CopyBufferToImage, 5, uintptr(cmd), uintptr(src), uintptr(dst), uintptr(unsafe.Pointer(&_tmp_imRange)), uintptr(offset), 0)
 	handleError(ctx, rc)
+	*imRange = _tmp_imRange
 }
 func call_Command_CopyImageToBuffer(ctx APIContext, cmd hCommand, src hImage, dst hBuffer, imRange *ImageRange, offset uint64) {
+	_tmp_imRange := *imRange
 	atEnd := ctx.Begin("Command_CopyImageToBuffer")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_Command_CopyImageToBuffer, 5, uintptr(cmd), uintptr(src), uintptr(dst), uintptr(unsafe.Pointer(imRange)), uintptr(offset), 0)
+	rc, _, _ := syscall.Syscall6(libcall.t_Command_CopyImageToBuffer, 5, uintptr(cmd), uintptr(src), uintptr(dst), uintptr(unsafe.Pointer(&_tmp_imRange)), uintptr(offset), 0)
 	handleError(ctx, rc)
+	*imRange = _tmp_imRange
 }
 func call_Command_Draw(ctx APIContext, cmd hCommand, draws []DrawItem) {
 	atEnd := ctx.Begin("Command_Draw")
@@ -509,12 +515,14 @@ func call_Command_EndRenderPass(ctx APIContext, cmd hCommand) {
 	handleError(ctx, rc)
 }
 func call_Command_SetLayout(ctx APIContext, cmd hCommand, image hImage, imRange *ImageRange, newLayout ImageLayout) {
+	_tmp_imRange := *imRange
 	atEnd := ctx.Begin("Command_SetLayout")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_Command_SetLayout, 4, uintptr(cmd), uintptr(image), uintptr(unsafe.Pointer(imRange)), uintptr(newLayout), 0, 0)
+	rc, _, _ := syscall.Syscall6(libcall.t_Command_SetLayout, 4, uintptr(cmd), uintptr(image), uintptr(unsafe.Pointer(&_tmp_imRange)), uintptr(newLayout), 0, 0)
 	handleError(ctx, rc)
+	*imRange = _tmp_imRange
 }
 func call_Command_Wait(ctx APIContext, cmd hCommand) {
 	atEnd := ctx.Begin("Command_Wait")
@@ -544,7 +552,7 @@ func call_DebugPoint(point []byte) {
 	_, _, _ = syscall.Syscall(libcall.t_DebugPoint, 2, byteArrayToUintptr(point), uintptr(len(point)), 0)
 }
 func call_DescriptorLayout_NewPool(ctx APIContext, layout hDescriptorLayout, size uint32, pool *hDescriptorPool) {
-	var _tmp_pool hDescriptorPool
+	_tmp_pool := *pool
 	atEnd := ctx.Begin("DescriptorLayout_NewPool")
 	if atEnd != nil {
 		defer atEnd()
@@ -554,7 +562,7 @@ func call_DescriptorLayout_NewPool(ctx APIContext, layout hDescriptorLayout, siz
 	*pool = _tmp_pool
 }
 func call_DescriptorPool_Alloc(ctx APIContext, pool hDescriptorPool, ds *hDescriptorSet) {
-	var _tmp_ds hDescriptorSet
+	_tmp_ds := *ds
 	atEnd := ctx.Begin("DescriptorPool_Alloc")
 	if atEnd != nil {
 		defer atEnd()
@@ -588,41 +596,49 @@ func call_DescriptorSet_WriteImage(ctx APIContext, ds hDescriptorSet, binding ui
 	handleError(ctx, rc)
 }
 func call_Desktop_CreateWindow(ctx APIContext, desktop hDesktop, title []byte, pos *WindowPos, win *hWindow) {
-	var _tmp_win hWindow
+	_tmp_pos := *pos
+	_tmp_win := *win
 	atEnd := ctx.Begin("Desktop_CreateWindow")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_Desktop_CreateWindow, 5, uintptr(desktop), byteArrayToUintptr(title), uintptr(len(title)), uintptr(unsafe.Pointer(pos)), uintptr(unsafe.Pointer(&_tmp_win)), 0)
+	rc, _, _ := syscall.Syscall6(libcall.t_Desktop_CreateWindow, 5, uintptr(desktop), byteArrayToUintptr(title), uintptr(len(title)), uintptr(unsafe.Pointer(&_tmp_pos)), uintptr(unsafe.Pointer(&_tmp_win)), 0)
 	handleError(ctx, rc)
+	*pos = _tmp_pos
 	*win = _tmp_win
 }
 func call_Desktop_GetKeyName(ctx APIContext, desktop hDesktop, keyCode uint32, name []uint8, strLen *uint32) {
+	_tmp_strLen := *strLen
 	atEnd := ctx.Begin("Desktop_GetKeyName")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_Desktop_GetKeyName, 5, uintptr(desktop), uintptr(keyCode), sliceToUintptr(name), uintptr(len(name)), uintptr(unsafe.Pointer(strLen)), 0)
+	rc, _, _ := syscall.Syscall6(libcall.t_Desktop_GetKeyName, 5, uintptr(desktop), uintptr(keyCode), sliceToUintptr(name), uintptr(len(name)), uintptr(unsafe.Pointer(&_tmp_strLen)), 0)
 	handleError(ctx, rc)
+	*strLen = _tmp_strLen
 }
 func call_Desktop_GetMonitor(ctx APIContext, desktop hDesktop, monitor uint32, info *WindowPos) {
+	_tmp_info := *info
 	atEnd := ctx.Begin("Desktop_GetMonitor")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall(libcall.t_Desktop_GetMonitor, 3, uintptr(desktop), uintptr(monitor), uintptr(unsafe.Pointer(info)))
+	rc, _, _ := syscall.Syscall(libcall.t_Desktop_GetMonitor, 3, uintptr(desktop), uintptr(monitor), uintptr(unsafe.Pointer(&_tmp_info)))
 	handleError(ctx, rc)
+	*info = _tmp_info
 }
 func call_Desktop_PullEvent(ctx APIContext, desktop hDesktop, ev *RawEvent) {
+	_tmp_ev := *ev
 	atEnd := ctx.Begin("Desktop_PullEvent")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall(libcall.t_Desktop_PullEvent, 2, uintptr(desktop), uintptr(unsafe.Pointer(ev)), 0)
+	rc, _, _ := syscall.Syscall(libcall.t_Desktop_PullEvent, 2, uintptr(desktop), uintptr(unsafe.Pointer(&_tmp_ev)), 0)
 	handleError(ctx, rc)
+	*ev = _tmp_ev
 }
 func call_Device_NewBuffer(ctx APIContext, dev hDevice, size uint64, hostMemory bool, usage BufferUsageFlags, buffer *hBuffer) {
-	var _tmp_buffer hBuffer
+	_tmp_buffer := *buffer
 	atEnd := ctx.Begin("Device_NewBuffer")
 	if atEnd != nil {
 		defer atEnd()
@@ -632,7 +648,7 @@ func call_Device_NewBuffer(ctx APIContext, dev hDevice, size uint64, hostMemory 
 	*buffer = _tmp_buffer
 }
 func call_Device_NewCommand(ctx APIContext, dev hDevice, queueType QueueFlags, once bool, command *hCommand) {
-	var _tmp_command hCommand
+	_tmp_command := *command
 	atEnd := ctx.Begin("Device_NewCommand")
 	if atEnd != nil {
 		defer atEnd()
@@ -642,7 +658,7 @@ func call_Device_NewCommand(ctx APIContext, dev hDevice, queueType QueueFlags, o
 	*command = _tmp_command
 }
 func call_Device_NewComputePipeline(ctx APIContext, dev hDevice, cp *hComputePipeline) {
-	var _tmp_cp hComputePipeline
+	_tmp_cp := *cp
 	atEnd := ctx.Begin("Device_NewComputePipeline")
 	if atEnd != nil {
 		defer atEnd()
@@ -652,7 +668,7 @@ func call_Device_NewComputePipeline(ctx APIContext, dev hDevice, cp *hComputePip
 	*cp = _tmp_cp
 }
 func call_Device_NewDescriptorLayout(ctx APIContext, dev hDevice, descriptorType DescriptorType, stages ShaderStageFlags, element uint32, flags DescriptorBindingFlagBitsEXT, prevLayout hDescriptorLayout, dsLayout *hDescriptorLayout) {
-	var _tmp_dsLayout hDescriptorLayout
+	_tmp_dsLayout := *dsLayout
 	atEnd := ctx.Begin("Device_NewDescriptorLayout")
 	if atEnd != nil {
 		defer atEnd()
@@ -662,7 +678,7 @@ func call_Device_NewDescriptorLayout(ctx APIContext, dev hDevice, descriptorType
 	*dsLayout = _tmp_dsLayout
 }
 func call_Device_NewGraphicsPipeline(ctx APIContext, dev hDevice, gp *hGraphicsPipeline) {
-	var _tmp_gp hGraphicsPipeline
+	_tmp_gp := *gp
 	atEnd := ctx.Begin("Device_NewGraphicsPipeline")
 	if atEnd != nil {
 		defer atEnd()
@@ -672,17 +688,19 @@ func call_Device_NewGraphicsPipeline(ctx APIContext, dev hDevice, gp *hGraphicsP
 	*gp = _tmp_gp
 }
 func call_Device_NewImage(ctx APIContext, dev hDevice, usage ImageUsageFlags, desc *ImageDescription, image *hImage) {
-	var _tmp_image hImage
+	_tmp_desc := *desc
+	_tmp_image := *image
 	atEnd := ctx.Begin("Device_NewImage")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_Device_NewImage, 4, uintptr(dev), uintptr(usage), uintptr(unsafe.Pointer(desc)), uintptr(unsafe.Pointer(&_tmp_image)), 0, 0)
+	rc, _, _ := syscall.Syscall6(libcall.t_Device_NewImage, 4, uintptr(dev), uintptr(usage), uintptr(unsafe.Pointer(&_tmp_desc)), uintptr(unsafe.Pointer(&_tmp_image)), 0, 0)
 	handleError(ctx, rc)
+	*desc = _tmp_desc
 	*image = _tmp_image
 }
 func call_Device_NewMemoryBlock(ctx APIContext, dev hDevice, memBlock *hMemoryBlock) {
-	var _tmp_memBlock hMemoryBlock
+	_tmp_memBlock := *memBlock
 	atEnd := ctx.Begin("Device_NewMemoryBlock")
 	if atEnd != nil {
 		defer atEnd()
@@ -692,7 +710,7 @@ func call_Device_NewMemoryBlock(ctx APIContext, dev hDevice, memBlock *hMemoryBl
 	*memBlock = _tmp_memBlock
 }
 func call_Device_NewSampler(ctx APIContext, dev hDevice, repeatMode SamplerAddressMode, sampler *hSampler) {
-	var _tmp_sampler hSampler
+	_tmp_sampler := *sampler
 	atEnd := ctx.Begin("Device_NewSampler")
 	if atEnd != nil {
 		defer atEnd()
@@ -702,7 +720,7 @@ func call_Device_NewSampler(ctx APIContext, dev hDevice, repeatMode SamplerAddre
 	*sampler = _tmp_sampler
 }
 func call_Device_NewTimestampQuery(ctx APIContext, dev hDevice, size uint32, qp *hQueryPool) {
-	var _tmp_qp hQueryPool
+	_tmp_qp := *qp
 	atEnd := ctx.Begin("Device_NewTimestampQuery")
 	if atEnd != nil {
 		defer atEnd()
@@ -712,7 +730,7 @@ func call_Device_NewTimestampQuery(ctx APIContext, dev hDevice, size uint32, qp 
 	*qp = _tmp_qp
 }
 func call_Device_Submit(ctx APIContext, dev hDevice, cmd hCommand, priority uint32, info []hSubmitInfo, waitStage PipelineStageFlags, waitInfo *hSubmitInfo) {
-	var _tmp_waitInfo hSubmitInfo
+	_tmp_waitInfo := *waitInfo
 	atEnd := ctx.Begin("Device_Submit")
 	if atEnd != nil {
 		defer atEnd()
@@ -725,7 +743,9 @@ func call_Disposable_Dispose(disp hDisposable) {
 	_, _, _ = syscall.Syscall(libcall.t_Disposable_Dispose, 1, uintptr(disp), 0, 0)
 }
 func call_Exception_GetError(ex hException, msg []byte, msgLen *int32) {
-	_, _, _ = syscall.Syscall6(libcall.t_Exception_GetError, 4, uintptr(ex), byteArrayToUintptr(msg), uintptr(len(msg)), uintptr(unsafe.Pointer(msgLen)), 0, 0)
+	_tmp_msgLen := *msgLen
+	_, _, _ = syscall.Syscall6(libcall.t_Exception_GetError, 4, uintptr(ex), byteArrayToUintptr(msg), uintptr(len(msg)), uintptr(unsafe.Pointer(&_tmp_msgLen)), 0, 0)
+	*msgLen = _tmp_msgLen
 }
 func call_GraphicsPipeline_AddAlphaBlend(ctx APIContext, pl hGraphicsPipeline) {
 	atEnd := ctx.Begin("GraphicsPipeline_AddAlphaBlend")
@@ -776,12 +796,14 @@ func call_GraphicsPipeline_SetTopology(ctx APIContext, pl hGraphicsPipeline, top
 	handleError(ctx, rc)
 }
 func call_ImageLoader_Describe(ctx APIContext, loader hImageLoader, kind []byte, desc *ImageDescription, content []uint8) {
+	_tmp_desc := *desc
 	atEnd := ctx.Begin("ImageLoader_Describe")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_ImageLoader_Describe, 6, uintptr(loader), byteArrayToUintptr(kind), uintptr(len(kind)), uintptr(unsafe.Pointer(desc)), sliceToUintptr(content), uintptr(len(content)))
+	rc, _, _ := syscall.Syscall6(libcall.t_ImageLoader_Describe, 6, uintptr(loader), byteArrayToUintptr(kind), uintptr(len(kind)), uintptr(unsafe.Pointer(&_tmp_desc)), sliceToUintptr(content), uintptr(len(content)))
 	handleError(ctx, rc)
+	*desc = _tmp_desc
 }
 func call_ImageLoader_Load(ctx APIContext, loader hImageLoader, kind []byte, content []uint8, buf hBuffer) {
 	atEnd := ctx.Begin("ImageLoader_Load")
@@ -792,41 +814,53 @@ func call_ImageLoader_Load(ctx APIContext, loader hImageLoader, kind []byte, con
 	handleError(ctx, rc)
 }
 func call_ImageLoader_Save(ctx APIContext, loader hImageLoader, kind []byte, desc *ImageDescription, buf hBuffer, content []uint8, reqSize *uint64) {
+	_tmp_desc := *desc
+	_tmp_reqSize := *reqSize
 	atEnd := ctx.Begin("ImageLoader_Save")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall9(libcall.t_ImageLoader_Save, 8, uintptr(loader), byteArrayToUintptr(kind), uintptr(len(kind)), uintptr(unsafe.Pointer(desc)), uintptr(buf), sliceToUintptr(content), uintptr(len(content)), uintptr(unsafe.Pointer(reqSize)), 0)
+	rc, _, _ := syscall.Syscall9(libcall.t_ImageLoader_Save, 8, uintptr(loader), byteArrayToUintptr(kind), uintptr(len(kind)), uintptr(unsafe.Pointer(&_tmp_desc)), uintptr(buf), sliceToUintptr(content), uintptr(len(content)), uintptr(unsafe.Pointer(&_tmp_reqSize)), 0)
 	handleError(ctx, rc)
+	*desc = _tmp_desc
+	*reqSize = _tmp_reqSize
 }
 func call_ImageLoader_Supported(ctx APIContext, loader hImageLoader, kind []byte, read *bool, write *bool) {
+	_tmp_read := *read
+	_tmp_write := *write
 	atEnd := ctx.Begin("ImageLoader_Supported")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_ImageLoader_Supported, 5, uintptr(loader), byteArrayToUintptr(kind), uintptr(len(kind)), uintptr(unsafe.Pointer(read)), uintptr(unsafe.Pointer(write)), 0)
+	rc, _, _ := syscall.Syscall6(libcall.t_ImageLoader_Supported, 5, uintptr(loader), byteArrayToUintptr(kind), uintptr(len(kind)), uintptr(unsafe.Pointer(&_tmp_read)), uintptr(unsafe.Pointer(&_tmp_write)), 0)
 	handleError(ctx, rc)
+	*read = _tmp_read
+	*write = _tmp_write
 }
 func call_Image_NewView(ctx APIContext, image hImage, imRange *ImageRange, imageView *hImageView, cube bool) {
-	var _tmp_imageView hImageView
+	_tmp_imRange := *imRange
+	_tmp_imageView := *imageView
 	atEnd := ctx.Begin("Image_NewView")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_Image_NewView, 4, uintptr(image), uintptr(unsafe.Pointer(imRange)), uintptr(unsafe.Pointer(&_tmp_imageView)), boolToUintptr(cube), 0, 0)
+	rc, _, _ := syscall.Syscall6(libcall.t_Image_NewView, 4, uintptr(image), uintptr(unsafe.Pointer(&_tmp_imRange)), uintptr(unsafe.Pointer(&_tmp_imageView)), boolToUintptr(cube), 0, 0)
 	handleError(ctx, rc)
+	*imRange = _tmp_imRange
 	*imageView = _tmp_imageView
 }
 func call_Instance_GetPhysicalDevice(ctx APIContext, instance hInstance, index int32, info *DeviceInfo) {
+	_tmp_info := *info
 	atEnd := ctx.Begin("Instance_GetPhysicalDevice")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall(libcall.t_Instance_GetPhysicalDevice, 3, uintptr(instance), uintptr(index), uintptr(unsafe.Pointer(info)))
+	rc, _, _ := syscall.Syscall(libcall.t_Instance_GetPhysicalDevice, 3, uintptr(instance), uintptr(index), uintptr(unsafe.Pointer(&_tmp_info)))
 	handleError(ctx, rc)
+	*info = _tmp_info
 }
 func call_Instance_NewDevice(ctx APIContext, instance hInstance, index int32, pd *hDevice) {
-	var _tmp_pd hDevice
+	_tmp_pd := *pd
 	atEnd := ctx.Begin("Instance_NewDevice")
 	if atEnd != nil {
 		defer atEnd()
@@ -844,15 +878,17 @@ func call_MemoryBlock_Allocate(ctx APIContext, memBlock hMemoryBlock) {
 	handleError(ctx, rc)
 }
 func call_MemoryBlock_Reserve(ctx APIContext, memBlock hMemoryBlock, memObject hMemoryObject, suitable *bool) {
+	_tmp_suitable := *suitable
 	atEnd := ctx.Begin("MemoryBlock_Reserve")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall(libcall.t_MemoryBlock_Reserve, 3, uintptr(memBlock), uintptr(memObject), uintptr(unsafe.Pointer(suitable)))
+	rc, _, _ := syscall.Syscall(libcall.t_MemoryBlock_Reserve, 3, uintptr(memBlock), uintptr(memObject), uintptr(unsafe.Pointer(&_tmp_suitable)))
 	handleError(ctx, rc)
+	*suitable = _tmp_suitable
 }
 func call_NewApplication(ctx APIContext, name []byte, app *hApplication) {
-	var _tmp_app hApplication
+	_tmp_app := *app
 	atEnd := ctx.Begin("NewApplication")
 	if atEnd != nil {
 		defer atEnd()
@@ -862,7 +898,7 @@ func call_NewApplication(ctx APIContext, name []byte, app *hApplication) {
 	*app = _tmp_app
 }
 func call_NewDesktop(ctx APIContext, app hApplication, imageUsage ImageUsageFlags, desktop *hDesktop) {
-	var _tmp_desktop hDesktop
+	_tmp_desktop := *desktop
 	atEnd := ctx.Begin("NewDesktop")
 	if atEnd != nil {
 		defer atEnd()
@@ -872,7 +908,7 @@ func call_NewDesktop(ctx APIContext, app hApplication, imageUsage ImageUsageFlag
 	*desktop = _tmp_desktop
 }
 func call_NewImageLoader(ctx APIContext, loader *hImageLoader) {
-	var _tmp_loader hImageLoader
+	_tmp_loader := *loader
 	atEnd := ctx.Begin("NewImageLoader")
 	if atEnd != nil {
 		defer atEnd()
@@ -882,7 +918,7 @@ func call_NewImageLoader(ctx APIContext, loader *hImageLoader) {
 	*loader = _tmp_loader
 }
 func call_NewRenderPass(ctx APIContext, dev hDevice, rp *hRenderPass, depthAttachment bool, attachments []AttachmentInfo) {
-	var _tmp_rp hRenderPass
+	_tmp_rp := *rp
 	atEnd := ctx.Begin("NewRenderPass")
 	if atEnd != nil {
 		defer atEnd()
@@ -908,15 +944,17 @@ func call_Pipeline_AddShader(ctx APIContext, pl hPipeline, stage ShaderStageFlag
 	handleError(ctx, rc)
 }
 func call_QueryPool_Get(ctx APIContext, qp hQueryPool, values []uint64, timestampPeriod *float32) {
+	_tmp_timestampPeriod := *timestampPeriod
 	atEnd := ctx.Begin("QueryPool_Get")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_QueryPool_Get, 4, uintptr(qp), sliceToUintptr(values), uintptr(len(values)), uintptr(unsafe.Pointer(timestampPeriod)), 0, 0)
+	rc, _, _ := syscall.Syscall6(libcall.t_QueryPool_Get, 4, uintptr(qp), sliceToUintptr(values), uintptr(len(values)), uintptr(unsafe.Pointer(&_tmp_timestampPeriod)), 0, 0)
 	handleError(ctx, rc)
+	*timestampPeriod = _tmp_timestampPeriod
 }
 func call_RenderPass_NewFrameBuffer(ctx APIContext, rp hRenderPass, attachments []hImageView, fb *hFramebuffer) {
-	var _tmp_fb hFramebuffer
+	_tmp_fb := *fb
 	atEnd := ctx.Begin("RenderPass_NewFrameBuffer")
 	if atEnd != nil {
 		defer atEnd()
@@ -926,7 +964,7 @@ func call_RenderPass_NewFrameBuffer(ctx APIContext, rp hRenderPass, attachments 
 	*fb = _tmp_fb
 }
 func call_RenderPass_NewNullFrameBuffer(ctx APIContext, rp hRenderPass, width uint32, height uint32, fb *hFramebuffer) {
-	var _tmp_fb hFramebuffer
+	_tmp_fb := *fb
 	atEnd := ctx.Begin("RenderPass_NewNullFrameBuffer")
 	if atEnd != nil {
 		defer atEnd()
@@ -936,38 +974,48 @@ func call_RenderPass_NewNullFrameBuffer(ctx APIContext, rp hRenderPass, width ui
 	*fb = _tmp_fb
 }
 func call_Window_GetNextFrame(ctx APIContext, win hWindow, image *hImage, submitInfo *hSubmitInfo, viewIndex *int32) {
-	var _tmp_image hImage
-	var _tmp_submitInfo hSubmitInfo
+	_tmp_image := *image
+	_tmp_submitInfo := *submitInfo
+	_tmp_viewIndex := *viewIndex
 	atEnd := ctx.Begin("Window_GetNextFrame")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_Window_GetNextFrame, 4, uintptr(win), uintptr(unsafe.Pointer(&_tmp_image)), uintptr(unsafe.Pointer(&_tmp_submitInfo)), uintptr(unsafe.Pointer(viewIndex)), 0, 0)
+	rc, _, _ := syscall.Syscall6(libcall.t_Window_GetNextFrame, 4, uintptr(win), uintptr(unsafe.Pointer(&_tmp_image)), uintptr(unsafe.Pointer(&_tmp_submitInfo)), uintptr(unsafe.Pointer(&_tmp_viewIndex)), 0, 0)
 	handleError(ctx, rc)
 	*image = _tmp_image
 	*submitInfo = _tmp_submitInfo
+	*viewIndex = _tmp_viewIndex
 }
 func call_Window_GetPos(ctx APIContext, win hWindow, pos *WindowPos) {
+	_tmp_pos := *pos
 	atEnd := ctx.Begin("Window_GetPos")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall(libcall.t_Window_GetPos, 2, uintptr(win), uintptr(unsafe.Pointer(pos)), 0)
+	rc, _, _ := syscall.Syscall(libcall.t_Window_GetPos, 2, uintptr(win), uintptr(unsafe.Pointer(&_tmp_pos)), 0)
 	handleError(ctx, rc)
+	*pos = _tmp_pos
 }
 func call_Window_PrepareSwapchain(ctx APIContext, win hWindow, dev hDevice, imageDesc *ImageDescription, imageCount *int32) {
+	_tmp_imageDesc := *imageDesc
+	_tmp_imageCount := *imageCount
 	atEnd := ctx.Begin("Window_PrepareSwapchain")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_Window_PrepareSwapchain, 4, uintptr(win), uintptr(dev), uintptr(unsafe.Pointer(imageDesc)), uintptr(unsafe.Pointer(imageCount)), 0, 0)
+	rc, _, _ := syscall.Syscall6(libcall.t_Window_PrepareSwapchain, 4, uintptr(win), uintptr(dev), uintptr(unsafe.Pointer(&_tmp_imageDesc)), uintptr(unsafe.Pointer(&_tmp_imageCount)), 0, 0)
 	handleError(ctx, rc)
+	*imageDesc = _tmp_imageDesc
+	*imageCount = _tmp_imageCount
 }
 func call_Window_SetPos(ctx APIContext, win hWindow, pos *WindowPos) {
+	_tmp_pos := *pos
 	atEnd := ctx.Begin("Window_SetPos")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall(libcall.t_Window_SetPos, 2, uintptr(win), uintptr(unsafe.Pointer(pos)), 0)
+	rc, _, _ := syscall.Syscall(libcall.t_Window_SetPos, 2, uintptr(win), uintptr(unsafe.Pointer(&_tmp_pos)), 0)
 	handleError(ctx, rc)
+	*pos = _tmp_pos
 }

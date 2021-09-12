@@ -177,10 +177,12 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 		l := vscene.Light{Intensity: pl.Intensity.Vec4(1),
 			Position: pos, Attenuation: pl.Attenuation.Vec4(pl.MaxDistance)}
 		var imIndex vmodel.ImageIndex
+		var imIndex2 vmodel.ImageIndex
 		if ok && rsr.lastImage >= 0 {
-			imIndex = imFrame.AddFrameImage(rsr.shadowImages[rsr.lastImage].DefaultView(pi.Frame.GetCache().Ctx), rsr.sampler)
+			imIndex = imFrame.AddFrameImage(rsr.shadowViews[rsr.lastImage*2+4], rsr.sampler)
+			imIndex2 = imFrame.AddFrameImage(rsr.shadowViews[rsr.lastImage*2+5], rsr.sampler)
 		}
-		if imIndex > 0 {
+		if imIndex2 > 0 {
 			l.ShadowMapMethod = 3
 			l.ShadowMapIndex = float32(imIndex)
 		}
@@ -319,6 +321,13 @@ func (pl *PointLight) makeRenderResources(ctx vk.APIContext, dev *vk.Device) *re
 		rsr.shadowViews = append(rsr.shadowViews, vk.NewImageView(ctx, rsr.shadowImages[idx], &rg2))
 	}
 
+	for idx := 0; idx < 2; idx++ {
+		rg := vk.ImageRange{FirstLayer: 0, LayerCount: 1, LevelCount: 1, Layout: vk.IMAGELayoutShaderReadOnlyOptimal}
+		rsr.shadowViews = append(rsr.shadowViews, vk.NewImageView(ctx, rsr.shadowImages[idx], &rg))
+		rg2 := rg
+		rg2.FirstLayer = 1
+		rsr.shadowViews = append(rsr.shadowViews, vk.NewImageView(ctx, rsr.shadowImages[idx], &rg2))
+	}
 	return &rsr
 }
 

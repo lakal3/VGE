@@ -43,9 +43,10 @@ void main() {
     // calc "normal" on intersection, by adding the
     // reflection-vector(0,0,1) and divide through
     // his z to get the texture coords
-    float n = pos.y + 1;
+    float n = max(0.01,pos.y + 1);
     float n2 = -pos.y + 1;
-    pos = pos.y > 0 ? vec3(pos.x / n, pos.z / n, (fLength - frame.minShadow) / (frame.maxShadow - frame.minShadow)) :
-        vec3(pos.x / n2, pos.z / n2, -(fLength - frame.minShadow) / (frame.maxShadow - frame.minShadow));
+    // pos = pos.y > 0 ? vec3(pos.x / n, pos.z / n, (fLength - frame.minShadow) / (frame.maxShadow - frame.minShadow)) :
+    //     vec3(pos.x / n2, pos.z / n2, -(fLength - frame.minShadow) / (frame.maxShadow - frame.minShadow));
+    pos = vec3(pos.x / n, pos.z / n, (fLength - frame.minShadow) / (frame.maxShadow - frame.minShadow));
     gl_Position = vec4(pos, 1);
 }

@@ -106,7 +106,7 @@ float getShadowFactor(LIGHT l, vec3 worldPos) {
                 float n = samplePos.y + 1;
                 vec3 pos = vec3(samplePos.x / n, samplePos.z / n, 1) * vec3(0.5, 0.5, 1) + vec3(0.5, 0.5, 0) + vec3(offset,0);
                 // pos.y = 1 - pos.y;
-                d = texture(frameImagesArray[shadowMapIdx], pos).x;
+                d = texture(frameImagesArray[shadowMapIdx + 1], pos).x;
             }
             sum += d + shadowBias > (fLength / maxDist) ? spFactor : 0;
             #if PCF

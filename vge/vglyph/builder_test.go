@@ -1,12 +1,12 @@
 package vglyph
 
 import (
+	"github.com/lakal3/vge/vge/vasset/pngloader"
 	"image"
 	"io/ioutil"
 	"testing"
 
 	"github.com/lakal3/vge/vge/vapp/vtestapp"
-	"github.com/lakal3/vge/vge/vasset"
 	"github.com/lakal3/vge/vge/vk"
 )
 
@@ -19,7 +19,8 @@ func TestNewGlyphBuilder(t *testing.T) {
 	tl := vtestapp.TestLoader{Path: "glyphs/test"}
 	ctx := vtestapp.TestContext{T: t}
 	vtestapp.Init(ctx, "glyphbuilder")
-	vasset.RegisterNativeImageLoader(ctx, vtestapp.TestApp.App)
+	// vasset.RegisterNativeImageLoader(ctx, vtestapp.TestApp.App)
+	pngloader.RegisterPngLoader()
 	gb := NewSetBuilder(ctx, SETGrayScale)
 	testLoadImage(ctx, gb, "btn_focus", tl, "button_focus.png", RED, image.Rect(40, 40, 50, 50))
 	gb.AddComputedGray("white", image.Pt(64, 64), image.Rect(16, 16, 16, 16),

@@ -46,6 +46,16 @@ func (set *GlyphSet) Dispose() {
 	}
 }
 
+// GetImage retrieves image associated to GlyphSet
+func (set *GlyphSet) GetImage() *vk.Image {
+	return set.image
+}
+
+// Kind retrieves layout of image (SDF, GrayScale, RGBA)
+func (set *GlyphSet) Kind() SetKind {
+	return set.kind
+}
+
 // Get glyph from set
 func (set *GlyphSet) Get(name string) Glyph {
 	return set.glyphs[name]

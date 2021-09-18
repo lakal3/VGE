@@ -86,10 +86,10 @@ func (p PngLoader) LoadImage(ctx vk.APIContext, kind string, content []byte, buf
 				off := (y*b.X + x) * 4
 				c := img.At(x, y)
 				r, g, b, a := c.RGBA()
-				sl[off] = byte(r >> 24)
-				sl[off+1] = byte(g >> 24)
-				sl[off+2] = byte(b >> 24)
-				sl[off+3] = byte(a >> 24)
+				sl[off] = byte(r >> 8)
+				sl[off+1] = byte(g >> 8)
+				sl[off+2] = byte(b >> 8)
+				sl[off+3] = byte(a >> 8)
 			}
 		}
 	}

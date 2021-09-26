@@ -65,7 +65,7 @@ func (gp *GraphicsPipeline) AddDepth(ctx APIContext, write bool, check bool) {
 }
 
 func (gp *GraphicsPipeline) SetTopology(ctx APIContext, topology PrimitiveTopology) {
-
+	call_GraphicsPipeline_SetTopology(ctx, gp.hPl, topology)
 }
 
 func (gp *GraphicsPipeline) Create(ctx APIContext, rp RenderPass) {

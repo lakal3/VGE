@@ -82,8 +82,8 @@ func main() {
 }
 
 func (v *viewerApp) loadThemes() {
-	app.theme = mintheme.NewTheme(vapp.Ctx, vapp.Dev, 15, nil, nil, nil)
-	app.theme3D = theme3d.NewTheme(vapp.Ctx, vapp.Dev, "../../assets/glyphs/3dui")
+	app.theme = mintheme.NewTheme(vapp.Dev, 15, nil, nil, nil)
+	app.theme3D = theme3d.NewTheme(vapp.Dev, "../../assets/glyphs/3dui")
 }
 
 func usage() {
@@ -99,7 +99,7 @@ func (a *viewerApp) init() {
 	vapp.Init("ui", vapp.Desktop{})
 }
 
-func (v *viewerApp) keyHandler(ctx vk.APIContext, ev vapp.Event) (unregister bool) {
+func (v *viewerApp) keyHandler(ev vapp.Event) (unregister bool) {
 	ke, ok := ev.(*vapp.CharEvent)
 	if ok && ke.Char == 'Q' {
 		go vapp.Terminate()
@@ -228,7 +228,7 @@ func loadSource() vui.Control {
 	vSrc := vui.NewVStack(2)
 	content, err := ioutil.ReadFile("main.go")
 	if err != nil {
-		vapp.Ctx.SetError(err)
+		log.Fatal("Error reading main.go ", err)
 		return nil
 	}
 	for _, line := range strings.Split(string(content), "\n") {
@@ -256,7 +256,7 @@ func (v *viewerApp) loadEnv() {
 			v.SetError(err)
 			return
 		}
-		eq := env.NewEquiRectBGNode(v, vapp.Dev, 1000, "hdr", content)
+		eq := env.NewEquiRectBGNode(vapp.Dev, 1000, "hdr", content)
 		v.owner.AddChild(eq)
 		v.win.Env.Children = append(v.win.Env.Children, vscene.NewNode(eq))
 	} else {

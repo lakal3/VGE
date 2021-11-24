@@ -25,13 +25,13 @@ func (e *EmissiveMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world 
 		return // Not supported
 	}
 	rc := scf.GetCache()
-	gp := dc.Pass.Get(rc.Ctx, kEmissivePipeline, func(ctx vk.APIContext) interface{} {
-		return e.newPipeline(ctx, dc, false)
+	gp := dc.Pass.Get(kEmissivePipeline, func() interface{} {
+		return e.newPipeline(dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
 	dsWorld := scf.BindFrame()
-	uli := rc.GetPerFrame(kEmissiveInstances, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
+	uli := rc.GetPerFrame(kEmissiveInstances, func() interface{} {
+		ds, sl := uc.Alloc()
 		return &emissiveInstances{ds: ds, sl: sl}
 	}).(*emissiveInstances)
 	copy(uli.sl.Content[uli.count*64:uli.count*64+64], vk.Float32ToBytes(world[:]))
@@ -50,19 +50,19 @@ func (e *EmissiveMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh,
 		return // Not supported
 	}
 	rc := scf.GetCache()
-	gp := dc.Pass.Get(rc.Ctx, kEmissiveSkinnedPipeline, func(ctx vk.APIContext) interface{} {
-		return e.newPipeline(ctx, dc, true)
+	gp := dc.Pass.Get(kEmissiveSkinnedPipeline, func() interface{} {
+		return e.newPipeline(dc, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
 	dsWorld := scf.BindFrame()
-	uli := rc.GetPerFrame(kEmissiveInstances, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
+	uli := rc.GetPerFrame(kEmissiveInstances, func() interface{} {
+		ds, sl := uc.Alloc()
 		return &emissiveInstances{ds: ds, sl: sl}
 	}).(*emissiveInstances)
 	copy(uli.sl.Content[uli.count*64:uli.count*64+64], vk.Float32ToBytes(world[:]))
 	copy(uli.sl.Content[MaxInstances*64+uli.count*16:MaxInstances*64+uli.count*16+16], vk.Float32ToBytes(e.Color[:]))
 
-	dsMesh, slMesh := uc.Alloc(rc.Ctx)
+	dsMesh, slMesh := uc.Alloc()
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindNormal)...).
 		AddDescriptors(dsWorld, uli.ds, dsMesh).SetInstances(uli.count, 1)
@@ -72,26 +72,26 @@ func (e *EmissiveMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh,
 	}
 }
 
-func (e *EmissiveMaterial) newPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
+func (e *EmissiveMaterial) newPipeline(dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
 	rc := dc.Frame.GetCache()
-	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
+	gp := vk.NewGraphicsPipeline(rc.Device)
 	if skinned {
-		vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)
+		vmodel.AddInput(gp, vmodel.MESHKindSkinned)
 	} else {
-		vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
+		vmodel.AddInput(gp, vmodel.MESHKindNormal)
 	}
-	la := vscene.GetUniformLayout(ctx, rc.Device)
-	gp.AddLayout(ctx, la)
-	gp.AddLayout(ctx, la)
+	la := vscene.GetUniformLayout(rc.Device)
+	gp.AddLayout(la)
+	gp.AddLayout(la)
 	if skinned {
-		gp.AddLayout(ctx, la)
-		gp.AddShader(ctx, vk.SHADERStageVertexBit, emissive_vert_skin_spv)
+		gp.AddLayout(la)
+		gp.AddShader(vk.SHADERStageVertexBit, emissive_vert_skin_spv)
 	} else {
-		gp.AddShader(ctx, vk.SHADERStageVertexBit, emissive_vert_spv)
+		gp.AddShader(vk.SHADERStageVertexBit, emissive_vert_spv)
 	}
-	gp.AddShader(ctx, vk.SHADERStageFragmentBit, emissive_frag_spv)
-	gp.AddDepth(ctx, true, true)
-	gp.Create(ctx, dc.Pass)
+	gp.AddShader(vk.SHADERStageFragmentBit, emissive_frag_spv)
+	gp.AddDepth(true, true)
+	gp.Create(dc.Pass)
 	return gp
 }
 

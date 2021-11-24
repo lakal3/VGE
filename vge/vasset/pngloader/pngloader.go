@@ -23,19 +23,18 @@ func RegisterPngLoader() {
 type PngLoader struct {
 }
 
-func (p PngLoader) SaveImage(ctx vk.APIContext, kind string, desc vk.ImageDescription, buffer *vk.Buffer) []byte {
+func (p PngLoader) SaveImage(kind string, desc vk.ImageDescription, buffer *vk.Buffer) ([]byte, error) {
 	if kind != "png" {
-		ctx.SetError(errors.New("Not supported " + kind))
-		return nil
+		return nil, errors.New("Not supported " + kind)
 	}
 	img := image.NewNRGBA(image.Rect(0, 0, int(desc.Width), int(desc.Height)))
-	copy(img.Pix, buffer.Bytes(ctx))
+	copy(img.Pix, buffer.Bytes())
 	wr := &bytes.Buffer{}
 	err := png.Encode(wr, img)
 	if err != nil {
-		ctx.SetError(err)
+		return nil, err
 	}
-	return wr.Bytes()
+	return wr.Bytes(), nil
 }
 
 func (p PngLoader) SupportsImage(kind string) (read bool, write bool) {
@@ -45,15 +44,13 @@ func (p PngLoader) SupportsImage(kind string) (read bool, write bool) {
 	return false, false
 }
 
-func (p PngLoader) DescribeImage(ctx vk.APIContext, kind string, desc *vk.ImageDescription, content []byte) {
+func (p PngLoader) DescribeImage(kind string, desc *vk.ImageDescription, content []byte) error {
 	if kind != "png" {
-		ctx.SetError(errors.New("Not supported " + kind))
-		return
+		return errors.New("Not supported " + kind)
 	}
 	config, err := png.DecodeConfig(bytes.NewBuffer(content))
 	if err != nil {
-		ctx.SetError(err)
-		return
+		return err
 	}
 	desc.Height = uint32(config.Height)
 	desc.Width = uint32(config.Width)
@@ -61,19 +58,19 @@ func (p PngLoader) DescribeImage(ctx vk.APIContext, kind string, desc *vk.ImageD
 	desc.Format = vk.FORMATR8g8b8a8Unorm
 	desc.Layers = 1
 	desc.MipLevels = 1
+	return nil
 }
 
-func (p PngLoader) LoadImage(ctx vk.APIContext, kind string, content []byte, buffer *vk.Buffer) {
+func (p PngLoader) LoadImage(kind string, content []byte, buffer *vk.Buffer) error {
 	if kind != "png" {
-		ctx.SetError(errors.New("Not supported " + kind))
-		return
+		return errors.New("Not supported " + kind)
 	}
 	img, err := png.Decode(bytes.NewBuffer(content))
 	if err != nil {
-		ctx.SetError(err)
-		return
+
+		return err
 	}
-	sl := buffer.Bytes(ctx)
+	sl := buffer.Bytes()
 	switch it := img.(type) {
 	case *image.RGBA:
 		copy(sl, it.Pix)
@@ -93,5 +90,5 @@ func (p PngLoader) LoadImage(ctx vk.APIContext, kind string, content []byte, buf
 			}
 		}
 	}
-
+	return nil
 }

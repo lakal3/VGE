@@ -19,6 +19,7 @@ import (
 type Theme struct {
 	P         *vglyph.Palette
 	imagePath string
+	err       error
 }
 
 // Style for control. Themes will construct styles based on control type and classes. You can have several different styles in one theme but this example
@@ -229,43 +230,43 @@ func (t *Theme) Palette() *vglyph.Palette {
 }
 
 // Constructs new 3D theme. You must supply path for assets/glyphs/3dui so that theme can locate bitmaps used to build up this Theme
-func NewTheme(ctx vk.APIContext, dev *vk.Device, imagePath string) *Theme {
-	mainFont := opensans.NewGlyphSet(ctx, dev, vglyph.Range{From: 33, To: 256})
-	iconFont := materialicons.NewDefaultGlyphSet(ctx, dev)
-	palette := vglyph.NewPalette(ctx, dev, 0, 0)
+func NewTheme(dev *vk.Device, imagePath string) *Theme {
+	mainFont := opensans.NewGlyphSet(dev, vglyph.Range{From: 33, To: 256})
+	iconFont := materialicons.NewDefaultGlyphSet(dev)
+	palette := vglyph.NewPalette(dev, 0, 0)
 	th := &Theme{P: palette, imagePath: imagePath}
-	th.buildPalette(ctx, dev, mainFont, iconFont)
+	th.buildPalette(dev, mainFont, iconFont)
 	return th
 }
 
 // Build actual palette containing main theme, font and glyph font
-func (th *Theme) buildPalette(ctx vk.APIContext, dev *vk.Device, mainFont *vglyph.GlyphSet, iconFont *vglyph.GlyphSet) {
-	mainSet := th.buildMainSet(ctx, dev)
+func (th *Theme) buildPalette(dev *vk.Device, mainFont *vglyph.GlyphSet, iconFont *vglyph.GlyphSet) {
+	mainSet := th.buildMainSet(dev)
 	pl := th.P
-	pl.AddGlyphSet(ctx, mainSet)
-	pl.AddGlyphSet(ctx, mainFont)
-	pl.AddGlyphSet(ctx, iconFont)
+	pl.AddGlyphSet(mainSet)
+	pl.AddGlyphSet(mainFont)
+	pl.AddGlyphSet(iconFont)
 }
 
 // Build glyphs for main glyph set.
-func (th *Theme) buildMainSet(ctx vk.APIContext, dev *vk.Device) *vglyph.GlyphSet {
-	b := vglyph.NewSetBuilder(ctx, vglyph.SETGrayScale)
-	th.addGlyph(ctx, b, "panel")
-	th.addGlyph(ctx, b, "btn_up")
-	th.addGlyph(ctx, b, "btn_down")
-	th.addGlyph(ctx, b, "tb_normal")
-	th.addGlyph(ctx, b, "tb_edit")
-	th.addGlyph(ctx, b, "caret")
-	th.addGlyph(ctx, b, "highlight")
-	th.addGlyph(ctx, b, "line")
-	th.addGlyph(ctx, b, "slider")
-	th.addGlyph(ctx, b, "slider_base")
-	th.addGlyph(ctx, b, "vslider")
-	th.addGlyph(ctx, b, "vslider_base")
+func (th *Theme) buildMainSet(dev *vk.Device) *vglyph.GlyphSet {
+	b := vglyph.NewSetBuilder(vglyph.SETGrayScale)
+	th.addGlyph(b, "panel")
+	th.addGlyph(b, "btn_up")
+	th.addGlyph(b, "btn_down")
+	th.addGlyph(b, "tb_normal")
+	th.addGlyph(b, "tb_edit")
+	th.addGlyph(b, "caret")
+	th.addGlyph(b, "highlight")
+	th.addGlyph(b, "line")
+	th.addGlyph(b, "slider")
+	th.addGlyph(b, "slider_base")
+	th.addGlyph(b, "vslider")
+	th.addGlyph(b, "vslider_base")
 	return b.Build(dev)
 }
 
-func (th *Theme) addGlyph(ctx vk.APIContext, sb *vglyph.SetBuilder, glyphName string) {
+func (th *Theme) addGlyph(sb *vglyph.SetBuilder, glyphName string) {
 	edges := image.Rect(20, 20, 20, 20)
 	fName := glyphName + ".png"
 	// Override default edges for some controls
@@ -289,12 +290,17 @@ func (th *Theme) addGlyph(ctx vk.APIContext, sb *vglyph.SetBuilder, glyphName st
 	}
 	content, err := ioutil.ReadFile(filepath.Join(th.imagePath, fName))
 	if err != nil {
-		ctx.SetError(err)
-		return
+		th.setError(err)
 	}
 	// Add glyph to glyph set builder. RED_GREENA indicates that RED color tells foreground intesity.
 	// GREEN color if > 0.5 will tell that pixel is transparent (alpha = 0). This is bit similar things used in film (with blue color).
 	// This is done because it is easier to render GREEN than transparent background. Three3D images are rendered bitmaps from 3D looking controls.
 	// Typically, if you draw controls using some 2D drawing program, you use directly RED channel for foreground / background ratio and alpha channel for alpha.
 	sb.AddEdgedGlyph(glyphName, vglyph.RED_GREENA, "png", content, edges)
+}
+
+func (t *Theme) setError(err error) {
+	if t.err == nil {
+		t.err = err
+	}
 }

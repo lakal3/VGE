@@ -19,14 +19,17 @@ import (
 	"github.com/lakal3/vge/vge/vscene"
 )
 
-func initApp(ctx initContext) error {
-	wwApp.app = vk.NewApplication(ctx, "WWW render")
+func initApp(ctx initContext) (err error) {
+	wwApp.app, err = vk.NewApplication("WWW render")
+	if err != nil {
+		return err
+	}
 	if wwApp.debug {
 		// Add validation layer if requested
-		wwApp.app.AddValidation(ctx)
+		wwApp.app.AddValidation()
 	}
 	// Initialize application and register it for disposal at end of application
-	wwApp.app.Init(ctx)
+	wwApp.app.Init()
 	wwApp.owner.AddChild(wwApp.dev)
 
 	// Needed to png images
@@ -34,18 +37,18 @@ func initApp(ctx initContext) error {
 
 	// Check that device exists.
 	// If we don't have device 0 then there is no Vulkan driver available that support all features we requested for
-	pds := wwApp.app.GetDevices(ctx)
+	pds := wwApp.app.GetDevices()
 	if len(pds) <= wwApp.pdIndex {
 		log.Fatal("No device ", wwApp.pdIndex)
 	}
 	fmt.Println("Using device ", string(pds[wwApp.pdIndex].Name[:pds[wwApp.pdIndex].NameLen]))
 
 	// Create a new device and register it for disposal at end of application
-	wwApp.dev = wwApp.app.NewDevice(ctx, int32(wwApp.pdIndex))
+	wwApp.dev = wwApp.app.NewDevice(int32(wwApp.pdIndex))
 	wwApp.owner.AddChild(wwApp.dev)
 
 	// Create render pass with depth buffer support. Final image will be copied so final layout is IMAGELayoutTransferSrcOptimal
-	wwApp.rp = vk.NewForwardRenderPass(ctx, wwApp.dev, vk.FORMATR8g8b8a8Unorm, vk.IMAGELayoutTransferSrcOptimal, vk.FORMATD32Sfloat)
+	wwApp.rp = vk.NewForwardRenderPass(wwApp.dev, vk.FORMATR8g8b8a8Unorm, vk.IMAGELayoutTransferSrcOptimal, vk.FORMATD32Sfloat)
 
 	// Load model to render
 	vasset.DefaultLoader = vasset.DirectoryLoader{Directory: "../../assets/gltf/elf"}
@@ -53,7 +56,7 @@ func initApp(ctx initContext) error {
 	// Std shader requires dynamics descriptors extension that we don't want to request in this example app
 	mb := vmodel.ModelBuilder{ShaderFactory: pbr.PbrFactory}
 	ol := gltf2loader.GLTF2Loader{Builder: &mb, Loader: vasset.DefaultLoader}
-	err := ol.LoadGltf(filepath.Base("elf.gltf"))
+	err = ol.LoadGltf(filepath.Base("elf.gltf"))
 	if err != nil {
 		return err
 	}
@@ -65,9 +68,9 @@ func initApp(ctx initContext) error {
 	}
 
 	// Create model
-	wwApp.model = mb.ToModel(ctx, wwApp.dev)
+	wwApp.model, err = mb.ToModel(wwApp.dev)
 	wwApp.owner.AddChild(wwApp.model)
-	return nil
+	return err
 }
 
 // Camera orbit is dependant of rendered image size. Elf model is about 25 units high
@@ -77,13 +80,13 @@ type imageRenderer struct {
 	rc *vk.RenderCache
 }
 
-func (i imageRenderer) GetPerRenderer(key vk.Key, ctor func(ctx vk.APIContext) interface{}) interface{} {
+func (i imageRenderer) GetPerRenderer(key vk.Key, ctor func() interface{}) interface{} {
 	return i.rc.Get(key, ctor)
 }
 
-func renderImage(ctx vk.APIContext, angle float64, imageSize image.Point) (pngImage []byte) {
+func renderImage(angle float64, imageSize image.Point) (pngImage []byte, err error) {
 	// Initialize render cache to handle frame related object
-	rc := vk.NewRenderCache(ctx, wwApp.dev)
+	rc := vk.NewRenderCache(wwApp.dev)
 	defer rc.Dispose()
 	// Pool for images
 	pool := vk.NewMemoryPool(wwApp.dev)
@@ -92,13 +95,13 @@ func renderImage(ctx vk.APIContext, angle float64, imageSize image.Point) (pngIm
 	ddDepth := ddMain
 	ddDepth.Format = vk.FORMATD32Sfloat
 	// Main image is used for rendering (IMAGEUsageInputAttachmentBit) and then we copy image (IMAGEUsageTransferSrcBit)
-	mainImg := pool.ReserveImage(ctx, ddMain, vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageColorAttachmentBit)
-	depthImg := pool.ReserveImage(ctx, ddDepth, vk.IMAGEUsageDepthStencilAttachmentBit)
+	mainImg := pool.ReserveImage(ddMain, vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageColorAttachmentBit)
+	depthImg := pool.ReserveImage(ddDepth, vk.IMAGEUsageDepthStencilAttachmentBit)
 	// Copy buffer where we can copy final image
 	imLen := imageSize.Y * imageSize.X * 4
-	copyBuffer := pool.ReserveBuffer(ctx, uint64(imLen), true, vk.BUFFERUsageTransferDstBit)
+	copyBuffer := pool.ReserveBuffer(uint64(imLen), true, vk.BUFFERUsageTransferDstBit)
 	// Allocate reserved elements
-	pool.Allocate(ctx)
+	pool.Allocate()
 
 	rc.DisposePerFrame(pool)
 
@@ -119,11 +122,11 @@ func renderImage(ctx vk.APIContext, angle float64, imageSize image.Point) (pngIm
 	sc.Root.Children = append(sc.Root.Children, al, bgNode, elfNode)
 
 	// Allocate frame buffer that attached depth and main images to rendering
-	fb := vk.NewFramebuffer(ctx, wwApp.rp, []*vk.ImageView{mainImg.DefaultView(ctx), depthImg.DefaultView(ctx)})
+	fb := vk.NewFramebuffer(wwApp.rp, []*vk.ImageView{mainImg.DefaultView(), depthImg.DefaultView()})
 	rc.DisposePerFrame(fb)
 
 	// Allocate command buffer to
-	cmd := vk.NewCommand(ctx, wwApp.dev, vk.QUEUEGraphicsBit, true)
+	cmd := vk.NewCommand(wwApp.dev, vk.QUEUEGraphicsBit, true)
 
 	// Render scene
 	cmd.Begin()
@@ -160,5 +163,5 @@ func renderImage(ctx vk.APIContext, angle float64, imageSize image.Point) (pngIm
 	cmd.Submit(ppPhase.Needeed...)
 	cmd.Wait()
 	// Save buffer to png image
-	return vasset.SaveImage(ctx, "png", mainImg.Description, copyBuffer)
+	return vasset.SaveImage("png", mainImg.Description, copyBuffer)
 }

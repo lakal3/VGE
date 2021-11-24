@@ -79,7 +79,7 @@ func buildStartScene() *logoWindow {
 	// Load envhdr/studio.hdr
 	lw.env = vapp.MustLoadAsset("envhdr/studio.hdr",
 		func(content []byte) (asset interface{}, err error) {
-			return env.NewEquiRectBGNode(vapp.Ctx, vapp.Dev, 100, "hdr", content), nil
+			return env.NewEquiRectBGNode(vapp.Dev, 100, "hdr", content), nil
 		}).(*env.EquiRectBGNode)
 	// Add loaded background to scene
 	rw.Env.Children = append(rw.Env.Children, vscene.NewNode(lw.env))
@@ -87,7 +87,7 @@ func buildStartScene() *logoWindow {
 	nLogo := vscene.NodeFromModel(app.logoModel, 0, true)
 	// We will also need a probe to reflect environment to model. Probes reflect everything outside this node inside children of this node.
 	// In this case we reflect only background
-	lw.probe = env.NewProbe(vapp.Ctx, vapp.Dev)
+	lw.probe = env.NewProbe(vapp.Dev)
 	// Create a new nodes from model and probe
 	lw.nLogoParent = vscene.NewNode(nil, nLogo)
 	rw.Model.Children = append(rw.Model.Children, lw.nLogoParent)

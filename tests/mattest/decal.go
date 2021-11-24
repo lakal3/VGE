@@ -52,7 +52,7 @@ func loadDecals() (set *vmodel.Model) {
 		ucNormal := b.AddImage("png", normalContent, vk.IMAGEUsageSampledBit|vk.IMAGEUsageTransferDstBit)
 		props = vmodel.NewMaterialProperties().SetImage(vmodel.TxAlbedo, ucAlbedo).SetImage(vmodel.TxBump, ucNormal)
 		b.AddDecalMaterial("underconstruction", props)
-		return b.ToModel(vapp.Ctx, vapp.Dev), nil
+		return b.ToModel(vapp.Dev)
 	})
 	if err != nil {
 		log.Fatal("Load decals failed ", err)
@@ -97,5 +97,9 @@ func loadTestModel() *vmodel.Model {
 	if err != nil {
 		log.Fatal("Load testparts model failed ", err)
 	}
-	return mb.ToModel(vapp.Ctx, vapp.Dev)
+	m, err := mb.ToModel(vapp.Dev)
+	if err != nil {
+		log.Fatal("Convert testparts model failed ", err)
+	}
+	return m
 }

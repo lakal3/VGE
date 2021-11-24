@@ -80,9 +80,9 @@ func main() {
 
 func initScene() {
 	bg := vapp.MustLoadAsset("assets/envhdr/studio.hdr", func(content []byte) (asset interface{}, err error) {
-		return env.NewEquiRectBGNode(vapp.Ctx, vapp.Dev, 100, "hdr", content), nil
+		return env.NewEquiRectBGNode(vapp.Dev, 100, "hdr", content), nil
 	}).(*env.EquiRectBGNode)
-	app.rw.Model.Ctrl = env.NewProbe(vapp.Ctx, vapp.Dev)
+	app.rw.Model.Ctrl = env.NewProbe(vapp.Dev)
 	app.nLights = vscene.NewNode(nil)
 	app.rw.Env.Children = []*vscene.Node{vscene.NewNode(bg), app.nLights}
 	app.cam = vscene.NewPerspectiveCamera(1000)

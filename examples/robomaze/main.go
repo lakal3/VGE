@@ -124,7 +124,7 @@ func loadModels1() (err error) {
 	vapp.AddChild(app.logoModel)
 	// Create UI. First we must create a theme.
 	// There is builtin minimal theme we can use here. It will use OpenSans font on material icons font if none other given.
-	app.theme = mintheme.NewTheme(vapp.Ctx, vapp.Dev, 15, nil, nil, nil)
+	app.theme = mintheme.NewTheme(vapp.Dev, 15, nil, nil, nil)
 	vapp.AddChild(app.theme)
 	return nil
 }
@@ -148,13 +148,13 @@ func loadModels2(lw *logoWindow) (err error) {
 
 	rawEnv, err := vapp.AM.Load("envhdr/kloofendal_48d_partly_cloudy_2k.hdr",
 		func(content []byte) (asset interface{}, err error) {
-			return env.NewEquiRectBGNode(vapp.Ctx, vapp.Dev, 100, "hdr", content), nil
+			return env.NewEquiRectBGNode(vapp.Dev, 100, "hdr", content), nil
 		})
 	if err != nil {
 		return err
 	}
 	app.envMaze = rawEnv.(*env.EquiRectBGNode)
-	app.probe = env.NewProbe(vapp.Ctx, vapp.Dev)
+	app.probe = env.NewProbe(vapp.Dev)
 	if app.oil {
 		b := vmodel.ModelBuilder{}
 		rIdx, err := vapp.AM.Load("decals/stain_albedo.png", func(content []byte) (asset interface{}, err error) {
@@ -166,7 +166,10 @@ func loadModels2(lw *logoWindow) (err error) {
 		props := vmodel.NewMaterialProperties().SetImage(vmodel.TxAlbedo, rIdx.(vmodel.ImageIndex)).
 			SetFactor(vmodel.FMetalness, 1).SetFactor(vmodel.FRoughness, 0.2).SetColor(vmodel.CAlbedo, mgl32.Vec4{0.7, 0.7, 0.7, 0.7})
 		b.AddDecalMaterial("oil_stain", props)
-		app.stainSet = b.ToModel(vapp.Ctx, vapp.Dev)
+		app.stainSet, err = b.ToModel(vapp.Dev)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

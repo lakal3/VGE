@@ -74,7 +74,7 @@ func main() {
 	// Probe will not render any child nodes of itself but child nodes can use probe cube image to reflect
 	// world around them. PBR shader will not work properly without probe
 	nProbe := &vscene.Node{Children: []*vscene.Node{app.nModel}}
-	nProbe.Ctrl = env.NewProbe(vapp.Ctx, vapp.Dev)
+	nProbe.Ctrl = env.NewProbe(vapp.Dev)
 	w.Scene.Root.Children = append(w.Scene.Root.Children, app.nLights, nProbe)
 	oc.Zoom(&w.Scene)
 	vapp.WaitForShutdown()
@@ -92,7 +92,7 @@ func (a *viewerApp) init() {
 	}
 	vapp.Init("model", vapp.Desktop{})
 	// Native image loaders for png and jpeg images
-	vasset.RegisterNativeImageLoader(vapp.Ctx, vapp.App)
+	vasset.RegisterNativeImageLoader(vapp.App)
 }
 
 func (v *viewerApp) loadModel() error {
@@ -127,7 +127,11 @@ func (v *viewerApp) loadModel() error {
 		log.Fatal("Unknown model type ", ext)
 	}
 
-	v.m = mb.ToModel(vapp.Ctx, vapp.Dev)
+	var err error
+	v.m, err = mb.ToModel(vapp.Dev)
+	if err != nil {
+		log.Fatal("Failed to convert model: ", err)
+	}
 	// Record model for dispose at end
 	v.owner.AddChild(v.m)
 	// Construct actual scene from whole model
@@ -143,7 +147,7 @@ func (v *viewerApp) loadModel() error {
 		if err != nil {
 			return err
 		}
-		eq := env.NewEquiRectBGNode(vapp.Ctx, vapp.Dev, 1000, "hdr", content)
+		eq := env.NewEquiRectBGNode(vapp.Dev, 1000, "hdr", content)
 		v.owner.AddChild(eq)
 		v.nEnv = &vscene.Node{Ctrl: eq}
 	} else {
@@ -154,7 +158,7 @@ func (v *viewerApp) loadModel() error {
 	return nil
 }
 
-func (v *viewerApp) keyHandler(ctx vk.APIContext, ev vapp.Event) (unregister bool) {
+func (v *viewerApp) keyHandler(ev vapp.Event) (unregister bool) {
 	ke, ok := ev.(*vapp.CharEvent)
 	if ok && ke.Char == 'Q' {
 		// Quit if we press Q

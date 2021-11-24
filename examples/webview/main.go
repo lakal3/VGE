@@ -103,16 +103,20 @@ func sendImage(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(500)
 		return
 	}
-	ctx := reqContext{writer: writer}
+	// ctx := reqContext{writer: writer}
 	defer func() {
 		_ = recover()
 	}()
 
 	s := image.Pt(1024, 768)
 	// Render raw image to memory
-	pngImage := renderImage(ctx, angle*math.Pi/180, s)
-
-	// Write image out
-	writer.Header().Add("Content-type", "image/png")
-	writer.Write(pngImage)
+	pngImage, err := renderImage(angle*math.Pi/180, s)
+	if err != nil {
+		writer.WriteHeader(500)
+		writer.Write([]byte(err.Error()))
+	} else {
+		// Write image out
+		writer.Header().Add("Content-type", "image/png")
+		writer.Write(pngImage)
+	}
 }

@@ -10,7 +10,7 @@ import (
 )
 
 func buildUi() {
-	app.theme = mintheme.NewTheme(vapp.Ctx, vapp.Dev, 15, nil, nil, nil)
+	app.theme = mintheme.NewTheme(vapp.Dev, 15, nil, nil, nil)
 	vapp.AddChild(app.theme)
 
 	var bQuit *vui.Button

@@ -102,25 +102,28 @@ func loadModels() (err error) {
 		// and convert them to signed depth fields
 		// You must also specify character unicode range you are interested in. Some Unicode font can contain quite a large number
 		// of characters
-		fl.AddFont(vapp.Ctx, content, vglyph.Range{From: 33, To: 255})
+		err = fl.AddFont(content, vglyph.Range{From: 33, To: 255})
+		if err != nil {
+			return nil, err
+		}
 
 		// Build glyphset
-		return fl.Build(vapp.Ctx, vapp.Dev), nil
+		return fl.Build(vapp.Dev), nil
 	})
 	if err != nil {
 		return err
 	}
 	// Create UI. First we must create a theme.
 	// There is builtin minimal theme we can use here. It will use OpenSans font on material icons font if none other given.
-	app.theme = mintheme.NewTheme(vapp.Ctx, vapp.Dev, 15, nil, ftRaw.(*vglyph.GlyphSet), nil)
+	app.theme = mintheme.NewTheme(vapp.Dev, 15, nil, ftRaw.(*vglyph.GlyphSet), nil)
 	vapp.AddChild(app.theme)
 
-	app.probe = env.NewProbe(vapp.Ctx, vapp.Dev)
+	app.probe = env.NewProbe(vapp.Dev)
 	vapp.AddChild(app.probe)
 
 	// Night time background image
 	app.bg = vapp.MustLoadAsset("envhdr/preller_drive_2k.hdr", func(content []byte) (asset interface{}, err error) {
-		return env.NewEquiRectBGNode(vapp.Ctx, vapp.Dev, 100, "hdr", content), nil
+		return env.NewEquiRectBGNode(vapp.Dev, 100, "hdr", content), nil
 	}).(*env.EquiRectBGNode)
 	return nil
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/lakal3/vge/vge/vscene"
 )
 
-func PhongFactory(ctx vk.APIContext, dev *vk.Device, props vmodel.MaterialProperties) (
+func PhongFactory(dev *vk.Device, props vmodel.MaterialProperties) (
 	sh vmodel.Shader, layout *vk.DescriptorLayout, ubf []byte, images []vmodel.ImageIndex) {
 	tx_diffuse := props.GetImage(vmodel.TxAlbedo)
 	tx_specular := props.GetImage(vmodel.TxSpecular)
@@ -29,7 +29,7 @@ func PhongFactory(ctx vk.APIContext, dev *vk.Device, props vmodel.MaterialProper
 	}
 
 	b := *(*[unsafe.Sizeof(phongMaterial{})]byte)(unsafe.Pointer(&ub))
-	return &PhongMaterial{}, getPhongLayout(ctx, dev), b[:], []vmodel.ImageIndex{tx_diffuse, tx_normal, tx_specular, tx_emissive}
+	return &PhongMaterial{}, getPhongLayout(dev), b[:], []vmodel.ImageIndex{tx_diffuse, tx_normal, tx_specular, tx_emissive}
 }
 
 func getFactor(imIndex vmodel.ImageIndex) mgl32.Vec4 {
@@ -51,17 +51,17 @@ func (u *PhongMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, wo
 		return
 	}
 	rc := ff.GetCache()
-	gp := dc.Pass.Get(rc.Ctx, kPhongPipeline, func(ctx vk.APIContext) interface{} {
-		return u.NewPipeline(ctx, dc)
+	gp := dc.Pass.Get(kPhongPipeline, func() interface{} {
+		return u.NewPipeline(dc)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
 	dsFrame := ff.BindForwardFrame()
-	uli := rc.GetPerFrame(kPhongInstances, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
+	uli := rc.GetPerFrame(kPhongInstances, func() interface{} {
+		ds, sl := uc.Alloc()
 		return &phongInstance{ds: ds, sl: sl}
 	}).(*phongInstance)
 	copy(uli.sl.Content[uli.count*64:uli.count*64+64], vk.Float32ToBytes(world[:]))
-	dsMesh, slMesh := uc.Alloc(rc.Ctx)
+	dsMesh, slMesh := uc.Alloc()
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindNormal)...).
 		AddDescriptors(dsFrame, uli.ds, u.dsMat, dsMesh).SetInstances(uli.count, 1)
@@ -83,13 +83,13 @@ func (u *PhongMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl
 		return
 	}
 	rc := ff.GetCache()
-	gp := dc.Pass.Get(rc.Ctx, kPhongPipeline, func(ctx vk.APIContext) interface{} {
-		return u.NewPipeline(ctx, dc)
+	gp := dc.Pass.Get(kPhongPipeline, func() interface{} {
+		return u.NewPipeline(dc)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
 	dsFrame := ff.BindForwardFrame()
-	uli := rc.GetPerFrame(kPhongInstances, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
+	uli := rc.GetPerFrame(kPhongInstances, func() interface{} {
+		ds, sl := uc.Alloc()
 		return &phongInstance{ds: ds, sl: sl}
 	}).(*phongInstance)
 	copy(uli.sl.Content[uli.count*64:uli.count*64+64], vk.Float32ToBytes(world[:]))
@@ -102,20 +102,20 @@ func (u *PhongMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl
 	}
 }
 
-func (u *PhongMaterial) NewPipeline(ctx vk.APIContext, dc *vmodel.DrawContext) *vk.GraphicsPipeline {
+func (u *PhongMaterial) NewPipeline(dc *vmodel.DrawContext) *vk.GraphicsPipeline {
 	rc := dc.Frame.GetCache()
-	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
-	vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
-	la := vscene.GetUniformLayout(ctx, rc.Device)
-	laFrame := forward.GetFrameLayout(ctx, rc.Device)
-	la2 := getPhongLayout(ctx, rc.Device)
-	gp.AddLayout(ctx, laFrame)
-	gp.AddLayout(ctx, la)
-	gp.AddLayout(ctx, la2)
-	gp.AddShader(ctx, vk.SHADERStageVertexBit, phong_vert_spv)
-	gp.AddShader(ctx, vk.SHADERStageFragmentBit, phong_frag_spv)
-	gp.AddDepth(ctx, true, true)
-	gp.Create(ctx, dc.Pass)
+	gp := vk.NewGraphicsPipeline(rc.Device)
+	vmodel.AddInput(gp, vmodel.MESHKindNormal)
+	la := vscene.GetUniformLayout(rc.Device)
+	laFrame := forward.GetFrameLayout(rc.Device)
+	la2 := getPhongLayout(rc.Device)
+	gp.AddLayout(laFrame)
+	gp.AddLayout(la)
+	gp.AddLayout(la2)
+	gp.AddShader(vk.SHADERStageVertexBit, phong_vert_spv)
+	gp.AddShader(vk.SHADERStageFragmentBit, phong_frag_spv)
+	gp.AddDepth(true, true)
+	gp.Create(dc.Pass)
 	return gp
 }
 
@@ -137,9 +137,9 @@ var kPhongLayout = vk.NewKey()
 var kPhongPipeline = vk.NewKey()
 var kPhongInstances = vk.NewKey()
 
-func getPhongLayout(ctx vk.APIContext, dev *vk.Device) *vk.DescriptorLayout {
-	la := vscene.GetUniformLayout(ctx, dev)
-	return dev.Get(ctx, kPhongLayout, func(ctx vk.APIContext) interface{} {
-		return la.AddBinding(ctx, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, 4)
+func getPhongLayout(dev *vk.Device) *vk.DescriptorLayout {
+	la := vscene.GetUniformLayout(dev)
+	return dev.Get(kPhongLayout, func() interface{} {
+		return la.AddBinding(vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, 4)
 	}).(*vk.DescriptorLayout)
 }

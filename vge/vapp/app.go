@@ -9,9 +9,6 @@ import (
 	"github.com/lakal3/vge/vge/vscene"
 )
 
-// APIContext used in nearly all methods in vapp. You can change context but preferable before calling Init
-var Ctx vk.APIContext = DefaultContext{}
-
 // Current application created with Init
 var App *vk.Application
 
@@ -56,29 +53,32 @@ var SelectDevice = func(devices []vk.DeviceInfo) int32 {
 			return int32(idx)
 		}
 	}
-	Ctx.SetError(errors.New("Can't locate suitable Vulkan device. Use GetDevices to check why device(s) are not supported"))
+	// Ctx.SetError(errors.New("Can't locate suitable Vulkan device. Use GetDevices to check why device(s) are not supported"))
 	return -1
 }
 
 // Initialize Vulkan application with given options. You can also call AddOptions before Init to add application object
 // You should set Ctx to different value before calling init
 // This will also start event loop and post StartupEvent to event queue
-func Init(name string, options ...ApplicationOption) {
+func Init(name string, options ...ApplicationOption) (err error) {
 	appStatic.assetKeys = make(map[string]vk.Key)
 	appStatic.options = append(appStatic.options, options...)
 	appStatic.owner = vk.NewOwner(true)
-	App = vk.NewApplication(Ctx, name)
+	App, err = vk.NewApplication(name)
+	if err != nil {
+		return err
+	}
 	for _, opt := range appStatic.options {
 		opt.InitApp()
 	}
-	App.Init(Ctx)
-	appStatic.pdIndex = SelectDevice(App.GetDevices(Ctx))
+	App.Init()
+	appStatic.pdIndex = SelectDevice(App.GetDevices())
 	if appStatic.pdIndex < 0 {
-		return
+		return errors.New("Can't locate suitable Vulkan device. Use GetDevices to check why device(s) are not supported")
 	}
-	Dev = App.NewDevice(Ctx, appStatic.pdIndex)
-	vasset.RegisterNativeImageLoader(Ctx, App)
-	AM = Dev.Get(Ctx, kAssetManager, func(ctx vk.APIContext) interface{} {
+	Dev = App.NewDevice(appStatic.pdIndex)
+	vasset.RegisterNativeImageLoader(App)
+	AM = Dev.Get(kAssetManager, func() interface{} {
 		return vasset.NewAssetManager(vasset.DefaultLoader)
 	}).(*vasset.AssetManager)
 	for _, opt := range appStatic.options {
@@ -87,8 +87,12 @@ func Init(name string, options ...ApplicationOption) {
 			do.DeviceReady()
 		}
 	}
-	startEventLoop()
+	err = startEventLoop()
+	if err != nil {
+		return err
+	}
 	Post(StartupEvent{})
+	return nil
 }
 
 // Add child item that will be disposed then application terminates
@@ -121,7 +125,7 @@ type Validate struct {
 }
 
 func (v Validate) InitApp() {
-	App.AddValidation(Ctx)
+	App.AddValidation()
 }
 
 func (v Validate) TerminateApp() {
@@ -143,7 +147,7 @@ func (d DynamicDescriptors) DeviceReady() {
 }
 
 func (d DynamicDescriptors) InitApp() {
-	App.AddDynamicDescriptors(Ctx)
+	App.AddDynamicDescriptors()
 }
 
 func (d DynamicDescriptors) TerminateApp() {

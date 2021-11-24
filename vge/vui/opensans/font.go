@@ -12,8 +12,12 @@ import (
 //go:embed OpenSans_Regular.ttf
 var opensans_regular_ttf []byte
 
-func NewGlyphSet(ctx vk.APIContext, dev *vk.Device, ranges ...vglyph.Range) *vglyph.GlyphSet {
+func NewGlyphSet(dev *vk.Device, ranges ...vglyph.Range) *vglyph.GlyphSet {
 	fl := &vglyph.VectorSetBuilder{}
-	fl.AddFont(ctx, opensans_regular_ttf, ranges...)
-	return fl.Build(ctx, dev)
+	err := fl.AddFont(opensans_regular_ttf, ranges...)
+	if err != nil {
+		dev.ReportError(err)
+		return nil
+	}
+	return fl.Build(dev)
 }

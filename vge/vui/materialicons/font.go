@@ -12,13 +12,17 @@ import (
 //go:embed MaterialIcons_Regular.ttf
 var materialicons_regular_ttf []byte
 
-func NewGlyphSet(ctx vk.APIContext, dev *vk.Device, ranges ...vglyph.Range) *vglyph.GlyphSet {
+func NewGlyphSet(dev *vk.Device, ranges ...vglyph.Range) *vglyph.GlyphSet {
 	fl := &vglyph.VectorSetBuilder{}
-	fl.AddFont(ctx, materialicons_regular_ttf, ranges...)
-	return fl.Build(ctx, dev)
+	err := fl.AddFont(materialicons_regular_ttf, ranges...)
+	if err != nil {
+		dev.ReportError(err)
+		return nil
+	}
+	return fl.Build(dev)
 
 }
 
-func NewDefaultGlyphSet(ctx vk.APIContext, dev *vk.Device) *vglyph.GlyphSet {
-	return NewGlyphSet(ctx, dev, vglyph.Range{From: rune(0xe000), To: rune(0xea00)})
+func NewDefaultGlyphSet(dev *vk.Device) *vglyph.GlyphSet {
+	return NewGlyphSet(dev, vglyph.Range{From: rune(0xe000), To: rune(0xea00)})
 }

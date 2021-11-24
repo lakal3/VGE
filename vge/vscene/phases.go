@@ -32,7 +32,7 @@ type ShadowPhase interface {
 	DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, material vmodel.Shader, aniMatrix []mgl32.Mat4)
 }
 
-func NewDrawPhase(frame vmodel.Frame, pass vk.RenderPass, layer Layer, cmd *vk.Command, begin func(), commit func()) DrawPhase {
+func NewDrawPhase(frame vmodel.Frame, pass *vk.GeneralRenderPass, layer Layer, cmd *vk.Command, begin func(), commit func()) DrawPhase {
 	return &BasicDrawPhase{DrawContext: vmodel.DrawContext{Frame: frame, Pass: pass}, Layer: layer, Cmd: cmd, begin: begin, commit: commit}
 }
 

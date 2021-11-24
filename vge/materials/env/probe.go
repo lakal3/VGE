@@ -47,9 +47,9 @@ func (p *Probe) Dispose() {
 	}
 }
 
-func NewProbe(ctx vk.APIContext, dev *vk.Device) *Probe {
+func NewProbe(dev *vk.Device) *Probe {
 	p := &Probe{}
-	p.setup(ctx, dev)
+	p.setup(dev)
 	return p
 }
 
@@ -62,13 +62,13 @@ func (p *Probe) Process(pi *vscene.ProcessInfo) {
 		}
 		cache := pi.Frame.GetCache()
 		if p.needUpdate {
-			p.renderProbe(cache.Ctx, cache, pre.Scene, pi.World.Col(3).Vec3())
+			p.renderProbe(cache, pre.Scene, pi.World.Col(3).Vec3())
 			// p.saveImg(pre.Cache, "d:/temp/prope.dds")
 		}
-		sampler := getEnvSampler(cache.Ctx, cache.Device)
+		sampler := getEnvSampler(cache.Device)
 		imFrame, ok := pi.Frame.(vscene.ImageFrame)
 		if ok {
-			idx := imFrame.AddFrameImage(p.imgs[p.currentImg].NewCubeView(cache.Ctx, -1), sampler)
+			idx := imFrame.AddFrameImage(p.imgs[p.currentImg].NewCubeView(-1), sampler)
 			ev.AddEnvironment(p.SPH, idx, pi)
 		} else {
 			ev.AddEnvironment(p.SPH, 0, pi)
@@ -123,7 +123,7 @@ func (d *drawProbe) GetDC(layer vscene.Layer) *vmodel.DrawContext {
 
 var kBlurPipeline = vk.NewKey()
 
-func (p *Probe) setup(ctx vk.APIContext, dev *vk.Device) {
+func (p *Probe) setup(dev *vk.Device) {
 	p.indexKey = vk.NewKey()
 	p.currentImg, p.needUpdate = -1, true
 	p.pool = vk.NewMemoryPool(dev)
@@ -136,15 +136,15 @@ func (p *Probe) setup(ctx vk.APIContext, dev *vk.Device) {
 		MipLevels: 6,
 	}
 	for idx := 0; idx < 2; idx++ {
-		img := p.pool.ReserveImage(ctx, p.desc, vk.IMAGEUsageColorAttachmentBit|vk.IMAGEUsageSampledBit|
+		img := p.pool.ReserveImage(p.desc, vk.IMAGEUsageColorAttachmentBit|vk.IMAGEUsageSampledBit|
 			vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageStorageBit)
 		p.imgs = append(p.imgs, img)
 	}
-	p.pool.Allocate(ctx)
-	// p.slUbf = ubf.Slice(ctx, 0, 256)
-	p.frp = vk.NewForwardRenderPass(ctx, dev, p.desc.Format, vk.IMAGELayoutGeneral, vk.FORMATD32Sfloat)
-	// lComp := p.getProbeLayout(ctx, dev)
-	// p.dsPool = vk.NewDescriptorPool(ctx, lComp, 1)
+	p.pool.Allocate()
+	// p.slUbf = ubf.Slice( 0, 256)
+	p.frp = vk.NewForwardRenderPass(dev, p.desc.Format, vk.IMAGELayoutGeneral, vk.FORMATD32Sfloat)
+	// lComp := p.getProbeLayout( dev)
+	// p.dsPool = vk.NewDescriptorPool( lComp, 1)
 	// p.ds = p.dsPool.Alloc(ctx)
 }
 
@@ -191,39 +191,39 @@ func (p *probeRender) Dispose() {
 var kRpProbe = vk.NewKey()
 
 func (p *probeRender) renderProbe() {
-	ctx := p.rcParent.Ctx
+
 	p.memPool = vk.NewMemoryPool(p.rcParent.Device)
 	depthDesc := vk.ImageDescription{Width: p.p.desc.Width, Height: p.p.desc.Height, Format: vk.FORMATD32Sfloat,
 		MipLevels: 1, Depth: 1, Layers: 1}
 	var depthImages []*vk.Image
 	for layer := int32(0); layer < 6; layer++ {
-		depthImage := p.memPool.ReserveImage(ctx, depthDesc, vk.IMAGEUsageDepthStencilAttachmentBit)
+		depthImage := p.memPool.ReserveImage(depthDesc, vk.IMAGEUsageDepthStencilAttachmentBit)
 		depthImages = append(depthImages, depthImage)
 	}
 	subImages := 6 * int(p.p.desc.MipLevels)
-	ubf := p.memPool.ReserveBuffer(ctx, vk.MinUniformBufferOffsetAlignment*uint64(subImages),
+	ubf := p.memPool.ReserveBuffer(vk.MinUniformBufferOffsetAlignment*uint64(subImages),
 		true, vk.BUFFERUsageUniformBufferBit)
-	p.sphBuf = p.memPool.ReserveBuffer(ctx, SPHUnits*16*9, true, vk.BUFFERUsageStorageBufferBit)
-	p.sphBuf2 = p.memPool.ReserveBuffer(ctx, vk.MinUniformBufferOffsetAlignment, true, vk.BUFFERUsageUniformBufferBit)
+	p.sphBuf = p.memPool.ReserveBuffer(SPHUnits*16*9, true, vk.BUFFERUsageStorageBufferBit)
+	p.sphBuf2 = p.memPool.ReserveBuffer(vk.MinUniformBufferOffsetAlignment, true, vk.BUFFERUsageUniformBufferBit)
 
-	p.memPool.Allocate(ctx)
-	lComp := p.p.getProbeLayout(ctx, p.rcParent.Device)
-	p.mipPool = vk.NewDescriptorPool(ctx, lComp, subImages)
+	p.memPool.Allocate()
+	lComp := p.p.getProbeLayout(p.rcParent.Device)
+	p.mipPool = vk.NewDescriptorPool(lComp, subImages)
 
 	for idx := 0; idx < subImages; idx++ {
-		p.mipUbfs = append(p.mipUbfs, ubf.Slice(ctx,
+		p.mipUbfs = append(p.mipUbfs, ubf.Slice(
 			vk.MinUniformBufferOffsetAlignment*uint64(idx), vk.MinUniformBufferOffsetAlignment*uint64(idx+1)-1))
-		p.mipDSs = append(p.mipDSs, p.mipPool.Alloc(ctx))
-		p.mipDSs[idx].WriteSlice(ctx, 0, 0, p.mipUbfs[idx])
+		p.mipDSs = append(p.mipDSs, p.mipPool.Alloc())
+		p.mipDSs[idx].WriteSlice(0, 0, p.mipUbfs[idx])
 	}
-	lSHP := p.p.getSPHLayout(ctx, p.rcParent.Device)
-	p.dsSPHPool = vk.NewDescriptorPool(ctx, lSHP, 1)
-	p.dsSPH = p.dsSPHPool.Alloc(ctx)
-	// p.ds.WriteSlice(ctx, 0, 0, p.slUbf)
-	p.dsSPH.WriteBuffer(ctx, 0, 0, p.sphBuf2)
-	p.dsSPH.WriteBuffer(ctx, 2, 0, p.sphBuf)
+	lSHP := p.p.getSPHLayout(p.rcParent.Device)
+	p.dsSPHPool = vk.NewDescriptorPool(lSHP, 1)
+	p.dsSPH = p.dsSPHPool.Alloc()
+	// p.ds.WriteSlice( 0, 0, p.slUbf)
+	p.dsSPH.WriteBuffer(0, 0, p.sphBuf2)
+	p.dsSPH.WriteBuffer(2, 0, p.sphBuf)
 
-	cmd := vk.NewCommand(ctx, p.rcParent.Device, vk.QUEUEGraphicsBit, true)
+	cmd := vk.NewCommand(p.rcParent.Device, vk.QUEUEGraphicsBit, true)
 	cmd.Begin()
 	for layer := int32(0); layer < 6; layer++ {
 		p.renderMainLayer(cmd, layer, depthImages[layer])
@@ -291,12 +291,11 @@ func (l *layerRender) Dispose() {
 
 func (p *probeRender) renderMainLayer(cmd *vk.Command, layer int32, depthImage *vk.Image) {
 	pc := p.getCamera(layer)
-	ctx := p.rcParent.Ctx
-	lr := &layerRender{rc: vk.NewRenderCache(ctx, p.rcParent.Device)}
+	lr := &layerRender{rc: vk.NewRenderCache(p.rcParent.Device)}
 	p.subRenderers = append(p.subRenderers, lr)
 	lr.rc.NewFrame()
-	lr.iv = p.image.NewView(ctx, layer, 0)
-	lr.fb = vk.NewFramebuffer(ctx, p.p.frp, []*vk.ImageView{lr.iv, depthImage.DefaultView(ctx)})
+	lr.iv = p.image.NewView(layer, 0)
+	lr.fb = vk.NewFramebuffer(p.p.frp, []*vk.ImageView{lr.iv, depthImage.DefaultView()})
 
 	f := &vscene.SimpleFrame{Cache: lr.rc}
 	dc1 := &drawProbe{DrawContext: vmodel.DrawContext{Frame: f, Pass: p.p.frp}, cmd: cmd,
@@ -308,22 +307,24 @@ func (p *probeRender) renderMainLayer(cmd *vk.Command, layer int32, depthImage *
 
 }
 
-func (p *Probe) saveImg(rc *vk.RenderCache, path string) {
-	cp := vmodel.NewCopier(rc.Ctx, rc.Device)
-	content := cp.CopyFromImage(p.imgs[p.currentImg], p.imgs[p.currentImg].FullRange(), "dds", vk.IMAGELayoutShaderReadOnlyOptimal)
-	err := ioutil.WriteFile(path, content, 0660)
+func (p *Probe) saveImg(rc *vk.RenderCache, path string) error {
+	cp := vmodel.NewCopier(rc.Device)
+	content, err := cp.CopyFromImage(p.imgs[p.currentImg], p.imgs[p.currentImg].FullRange(), "dds", vk.IMAGELayoutShaderReadOnlyOptimal)
 	if err != nil {
-		fmt.Println("Failed to save ", path, ": ", err)
-	} else {
-		fmt.Println("Saved probe to ", path)
+		return err
 	}
+	err = ioutil.WriteFile(path, content, 0660)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Saved probe to ", path)
+	return nil
 }
 
 var kProbeLayouts = vk.NewKeys(4)
 
 func (p *probeRender) renderSubimage(siIndex int, cmd *vk.Command, layer int32, mip uint32) {
-	ctx := p.rcParent.Ctx
-	plProbe := p.p.getProbePipeline(ctx, p.rcParent.Device)
+	plProbe := p.p.getProbePipeline(p.rcParent.Device)
 	w := p.p.desc.Width >> mip
 	h := p.p.desc.Height >> mip
 	fls := []float32{float32(2.2), float32(1.0), float32(w * 2), float32(h * 2)}
@@ -331,42 +332,42 @@ func (p *probeRender) renderSubimage(siIndex int, cmd *vk.Command, layer int32, 
 	rOutput := vk.ImageRange{LevelCount: 1, LayerCount: 1, FirstMipLevel: mip, FirstLayer: uint32(layer), Layout: vk.IMAGELayoutGeneral}
 	rInput := rOutput
 	rInput.FirstMipLevel--
-	vInput := vk.NewImageView(ctx, p.image, &rInput)
+	vInput := vk.NewImageView(p.image, &rInput)
 	p.views = append(p.views, vInput)
-	vOutput := vk.NewImageView(ctx, p.image, &rOutput)
+	vOutput := vk.NewImageView(p.image, &rOutput)
 	p.views = append(p.views, vOutput)
-	p.mipDSs[siIndex].WriteImage(ctx, 1, 0, vInput, nil)
-	p.mipDSs[siIndex].WriteImage(ctx, 2, 0, vOutput, nil)
+	p.mipDSs[siIndex].WriteImage(1, 0, vInput, nil)
+	p.mipDSs[siIndex].WriteImage(2, 0, vOutput, nil)
 	rOutput.Layout = vk.IMAGELayoutUndefined
 	cmd.SetLayout(p.image, &rOutput, vk.IMAGELayoutGeneral)
 	cmd.Compute(plProbe, w/32+1, h/32+1, 1, p.mipDSs[siIndex])
 }
 
-func (p *Probe) getProbeLayout(ctx vk.APIContext, dev *vk.Device) *vk.DescriptorLayout {
-	l1 := dev.Get(ctx, kProbeLayouts, func(ctx vk.APIContext) interface{} {
-		return vk.NewDescriptorLayout(ctx, dev, vk.DESCRIPTORTypeUniformBuffer, vk.SHADERStageComputeBit, 1)
+func (p *Probe) getProbeLayout(dev *vk.Device) *vk.DescriptorLayout {
+	l1 := dev.Get(kProbeLayouts, func() interface{} {
+		return vk.NewDescriptorLayout(dev, vk.DESCRIPTORTypeUniformBuffer, vk.SHADERStageComputeBit, 1)
 	}).(*vk.DescriptorLayout)
-	l2 := dev.Get(ctx, kProbeLayouts+1, func(ctx vk.APIContext) interface{} {
-		return l1.AddBinding(ctx, vk.DESCRIPTORTypeStorageImage, vk.SHADERStageComputeBit, 1)
+	l2 := dev.Get(kProbeLayouts+1, func() interface{} {
+		return l1.AddBinding(vk.DESCRIPTORTypeStorageImage, vk.SHADERStageComputeBit, 1)
 	}).(*vk.DescriptorLayout)
-	l3 := dev.Get(ctx, kProbeLayouts+2, func(ctx vk.APIContext) interface{} {
-		return l2.AddBinding(ctx, vk.DESCRIPTORTypeStorageImage, vk.SHADERStageComputeBit, 1)
+	l3 := dev.Get(kProbeLayouts+2, func() interface{} {
+		return l2.AddBinding(vk.DESCRIPTORTypeStorageImage, vk.SHADERStageComputeBit, 1)
 	}).(*vk.DescriptorLayout)
 	return l3
 }
 
-func (p *Probe) getProbePipeline(ctx vk.APIContext, dev *vk.Device) *vk.ComputePipeline {
-	lComp := p.getProbeLayout(ctx, dev)
-	return dev.Get(ctx, kBlurPipeline, func(ctx vk.APIContext) interface{} {
-		cp := vk.NewComputePipeline(ctx, dev)
-		cp.AddLayout(ctx, lComp)
-		cp.AddShader(ctx, probe_comp_spv)
-		cp.Create(ctx)
+func (p *Probe) getProbePipeline(dev *vk.Device) *vk.ComputePipeline {
+	lComp := p.getProbeLayout(dev)
+	return dev.Get(kBlurPipeline, func() interface{} {
+		cp := vk.NewComputePipeline(dev)
+		cp.AddLayout(lComp)
+		cp.AddShader(probe_comp_spv)
+		cp.Create()
 		return cp
 	}).(*vk.ComputePipeline)
 }
 
-func (p *Probe) renderProbe(ctx vk.APIContext, rcParent *vk.RenderCache, scene *vscene.Scene, pos mgl32.Vec3) {
+func (p *Probe) renderProbe(rcParent *vk.RenderCache, scene *vscene.Scene, pos mgl32.Vec3) {
 	pr := probeRender{p: p, rcParent: rcParent, sc: scene, probePos: pos}
 	defer pr.Dispose()
 	p.currentImg++

@@ -1,5 +1,11 @@
 # Change history
 
+## Version 0.next
+
+Breaking changes:
+- APIContext is now private to vk module. No public API takes APIContext parameter
+
+
 ## Version 0.20.1 
 
 This version contains several improvement and unfortunately there are also some breaking changes.

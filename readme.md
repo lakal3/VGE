@@ -209,7 +209,10 @@ I gradually added new features to handle different aspects of Graphics programmi
 Now VGE has all the basic elements to make Vulkan based 3D programs using Go.
 The examples give a quite nice overview of the existing features in VGE.
 
-Features not marked as preview or experimental should be considered fairly stable and breaking API changes will happen only if really necessary.
+Features not marked as preview or experimental should be considered fairly stable. 
+However, breaking API changes are still likely need to support new features.
+
+If you like to use VGE for more serious work, I recommend that you make own fork of project. 
 
 **Note that the number of different devices VGE has been tested on is limited and
 Vulkan drivers have bugs and inconsistencies. Please report any device incompatibilities you find.**

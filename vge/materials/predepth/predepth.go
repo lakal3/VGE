@@ -33,13 +33,13 @@ func (p *PreDepthPass) Begin() (atEnd func()) {
 
 func (p *PreDepthPass) DrawShadow(mesh vmodel.Mesh, world mgl32.Mat4, material vmodel.Shader) {
 	rc := p.DC.Frame.GetCache()
-	gp := p.DC.Pass.Get(rc.Ctx, kPreDepthPipeline, func(ctx vk.APIContext) interface{} {
-		return p.newPipeline(ctx, false)
+	gp := p.DC.Pass.Get(kPreDepthPipeline, func() interface{} {
+		return p.newPipeline(false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
 	dsWorld := p.BindFrame()
-	uli := rc.GetPerFrame(kPreDepthInstances, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
+	uli := rc.GetPerFrame(kPreDepthInstances, func() interface{} {
+		ds, sl := uc.Alloc()
 		return &preDepthInstances{ds: ds, sl: sl}
 	}).(*preDepthInstances)
 	copy(uli.sl.Content[uli.count*64:uli.count*64+64], vk.Float32ToBytes(world[:]))
@@ -53,17 +53,17 @@ func (p *PreDepthPass) DrawShadow(mesh vmodel.Mesh, world mgl32.Mat4, material v
 
 func (p *PreDepthPass) DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, material vmodel.Shader, aniMatrix []mgl32.Mat4) {
 	rc := p.DC.Frame.GetCache()
-	gp := p.DC.Pass.Get(rc.Ctx, kPreDepthSkinnedPipeline, func(ctx vk.APIContext) interface{} {
-		return p.newPipeline(ctx, true)
+	gp := p.DC.Pass.Get(kPreDepthSkinnedPipeline, func() interface{} {
+		return p.newPipeline(true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
 	dsWorld := p.BindFrame()
-	uli := rc.GetPerFrame(kPreDepthInstances, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
+	uli := rc.GetPerFrame(kPreDepthInstances, func() interface{} {
+		ds, sl := uc.Alloc()
 		return &preDepthInstances{ds: ds, sl: sl}
 	}).(*preDepthInstances)
 	copy(uli.sl.Content[uli.count*64:uli.count*64+64], vk.Float32ToBytes(world[:]))
-	dsMesh, slMesh := uc.Alloc(rc.Ctx)
+	dsMesh, slMesh := uc.Alloc()
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	p.DC.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindNormal)...).
 		AddDescriptors(dsWorld, uli.ds, dsMesh).SetInstances(uli.count, 1)
@@ -73,26 +73,26 @@ func (p *PreDepthPass) DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, mat
 	}
 }
 
-func (p *PreDepthPass) newPipeline(ctx vk.APIContext, skinned bool) *vk.GraphicsPipeline {
+func (p *PreDepthPass) newPipeline(skinned bool) *vk.GraphicsPipeline {
 	rc := p.DC.Frame.GetCache()
-	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
+	gp := vk.NewGraphicsPipeline(rc.Device)
 	if skinned {
-		vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)
+		vmodel.AddInput(gp, vmodel.MESHKindSkinned)
 	} else {
-		vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
+		vmodel.AddInput(gp, vmodel.MESHKindNormal)
 	}
-	la := vscene.GetUniformLayout(ctx, rc.Device)
-	gp.AddLayout(ctx, la)
-	gp.AddLayout(ctx, la)
+	la := vscene.GetUniformLayout(rc.Device)
+	gp.AddLayout(la)
+	gp.AddLayout(la)
 	if skinned {
-		gp.AddLayout(ctx, la)
-		gp.AddShader(ctx, vk.SHADERStageVertexBit, predepth_vert_skin_spv)
+		gp.AddLayout(la)
+		gp.AddShader(vk.SHADERStageVertexBit, predepth_vert_skin_spv)
 	} else {
-		gp.AddShader(ctx, vk.SHADERStageVertexBit, predepth_vert_spv)
+		gp.AddShader(vk.SHADERStageVertexBit, predepth_vert_spv)
 	}
-	gp.AddShader(ctx, vk.SHADERStageFragmentBit, predepth_frag_spv)
-	gp.AddDepth(ctx, true, true)
-	gp.Create(ctx, p.DC.Pass)
+	gp.AddShader(vk.SHADERStageFragmentBit, predepth_frag_spv)
+	gp.AddDepth(true, true)
+	gp.Create(p.DC.Pass)
 	return gp
 }
 

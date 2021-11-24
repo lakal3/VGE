@@ -229,34 +229,34 @@ func (t *Theme) Palette() *vglyph.Palette {
 }
 
 // Constructs new minimal theme using given palette, mainFont and glyph font. palette, mainFont and iconFont can be nil if defaults are fine.
-func NewTheme(ctx vk.APIContext, dev *vk.Device, cornerSize int, palette *vglyph.Palette, mainFont *vglyph.GlyphSet,
+func NewTheme(dev *vk.Device, cornerSize int, palette *vglyph.Palette, mainFont *vglyph.GlyphSet,
 	iconFont *vglyph.GlyphSet, sets ...*vglyph.GlyphSet) *Theme {
 	if mainFont == nil {
-		mainFont = opensans.NewGlyphSet(ctx, dev, vglyph.Range{From: 33, To: 256})
+		mainFont = opensans.NewGlyphSet(dev, vglyph.Range{From: 33, To: 256})
 	}
 	if iconFont == nil {
-		iconFont = materialicons.NewDefaultGlyphSet(ctx, dev)
+		iconFont = materialicons.NewDefaultGlyphSet(dev)
 	}
 	if palette == nil {
-		palette = vglyph.NewPalette(ctx, dev, 2, 128)
+		palette = vglyph.NewPalette(dev, 2, 128)
 	}
 	th := &Theme{P: palette, CornerSize: cornerSize}
-	buildPalette(ctx, dev, th, mainFont, iconFont, sets)
+	buildPalette(dev, th, mainFont, iconFont, sets)
 	return th
 }
 
-func buildPalette(ctx vk.APIContext, dev *vk.Device, th *Theme, mainFont *vglyph.GlyphSet, iconFont *vglyph.GlyphSet, sets []*vglyph.GlyphSet) {
-	mainSet := buildMainSet(ctx, dev, th)
+func buildPalette(dev *vk.Device, th *Theme, mainFont *vglyph.GlyphSet, iconFont *vglyph.GlyphSet, sets []*vglyph.GlyphSet) {
+	mainSet := buildMainSet(dev, th)
 	pl := th.P
-	pl.AddGlyphSet(ctx, mainSet)
-	pl.AddGlyphSet(ctx, mainFont)
-	pl.AddGlyphSet(ctx, iconFont)
+	pl.AddGlyphSet(mainSet)
+	pl.AddGlyphSet(mainFont)
+	pl.AddGlyphSet(iconFont)
 	for _, set := range sets {
-		pl.AddGlyphSet(ctx, set)
+		pl.AddGlyphSet(set)
 	}
 }
 
-func buildMainSet(ctx vk.APIContext, dev *vk.Device, th *Theme) *vglyph.GlyphSet {
+func buildMainSet(dev *vk.Device, th *Theme) *vglyph.GlyphSet {
 	b := &vglyph.VectorSetBuilder{}
 	DefaultMainGlyph(b, "solid_bg", th)
 	DefaultMainGlyph(b, "solid_border", th)
@@ -266,7 +266,7 @@ func buildMainSet(ctx vk.APIContext, dev *vk.Device, th *Theme) *vglyph.GlyphSet
 	DefaultMainGlyph(b, "solid_vline_border", th)
 	DefaultMainGlyph(b, "solid_hline_border", th)
 	DefaultMainGlyph(b, "solid_filled", th)
-	return b.Build(ctx, dev)
+	return b.Build(dev)
 }
 
 var DefaultMainGlyph = func(sb *vglyph.VectorSetBuilder, glyphName string, th *Theme) {

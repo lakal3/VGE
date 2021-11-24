@@ -155,8 +155,8 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 			// Skip shadow pass for light too long away or very close
 			return
 		}
-		rsr := pi.Frame.GetRenderer().GetPerRenderer(pl.key, func(ctx vk.APIContext) interface{} {
-			return pl.makeRenderResources(ctx, pi.Frame.GetCache().Device)
+		rsr := pi.Frame.GetRenderer().GetPerRenderer(pl.key, func() interface{} {
+			return pl.makeRenderResources(pi.Frame.GetCache().Device)
 		}).(*renderResources)
 
 		if rsr.updateCount > 0 {
@@ -169,8 +169,8 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 
 	lp, ok := pi.Phase.(vscene.LightPhase)
 	if ok {
-		rsr := pi.Frame.GetRenderer().GetPerRenderer(pl.key, func(ctx vk.APIContext) interface{} {
-			return pl.makeRenderResources(ctx, pi.Frame.GetCache().Device)
+		rsr := pi.Frame.GetRenderer().GetPerRenderer(pl.key, func() interface{} {
+			return pl.makeRenderResources(pi.Frame.GetCache().Device)
 		}).(*renderResources)
 		pos := pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1})
 		imFrame, ok := pi.Frame.(vscene.ImageFrame)
@@ -192,14 +192,14 @@ func (pl *PointLight) Process(pi *vscene.ProcessInfo) {
 
 func (pl *PointLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.ProcessInfo, rsr *renderResources, side int) *plResources {
 	cache := pi.Frame.GetCache()
-	sr := cache.Get(pl.key, func(ctx vk.APIContext) interface{} {
-		return pl.makeResources(ctx, cache.Device, rsr.rp)
+	sr := cache.Get(pl.key, func() interface{} {
+		return pl.makeResources(cache.Device, rsr.rp)
 	}).(*plResources)
-	gpl := rsr.rp.Get(cache.Ctx, kDepthPipeline, func(ctx vk.APIContext) interface{} {
-		return makePlShadowPipeline(ctx, cache.Device, rsr.rp)
+	gpl := rsr.rp.Get(kDepthPipeline, func() interface{} {
+		return makePlShadowPipeline(cache.Device, rsr.rp)
 	}).(*vk.GraphicsPipeline)
-	gSkinnedPl := rsr.rp.Get(cache.Ctx, kSkinnedDepthPipeline, func(ctx vk.APIContext) interface{} {
-		return makePlSkinnedShadowPipeline(ctx, cache.Device, rsr.rp)
+	gSkinnedPl := rsr.rp.Get(kSkinnedDepthPipeline, func() interface{} {
+		return makePlSkinnedShadowPipeline(cache.Device, rsr.rp)
 	}).(*vk.GraphicsPipeline)
 	cmd := sr.cmd[side]
 	cmd.Begin()
@@ -207,12 +207,12 @@ func (pl *PointLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.Proces
 	if imageIndex >= 2 {
 		imageIndex = 0
 	}
-	fbs := cache.GetPerFrame(pl.key, func(ctx vk.APIContext) interface{} {
+	fbs := cache.GetPerFrame(pl.key, func() interface{} {
 		return pl.makeFrameResource(cache, rsr, imageIndex)
 	}).(*plFrameResources)
 	fb := fbs.fbs[side]
 	cmd.BeginRenderPass(rsr.rp, fb)
-	sp := &shadowPass{ctx: cache.Ctx, cmd: cmd, dl: &vk.DrawList{}, maxDistance: pl.MaxDistance,
+	sp := &shadowPass{cmd: cmd, dl: &vk.DrawList{}, maxDistance: pl.MaxDistance,
 		rc: cache, renderer: pi.Frame.GetRenderer(), pl: gpl, plSkin: gSkinnedPl, sampler: rsr.sampler,
 		dsFrame: rsr.dsFrame[imageIndex*2+side], slFrame: rsr.slFrame[2*imageIndex+side]}
 	lightPos := pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1})
@@ -237,9 +237,9 @@ func (pl *PointLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.Proces
 	return sr
 }
 
-func makeRenderPass(ctx vk.APIContext, dev *vk.Device) *vk.GeneralRenderPass {
-	rp := dev.Get(ctx, kDepthPass, func(ctx vk.APIContext) interface{} {
-		return vk.NewGeneralRenderPass(ctx, dev, true, []vk.AttachmentInfo{
+func makeRenderPass(dev *vk.Device) *vk.GeneralRenderPass {
+	rp := dev.Get(kDepthPass, func() interface{} {
+		return vk.NewGeneralRenderPass(dev, true, []vk.AttachmentInfo{
 			vk.AttachmentInfo{Format: ShadowFormat, InitialLayout: vk.IMAGELayoutUndefined, FinalLayout: vk.IMAGELayoutShaderReadOnlyOptimal,
 				ClearColor: [4]float32{1, 0, 0, 0}},
 		})
@@ -247,86 +247,86 @@ func makeRenderPass(ctx vk.APIContext, dev *vk.Device) *vk.GeneralRenderPass {
 	return rp
 }
 
-func (pl *PointLight) makeResources(ctx vk.APIContext, dev *vk.Device, rp *vk.DepthRenderPass) *plResources {
+func (pl *PointLight) makeResources(dev *vk.Device, rp *vk.DepthRenderPass) *plResources {
 	sr := &plResources{}
-	sr.cmd = append(sr.cmd, vk.NewCommand(ctx, dev, vk.QUEUEGraphicsBit, false), vk.NewCommand(ctx, dev, vk.QUEUEGraphicsBit, false))
+	sr.cmd = append(sr.cmd, vk.NewCommand(dev, vk.QUEUEGraphicsBit, false), vk.NewCommand(dev, vk.QUEUEGraphicsBit, false))
 	return sr
 }
 
-func makePlShadowPipeline(ctx vk.APIContext, dev *vk.Device, rp *vk.GeneralRenderPass) *vk.GraphicsPipeline {
-	gp := vk.NewGraphicsPipeline(ctx, dev)
-	vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
-	gp.AddLayout(ctx, getShadowFrameLayout(ctx, dev))
-	gp.AddLayout(ctx, vscene.GetUniformLayout(ctx, dev))
-	gp.AddShader(ctx, vk.SHADERStageVertexBit, point_shadow_vert_spv)
+func makePlShadowPipeline(dev *vk.Device, rp *vk.GeneralRenderPass) *vk.GraphicsPipeline {
+	gp := vk.NewGraphicsPipeline(dev)
+	vmodel.AddInput(gp, vmodel.MESHKindNormal)
+	gp.AddLayout(getShadowFrameLayout(dev))
+	gp.AddLayout(vscene.GetUniformLayout(dev))
+	gp.AddShader(vk.SHADERStageVertexBit, point_shadow_vert_spv)
 	if vscene.FrameMaxDynamicSamplers > 0 {
-		gp.AddShader(ctx, vk.SHADERStageFragmentBit, point_shadow_dyn_frag_spv)
+		gp.AddShader(vk.SHADERStageFragmentBit, point_shadow_dyn_frag_spv)
 
 	} else {
-		gp.AddShader(ctx, vk.SHADERStageFragmentBit, point_shadow_frag_spv)
+		gp.AddShader(vk.SHADERStageFragmentBit, point_shadow_frag_spv)
 	}
-	gp.AddDepth(ctx, true, true)
-	gp.Create(ctx, rp)
+	gp.AddDepth(true, true)
+	gp.Create(rp)
 	return gp
 }
 
-func makePlSkinnedShadowPipeline(ctx vk.APIContext, dev *vk.Device, rp *vk.DepthRenderPass) *vk.GraphicsPipeline {
-	gp := vk.NewGraphicsPipeline(ctx, dev)
-	vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)
-	gp.AddLayout(ctx, getShadowFrameLayout(ctx, dev))
-	gp.AddLayout(ctx, vscene.GetUniformLayout(ctx, dev))
-	gp.AddLayout(ctx, vscene.GetUniformLayout(ctx, dev))
-	gp.AddShader(ctx, vk.SHADERStageVertexBit, point_shadow_vert_skin_spv)
+func makePlSkinnedShadowPipeline(dev *vk.Device, rp *vk.DepthRenderPass) *vk.GraphicsPipeline {
+	gp := vk.NewGraphicsPipeline(dev)
+	vmodel.AddInput(gp, vmodel.MESHKindSkinned)
+	gp.AddLayout(getShadowFrameLayout(dev))
+	gp.AddLayout(vscene.GetUniformLayout(dev))
+	gp.AddLayout(vscene.GetUniformLayout(dev))
+	gp.AddShader(vk.SHADERStageVertexBit, point_shadow_vert_skin_spv)
 	if vscene.FrameMaxDynamicSamplers > 0 {
-		gp.AddShader(ctx, vk.SHADERStageFragmentBit, point_shadow_dyn_frag_spv)
+		gp.AddShader(vk.SHADERStageFragmentBit, point_shadow_dyn_frag_spv)
 
 	} else {
-		gp.AddShader(ctx, vk.SHADERStageFragmentBit, point_shadow_frag_spv)
+		gp.AddShader(vk.SHADERStageFragmentBit, point_shadow_frag_spv)
 	}
-	gp.AddDepth(ctx, true, true)
-	gp.Create(ctx, rp)
+	gp.AddDepth(true, true)
+	gp.Create(rp)
 	return gp
 }
 
-func (pl *PointLight) makeRenderResources(ctx vk.APIContext, dev *vk.Device) *renderResources {
+func (pl *PointLight) makeRenderResources(dev *vk.Device) *renderResources {
 	rsr := renderResources{lastImage: -1}
-	rsr.rp = makeRenderPass(ctx, dev)
+	rsr.rp = makeRenderPass(dev)
 	rsr.pool = vk.NewMemoryPool(dev)
 	desc := vk.ImageDescription{Width: pl.mapSize, Height: pl.mapSize, Depth: 1, Layers: 2, MipLevels: 1,
 		Format: vk.FORMATD32Sfloat}
 	var buffers []*vk.Buffer
 	for idx := 0; idx < 2; idx++ {
-		rsr.shadowImages = append(rsr.shadowImages, rsr.pool.ReserveImage(ctx, desc, vk.IMAGEUsageDepthStencilAttachmentBit|
+		rsr.shadowImages = append(rsr.shadowImages, rsr.pool.ReserveImage(desc, vk.IMAGEUsageDepthStencilAttachmentBit|
 			vk.IMAGEUsageSampledBit))
 		buffers = append(buffers,
-			rsr.pool.ReserveBuffer(ctx, vk.MinUniformBufferOffsetAlignment, true, vk.BUFFERUsageUniformBufferBit))
+			rsr.pool.ReserveBuffer(vk.MinUniformBufferOffsetAlignment, true, vk.BUFFERUsageUniformBufferBit))
 		buffers = append(buffers,
-			rsr.pool.ReserveBuffer(ctx, vk.MinUniformBufferOffsetAlignment, true, vk.BUFFERUsageUniformBufferBit))
+			rsr.pool.ReserveBuffer(vk.MinUniformBufferOffsetAlignment, true, vk.BUFFERUsageUniformBufferBit))
 	}
-	rsr.pool.Allocate(ctx)
-	rsr.dpFrame = vk.NewDescriptorPool(ctx, getShadowFrameLayout(ctx, dev), 4)
-	rsr.sampler = vmodel.GetDefaultSampler(ctx, dev)
+	rsr.pool.Allocate()
+	rsr.dpFrame = vk.NewDescriptorPool(getShadowFrameLayout(dev), 4)
+	rsr.sampler = vmodel.GetDefaultSampler(dev)
 	for idx := 0; idx < 2; idx++ {
-		rsr.dsFrame = append(rsr.dsFrame, rsr.dpFrame.Alloc(ctx), rsr.dpFrame.Alloc(ctx))
-		sl := buffers[idx*2].Slice(ctx, 0, vk.MinUniformBufferOffsetAlignment)
-		rsr.dsFrame[idx*2].WriteSlice(ctx, 0, 0, sl)
+		rsr.dsFrame = append(rsr.dsFrame, rsr.dpFrame.Alloc(), rsr.dpFrame.Alloc())
+		sl := buffers[idx*2].Slice(0, vk.MinUniformBufferOffsetAlignment)
+		rsr.dsFrame[idx*2].WriteSlice(0, 0, sl)
 		rsr.slFrame = append(rsr.slFrame, sl)
-		sl = buffers[idx*2+1].Slice(ctx, 0, vk.MinUniformBufferOffsetAlignment)
-		rsr.dsFrame[idx*2+1].WriteSlice(ctx, 0, 0, sl)
+		sl = buffers[idx*2+1].Slice(0, vk.MinUniformBufferOffsetAlignment)
+		rsr.dsFrame[idx*2+1].WriteSlice(0, 0, sl)
 		rsr.slFrame = append(rsr.slFrame, sl)
 		rg := vk.ImageRange{FirstLayer: 0, LayerCount: 1, LevelCount: 1}
-		rsr.shadowViews = append(rsr.shadowViews, vk.NewImageView(ctx, rsr.shadowImages[idx], &rg))
+		rsr.shadowViews = append(rsr.shadowViews, vk.NewImageView(rsr.shadowImages[idx], &rg))
 		rg2 := rg
 		rg2.FirstLayer = 1
-		rsr.shadowViews = append(rsr.shadowViews, vk.NewImageView(ctx, rsr.shadowImages[idx], &rg2))
+		rsr.shadowViews = append(rsr.shadowViews, vk.NewImageView(rsr.shadowImages[idx], &rg2))
 	}
 
 	for idx := 0; idx < 2; idx++ {
 		rg := vk.ImageRange{FirstLayer: 0, LayerCount: 1, LevelCount: 1, Layout: vk.IMAGELayoutShaderReadOnlyOptimal}
-		rsr.shadowViews = append(rsr.shadowViews, vk.NewImageView(ctx, rsr.shadowImages[idx], &rg))
+		rsr.shadowViews = append(rsr.shadowViews, vk.NewImageView(rsr.shadowImages[idx], &rg))
 		rg2 := rg
 		rg2.FirstLayer = 1
-		rsr.shadowViews = append(rsr.shadowViews, vk.NewImageView(ctx, rsr.shadowImages[idx], &rg2))
+		rsr.shadowViews = append(rsr.shadowViews, vk.NewImageView(rsr.shadowImages[idx], &rg2))
 	}
 	return &rsr
 }
@@ -334,8 +334,8 @@ func (pl *PointLight) makeRenderResources(ctx vk.APIContext, dev *vk.Device) *re
 func (pl *PointLight) makeFrameResource(cache *vk.RenderCache, rsr *renderResources, imageIndex int) *plFrameResources {
 	fr := plFrameResources{}
 	fr.fbs = append(fr.fbs,
-		vk.NewFramebuffer(cache.Ctx, rsr.rp, []*vk.ImageView{rsr.shadowViews[imageIndex*2]}),
-		vk.NewFramebuffer(cache.Ctx, rsr.rp, []*vk.ImageView{rsr.shadowViews[imageIndex*2+1]}),
+		vk.NewFramebuffer(rsr.rp, []*vk.ImageView{rsr.shadowViews[imageIndex*2]}),
+		vk.NewFramebuffer(rsr.rp, []*vk.ImageView{rsr.shadowViews[imageIndex*2+1]}),
 	)
 	return &fr
 }

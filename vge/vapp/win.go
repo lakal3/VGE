@@ -33,7 +33,7 @@ type Desktop struct {
 var winCount int
 
 func GetMonitorArea(monitor uint32) (pos vk.WindowPos, exists bool) {
-	return appStatic.desktop.GetMonitor(Ctx, monitor)
+	return appStatic.desktop.GetMonitor(monitor)
 }
 
 // NewRenderWindow creates new default size window (1024 x 768)
@@ -47,7 +47,7 @@ func NewRenderWindowAt(title string, wp vk.WindowPos, renderer vscene.Renderer) 
 	rw := &RenderWindow{renderer: renderer}
 	rw.owner = vk.NewOwner(true)
 	rw.owner.AddChild(renderer)
-	rw.win = appStatic.desktop.NewWindow(Ctx, title, wp)
+	rw.win = appStatic.desktop.NewWindow(title, wp)
 	rw.WindowSize = image.Point{X: int(wp.Width), Y: int(wp.Height)}
 	rw.owner.AddChild(rw.win)
 	winCount++
@@ -101,7 +101,7 @@ func (r rawWinEvent) Handled() bool {
 func (d Desktop) InitApp() {
 	var wg *sync.WaitGroup
 	var shutdown bool
-	RegisterHandler(PRILast+1, func(ctx vk.APIContext, ev Event) (unregister bool) {
+	RegisterHandler(PRILast+1, func(ev Event) (unregister bool) {
 		_, ok := ev.(StartupEvent)
 		if ok {
 			wg = &sync.WaitGroup{}
@@ -119,9 +119,9 @@ func (d Desktop) InitApp() {
 		return false
 	})
 	if d.ImageUsage != 0 {
-		appStatic.desktop = vk.NewDesktopWithSettings(Ctx, App, vk.DesktopSettings{ImageUsage: d.ImageUsage})
+		appStatic.desktop = vk.NewDesktopWithSettings(App, vk.DesktopSettings{ImageUsage: d.ImageUsage})
 	} else {
-		appStatic.desktop = vk.NewDesktop(Ctx, App)
+		appStatic.desktop = vk.NewDesktop(App)
 	}
 }
 
@@ -131,7 +131,7 @@ func (d Desktop) TerminateApp() {
 
 func (d *Desktop) pollDesktopEvents(wg *sync.WaitGroup, shutdown *bool) {
 	for !*shutdown {
-		ev, win := appStatic.desktop.PullEvent(Ctx)
+		ev, win := appStatic.desktop.PullEvent()
 		if ev.EventType != 0 {
 			Post(&rawWinEvent{win: win, ev: ev})
 		} else {
@@ -158,7 +158,7 @@ func (rw *RenderWindow) GetRenderer() vscene.Renderer {
 }
 
 func (rw *RenderWindow) SetPos(pos vk.WindowPos) {
-	rw.win.SetPos(Ctx, pos)
+	rw.win.SetPos(pos)
 }
 
 func (rw *RenderWindow) Dispose() {
@@ -183,7 +183,7 @@ func (rw *RenderWindow) AddChild(disp vk.Disposable) {
 func (rw *RenderWindow) renderLoop() {
 	rw.Scene.Init()
 	for rw.state == 1 {
-		im, imageIndex, submitInfo := rw.win.GetNextFrame(Ctx, Dev)
+		im, imageIndex, submitInfo := rw.win.GetNextFrame(Dev)
 		if imageIndex < 0 {
 			rw.clearCaches()
 			continue
@@ -192,13 +192,13 @@ func (rw *RenderWindow) renderLoop() {
 			rw.caches = make([]*vk.RenderCache, rw.win.GetImageCount())
 		}
 		if rw.caches[imageIndex] == nil {
-			rw.caches[imageIndex] = vk.NewRenderCache(Ctx, Dev)
+			rw.caches[imageIndex] = vk.NewRenderCache(Dev)
 			if !rw.setup {
 				if rw.renderer == nil {
 					rw.renderer = forward.NewRenderer(true)
 				}
 				rw.setup = true
-				rw.renderer.Setup(Ctx, Dev, rw.win.WindowDesc, rw.win.GetImageCount())
+				rw.renderer.Setup(Dev, rw.win.WindowDesc, rw.win.GetImageCount())
 			}
 		}
 		rc := rw.caches[imageIndex]
@@ -232,7 +232,7 @@ func (rw *RenderWindow) clearCaches() {
 	rw.setup = false
 }
 
-func (rw *RenderWindow) eventHandler(ctx vk.APIContext, ev Event) (unregister bool) {
+func (rw *RenderWindow) eventHandler(ev Event) (unregister bool) {
 	if rw.win == nil {
 		return true // Done
 	}

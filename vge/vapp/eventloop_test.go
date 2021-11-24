@@ -3,8 +3,6 @@ package vapp
 import (
 	"sync"
 	"testing"
-
-	"github.com/lakal3/vge/vge/vk"
 )
 
 type testCtx struct {
@@ -40,8 +38,10 @@ func (c *countUpEvent) Handled() bool {
 var results = []int{2, 4, 6, 7, 8, 9, 10, 11, 12}
 
 func TestNewEventLoop(t *testing.T) {
-	Ctx = testCtx{t: t}
-	startEventLoop()
+	err := startEventLoop()
+	if err != nil {
+		t.Fatal("Start event loop ", err)
+	}
 	RegisterHandler(3, countUp(3, false))
 	RegisterHandler(1, countUp(4, false))
 	cue := &countUpEvent{wg: &sync.WaitGroup{}}
@@ -65,7 +65,7 @@ func TestNewEventLoop(t *testing.T) {
 
 func countUp(total int, handle bool) EventHandler {
 	myCount := 0
-	return func(ctx vk.APIContext, ev Event) (unregister bool) {
+	return func(ev Event) (unregister bool) {
 		cce, ok := ev.(*countUpEvent)
 		if ok {
 			cce.count++

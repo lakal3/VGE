@@ -103,7 +103,7 @@ func (s *SimpleFrame) ViewProjection() (projection, view mgl32.Mat4) {
 func (s *SimpleFrame) WriteFrame() *vk.DescriptorSet {
 	uc := GetUniformCache(s.Cache)
 	var sl *vk.Slice
-	s.ds, sl = uc.Alloc(s.Cache.Ctx)
+	s.ds, sl = uc.Alloc()
 	s.CopyTo(sl)
 	return s.ds
 }

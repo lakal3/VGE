@@ -98,7 +98,7 @@ func main() {
 }
 
 // Helper to record camera pos when we press F1
-func cameraPos(ctx vk.APIContext, ev vapp.Event) (unregister bool) {
+func cameraPos(ev vapp.Event) (unregister bool) {
 	kd, ok := ev.(*vapp.KeyDownEvent)
 	if ok && kd.KeyCode == vapp.GLFWKeyF1 {
 		c := app.rw.Camera.(*vscene.PerspectiveCamera)

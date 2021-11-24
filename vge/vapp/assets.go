@@ -21,7 +21,7 @@ var kAssetManager = vk.NewKey()
 func MustLoadAsset(path string, construct func(content []byte) (asset interface{}, err error)) (asset interface{}) {
 	asset, err := AM.Load(path, construct)
 	if err != nil {
-		Ctx.SetError(err)
+		Dev.ReportError(err)
 		return nil
 	}
 	return asset
@@ -57,7 +57,7 @@ func LoadModel(path string) (model *vmodel.Model, err error) {
 		default:
 			return nil, fmt.Errorf("Unknown model type %s", ext)
 		}
-		return mb.ToModel(Ctx, Dev), nil
+		return mb.ToModel(Dev)
 	})
 	if err != nil {
 		return nil, err

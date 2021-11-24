@@ -31,7 +31,7 @@ func (l *LocalPainter) Process(pi *vscene.ProcessInfo) {
 	_, ok := pi.Phase.(vscene.DrawPhase)
 	if ok {
 		// ?Layer
-		pi.Set(kPainter, pi.Frame.GetCache().GetPerFrame(kPainter, func(ctx vk.APIContext) interface{} {
+		pi.Set(kPainter, pi.Frame.GetCache().GetPerFrame(kPainter, func() interface{} {
 			return l.buildPhaseInfo(pi.Frame, pi.World)
 		}).(phaseInfo))
 	}
@@ -47,7 +47,7 @@ func (l *LocalPainter) buildPhaseInfo(frame vmodel.Frame, world mgl32.Mat4) phas
 		}
 	}
 	uc := vscene.GetUniformCache(frame.GetCache())
-	ds, sl := uc.Alloc(frame.GetCache().Ctx)
+	ds, sl := uc.Alloc()
 	b := *(*[unsafe.Sizeof(GPUDecals{})]byte)(unsafe.Pointer(&decals))
 	copy(sl.Content, b[:])
 	return phaseInfo{ds: ds}
@@ -76,8 +76,8 @@ func (i DecalInstance) getImage(frame vmodel.Frame, mat vmodel.Material, tx vmod
 		return 0
 	}
 	cache := frame.GetCache()
-	view := i.Model.GetImage(mat.Props.GetImage(tx)).DefaultView(cache.Ctx)
-	sampler := vmodel.GetDefaultSampler(cache.Ctx, cache.Device)
+	view := i.Model.GetImage(mat.Props.GetImage(tx)).DefaultView()
+	sampler := vmodel.GetDefaultSampler(cache.Device)
 	return float32(imf.AddFrameImage(view, sampler))
 }
 
@@ -90,10 +90,10 @@ func BindPainter(rc *vk.RenderCache, extra vmodel.ShaderExtra) *vk.DescriptorSet
 }
 
 func buildNullDescriptor(rc *vk.RenderCache) *vk.DescriptorSet {
-	return rc.GetPerFrame(kNullDescriptor, func(ctx vk.APIContext) interface{} {
+	return rc.GetPerFrame(kNullDescriptor, func() interface{} {
 		var decals GPUDecals
 		uc := vscene.GetUniformCache(rc)
-		ds, sl := uc.Alloc(ctx)
+		ds, sl := uc.Alloc()
 		b := *(*[unsafe.Sizeof(GPUDecals{})]byte)(unsafe.Pointer(&decals))
 		copy(sl.Content, b[:])
 		return ds

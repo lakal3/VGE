@@ -30,6 +30,7 @@ type Palette struct {
 	maskImage *vk.Image
 	glyphSets []*GlyphSet
 	sampler   *vk.Sampler
+	dev       *vk.Device
 }
 
 func (pl *Palette) Dispose() {
@@ -50,29 +51,29 @@ var kThemeLayout = vk.NewKeys(2)
 // NewPalette initialized new palette and allocates room for mask image. Mask image is single multilayered image
 // that glyph shader can use to amplify forecolor or backcolor. Masks can be used to create gradient effects to
 // rendered glyph
-func NewPalette(ctx vk.APIContext, dev *vk.Device, noMasks int, maskSize int) *Palette {
+func NewPalette(dev *vk.Device, noMasks int, maskSize int) *Palette {
 
-	laTheme := getThemeLayout(ctx, dev)
+	laTheme := getThemeLayout(dev)
 	if maskSize == 0 {
 		maskSize = 128
 	}
 	desc := vk.ImageDescription{Layers: uint32(noMasks + 1), MipLevels: 1, Width: uint32(maskSize), Height: uint32(maskSize),
 		Depth: 1, Format: vk.FORMATR8g8b8a8Unorm}
-	th := &Palette{noMasks: MaskIndex(noMasks + 1), maskSize: maskSize}
+	th := &Palette{noMasks: MaskIndex(noMasks + 1), maskSize: maskSize, dev: dev}
 	th.pool = vk.NewMemoryPool(dev)
-	th.maskImage = th.pool.ReserveImage(ctx, desc, vk.IMAGEUsageTransferDstBit|vk.IMAGEUsageSampledBit)
-	th.pool.Allocate(ctx)
-	th.dsPool = vk.NewDescriptorPool(ctx, laTheme, 1)
-	th.ds = th.dsPool.Alloc(ctx)
-	th.ComputeMask(ctx, dev, func(x, y, maskSize int) color.RGBA {
+	th.maskImage = th.pool.ReserveImage(desc, vk.IMAGEUsageTransferDstBit|vk.IMAGEUsageSampledBit)
+	th.pool.Allocate()
+	th.dsPool = vk.NewDescriptorPool(laTheme, 1)
+	th.ds = th.dsPool.Alloc()
+	th.ComputeMask(dev, func(x, y, maskSize int) color.RGBA {
 		return color.RGBA{R: 255, G: 255, B: 255, A: 255}
 	})
 	return th
 }
 
 // ComputeMask fills one mask using given function.
-func (th *Palette) ComputeMask(ctx vk.APIContext, dev *vk.Device, compute func(x, y, maskSize int) color.RGBA) MaskIndex {
-	cp := vmodel.NewCopier(ctx, dev)
+func (th *Palette) ComputeMask(dev *vk.Device, compute func(x, y, maskSize int) color.RGBA) MaskIndex {
+	cp := vmodel.NewCopier(dev)
 	defer cp.Dispose()
 	tmp := make([]byte, th.maskSize*th.maskSize*4)
 	for y := 0; y < th.maskSize; y++ {
@@ -89,8 +90,8 @@ func (th *Palette) ComputeMask(ctx vk.APIContext, dev *vk.Device, compute func(x
 	}
 	rg.FirstLayer, rg.LayerCount = uint32(th.usedMask), 1
 	cp.CopyToImage(th.maskImage, "raw", tmp, rg, vk.IMAGELayoutShaderReadOnlyOptimal)
-	th.sampler = GetPalletteSampler(ctx, dev)
-	th.ds.WriteImage(ctx, 1, 0, th.maskImage.DefaultView(ctx), th.sampler)
+	th.sampler = GetPalletteSampler(dev)
+	th.ds.WriteImage(1, 0, th.maskImage.DefaultView(), th.sampler)
 
 	th.usedMask++
 	return mi
@@ -99,24 +100,24 @@ func (th *Palette) ComputeMask(ctx vk.APIContext, dev *vk.Device, compute func(x
 var kPalletteSampler = vk.NewKey()
 
 // Sampler used in gyph shader. Clamps samping to edge
-func GetPalletteSampler(ctx vk.APIContext, dev *vk.Device) *vk.Sampler {
-	return dev.Get(ctx, kPalletteSampler, func(ctx vk.APIContext) interface{} {
-		return vk.NewSampler(ctx, dev, vk.SAMPLERAddressModeClampToEdge)
+func GetPalletteSampler(dev *vk.Device) *vk.Sampler {
+	return dev.Get(kPalletteSampler, func() interface{} {
+		return vk.NewSampler(dev, vk.SAMPLERAddressModeClampToEdge)
 	}).(*vk.Sampler)
 }
 
 // Add glyph set to palette. You should add all glyph sets to palette before using it.
-func (th *Palette) AddGlyphSet(ctx vk.APIContext, gs *GlyphSet) GlyphSetIndex {
+func (th *Palette) AddGlyphSet(gs *GlyphSet) GlyphSetIndex {
 	at := GlyphSetIndex(len(th.glyphSets))
 	if at >= MAXGlyphSets {
-		ctx.SetError(errors.New("Too many glyph sets"))
+		th.dev.ReportError(errors.New("Too many glyph sets"))
 		return 0
 	}
-	view := gs.image.DefaultView(ctx)
-	th.ds.WriteImage(ctx, 0, uint32(at), view, th.sampler)
+	view := gs.image.DefaultView()
+	th.ds.WriteImage(0, uint32(at), view, th.sampler)
 	if at == 0 {
 		for idx := uint32(1); idx < MAXGlyphSets; idx++ {
-			th.ds.WriteImage(ctx, 0, idx, view, th.sampler)
+			th.ds.WriteImage(0, idx, view, th.sampler)
 		}
 	}
 	th.glyphSets = append(th.glyphSets, gs)
@@ -131,12 +132,12 @@ func (th *Palette) GetSet(index GlyphSetIndex) *GlyphSet {
 	return th.glyphSets[index]
 }
 
-func getThemeLayout(ctx vk.APIContext, dev *vk.Device) *vk.DescriptorLayout {
-	la1 := dev.Get(ctx, kThemeLayout, func(ctx vk.APIContext) interface{} {
-		return vk.NewDescriptorLayout(ctx, dev, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, MAXGlyphSets)
+func getThemeLayout(dev *vk.Device) *vk.DescriptorLayout {
+	la1 := dev.Get(kThemeLayout, func() interface{} {
+		return vk.NewDescriptorLayout(dev, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, MAXGlyphSets)
 	}).(*vk.DescriptorLayout)
-	la2 := dev.Get(ctx, kThemeLayout+1, func(ctx vk.APIContext) interface{} {
-		return la1.AddBinding(ctx, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, 1)
+	la2 := dev.Get(kThemeLayout+1, func() interface{} {
+		return la1.AddBinding(vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, 1)
 	}).(*vk.DescriptorLayout)
 	return la2
 }

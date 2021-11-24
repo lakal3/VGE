@@ -18,16 +18,19 @@ func buildUi() error {
 		// and convert them to signed depth fields
 		// You must also specify character unicode range you are interested in. Some Unicode font can contain quite a large number
 		// of characters
-		fl.AddFont(vapp.Ctx, content, vglyph.Range{From: 33, To: 255})
+		err = fl.AddFont(content, vglyph.Range{From: 33, To: 255})
+		if err != nil {
+			return nil, err
+		}
 
 		// Build glyphset
-		return fl.Build(vapp.Ctx, vapp.Dev), nil
+		return fl.Build(vapp.Dev), nil
 	})
 	if err != nil {
 		return err
 	}
 	// Pass loaded font as main font
-	app.theme = mintheme.NewTheme(vapp.Ctx, vapp.Dev, 15, nil, ftRaw.(*vglyph.GlyphSet), nil)
+	app.theme = mintheme.NewTheme(vapp.Dev, 15, nil, ftRaw.(*vglyph.GlyphSet), nil)
 	vapp.AddChild(app.theme)
 	// Build actual UI
 	var bQuit, bQuit2, bReturn *vui.Button

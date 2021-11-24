@@ -39,7 +39,6 @@ type GlyphBuilder struct {
 }
 
 type SetBuilder struct {
-	Ctx            vk.APIContext
 	images         []*GlyphBuilder
 	kind           SetKind
 	baselineOffset int
@@ -57,8 +56,8 @@ type buildInfo struct {
 
 // NewSetBuilder initialize new build that can build glyphset using images. Images can have foreground / background ratio (SETGrayScale) or full rgba image (SETRGBA)
 // All images in one glyph set must have same kind
-func NewSetBuilder(ctx vk.APIContext, kind SetKind) *SetBuilder {
-	return &SetBuilder{Ctx: ctx, kind: kind}
+func NewSetBuilder(kind SetKind) *SetBuilder {
+	return &SetBuilder{kind: kind}
 }
 
 // Add glyph to glyph set
@@ -69,7 +68,7 @@ func (sb *SetBuilder) AddGlyph(name string, mainColor ColorIndex, kind string, c
 // Add edged glyph. See docs/vui.md) for more info
 func (sb *SetBuilder) AddEdgedGlyph(name string, mainColor ColorIndex, kind string, content []byte, edges image.Rectangle) *GlyphBuilder {
 	gb := &GlyphBuilder{name: name, kind: kind, content: content, mainColor: mainColor, edges: edges}
-	vasset.DescribeImage(sb.Ctx, kind, &gb.desc, content)
+	vasset.DescribeImage(kind, &gb.desc, content)
 	sb.images = append(sb.images, gb)
 	return gb
 }
@@ -105,15 +104,15 @@ func (sb *SetBuilder) Build(dev *vk.Device) *GlyphSet {
 		w = 2 * w
 		h = sb.calcSize(w)
 		if w > MAXImageWidth {
-			sb.Ctx.SetError(errors.New("Glyph set too large"))
+			dev.ReportError(errors.New("Glyph set too large"))
 			return nil
 		}
 	}
 	bi := &buildInfo{}
 	defer bi.owner.Dispose()
-	bi.gs = newGlyphSet(sb.Ctx, dev, len(sb.images), w, h, sb.kind)
-	bi.prepare(sb.Ctx, dev, sb.images)
-	bi.render(sb.Ctx, dev, sb.images)
+	bi.gs = newGlyphSet(dev, len(sb.images), w, h, sb.kind)
+	bi.prepare(dev, sb.images)
+	bi.render(dev, sb.images)
 	sb.addGlyphs(bi.gs)
 	bi.gs.Advance = DefaultAdvance
 	return bi.gs
@@ -155,76 +154,76 @@ var kOutputLayout = vk.NewKey()
 var kCopyPipeline = vk.NewKey()
 var kRGBCopyPipeline = vk.NewKey()
 
-func (bi *buildInfo) prepare(ctx vk.APIContext, dev *vk.Device, images []*GlyphBuilder) {
+func (bi *buildInfo) prepare(dev *vk.Device, images []*GlyphBuilder) {
 	pool := vk.NewMemoryPool(dev)
 	bi.owner.AddChild(pool)
 	bi.buffers = make([]*vk.Buffer, len(images))
 	for idx, im := range images {
-		bi.buffers[idx] = pool.ReserveBuffer(ctx, im.desc.ImageSize(), true, vk.BUFFERUsageUniformTexelBufferBit)
+		bi.buffers[idx] = pool.ReserveBuffer(im.desc.ImageSize(), true, vk.BUFFERUsageUniformTexelBufferBit)
 	}
-	bUniforms := pool.ReserveBuffer(ctx, vk.MinUniformBufferOffsetAlignment*uint64(len(images)), true,
+	bUniforms := pool.ReserveBuffer(vk.MinUniformBufferOffsetAlignment*uint64(len(images)), true,
 		vk.BUFFERUsageUniformBufferBit)
-	pool.Allocate(ctx)
-	laIn1 := dev.Get(ctx, kInputLayout, func(ctx vk.APIContext) interface{} {
-		return vk.NewDescriptorLayout(ctx, dev, vk.DESCRIPTORTypeUniformBuffer, vk.SHADERStageComputeBit, 1)
+	pool.Allocate()
+	laIn1 := dev.Get(kInputLayout, func() interface{} {
+		return vk.NewDescriptorLayout(dev, vk.DESCRIPTORTypeUniformBuffer, vk.SHADERStageComputeBit, 1)
 	}).(*vk.DescriptorLayout)
-	laIn := dev.Get(ctx, kInputLayout+1, func(ctx vk.APIContext) interface{} {
-		return laIn1.AddBinding(ctx, vk.DESCRIPTORTypeUniformTexelBuffer, vk.SHADERStageComputeBit, 1)
+	laIn := dev.Get(kInputLayout+1, func() interface{} {
+		return laIn1.AddBinding(vk.DESCRIPTORTypeUniformTexelBuffer, vk.SHADERStageComputeBit, 1)
 	}).(*vk.DescriptorLayout)
-	laOut := dev.Get(ctx, kOutputLayout, func(ctx vk.APIContext) interface{} {
-		return vk.NewDescriptorLayout(ctx, dev, vk.DESCRIPTORTypeStorageImage, vk.SHADERStageComputeBit, 1)
+	laOut := dev.Get(kOutputLayout, func() interface{} {
+		return vk.NewDescriptorLayout(dev, vk.DESCRIPTORTypeStorageImage, vk.SHADERStageComputeBit, 1)
 	}).(*vk.DescriptorLayout)
 
 	if bi.gs.kind == SETRGBA {
-		bi.pl = dev.Get(ctx, kRGBCopyPipeline, func(ctx vk.APIContext) interface{} {
-			cp := vk.NewComputePipeline(ctx, dev)
-			cp.AddShader(ctx, copy_rgb_comp_spv)
-			cp.AddLayout(ctx, laIn)
-			cp.AddLayout(ctx, laOut)
-			cp.Create(ctx)
+		bi.pl = dev.Get(kRGBCopyPipeline, func() interface{} {
+			cp := vk.NewComputePipeline(dev)
+			cp.AddShader(copy_rgb_comp_spv)
+			cp.AddLayout(laIn)
+			cp.AddLayout(laOut)
+			cp.Create()
 			return cp
 		}).(*vk.ComputePipeline)
 	} else {
-		bi.pl = dev.Get(ctx, kCopyPipeline, func(ctx vk.APIContext) interface{} {
-			cp := vk.NewComputePipeline(ctx, dev)
-			cp.AddShader(ctx, copy_comp_spv)
-			cp.AddLayout(ctx, laIn)
-			cp.AddLayout(ctx, laOut)
-			cp.Create(ctx)
+		bi.pl = dev.Get(kCopyPipeline, func() interface{} {
+			cp := vk.NewComputePipeline(dev)
+			cp.AddShader(copy_comp_spv)
+			cp.AddLayout(laIn)
+			cp.AddLayout(laOut)
+			cp.Create()
 			return cp
 		}).(*vk.ComputePipeline)
 	}
-	dpOut := vk.NewDescriptorPool(ctx, laOut, 1)
+	dpOut := vk.NewDescriptorPool(laOut, 1)
 	bi.owner.AddChild(dpOut)
-	bi.dsOut = dpOut.Alloc(ctx)
-	dpIn := vk.NewDescriptorPool(ctx, laIn, len(images))
+	bi.dsOut = dpOut.Alloc()
+	dpIn := vk.NewDescriptorPool(laIn, len(images))
 	bi.owner.AddChild(dpIn)
 	bi.dsIn = make([]*vk.DescriptorSet, len(images))
 	bi.sUniforms = make([]*vk.Slice, len(images))
 	for idx, im := range images {
-		ds := dpIn.Alloc(ctx)
-		sl := bUniforms.Slice(ctx, uint64(idx)*vk.MinUniformBufferOffsetAlignment, uint64(idx+1)*vk.MinUniformBufferOffsetAlignment)
-		ds.WriteSlice(ctx, 0, 0, sl)
-		view := vk.NewBufferView(ctx, bi.buffers[idx], im.desc.Format)
+		ds := dpIn.Alloc()
+		sl := bUniforms.Slice(uint64(idx)*vk.MinUniformBufferOffsetAlignment, uint64(idx+1)*vk.MinUniformBufferOffsetAlignment)
+		ds.WriteSlice(0, 0, sl)
+		view := vk.NewBufferView(bi.buffers[idx], im.desc.Format)
 		bi.owner.AddChild(view)
-		ds.WriteBufferView(ctx, 1, 0, view)
+		ds.WriteBufferView(1, 0, view)
 		bi.sUniforms[idx] = sl
 		bi.dsIn[idx] = ds
 		if im.kind == "font" {
-			copy(bi.buffers[idx].Bytes(ctx), im.content)
+			copy(bi.buffers[idx].Bytes(), im.content)
 		} else {
-			vasset.LoadImage(ctx, im.kind, im.content, bi.buffers[idx])
+			vasset.LoadImage(im.kind, im.content, bi.buffers[idx])
 		}
 	}
 	fr := bi.gs.image.FullRange()
 	fr.Layout = vk.IMAGELayoutGeneral
-	view := vk.NewImageView(ctx, bi.gs.image, &fr)
+	view := vk.NewImageView(bi.gs.image, &fr)
 	bi.owner.AddChild(view)
-	bi.dsOut.WriteImage(ctx, 0, 0, view, nil)
+	bi.dsOut.WriteImage(0, 0, view, nil)
 }
 
-func (bi *buildInfo) render(ctx vk.APIContext, dev *vk.Device, images []*GlyphBuilder) {
-	cmd := vk.NewCommand(ctx, dev, vk.QUEUEComputeBit, true)
+func (bi *buildInfo) render(dev *vk.Device, images []*GlyphBuilder) {
+	cmd := vk.NewCommand(dev, vk.QUEUEComputeBit, true)
 	defer cmd.Dispose()
 	cmd.Begin()
 	ir := bi.gs.image.FullRange()

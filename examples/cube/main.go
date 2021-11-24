@@ -38,18 +38,6 @@ func (v *cubeApp) Dispose() {
 	v.owner.Dispose()
 }
 
-func (v *cubeApp) SetError(err error) {
-	log.Fatal("API error ", err)
-}
-
-func (v *cubeApp) IsValid() bool {
-	return true
-}
-
-func (v *cubeApp) Begin(callName string) (atEnd func()) {
-	return nil
-}
-
 var app cubeApp
 
 func main() {
@@ -62,11 +50,14 @@ func main() {
 	}
 	app.init()
 	defer app.Dispose()
-	app.buildModel()
+	err := app.buildModel()
+	if err != nil {
+		log.Fatal("Build model failed ", err)
+	}
 	app.pitch = 0.3
 	app.yaw = 0.2
 	app.scale = 3
-	w := app.desktop.NewWindow(&app, "Cube", vk.WindowPos{Left: -1, Top: -1, Width: 1024, Height: 768})
+	w := app.desktop.NewWindow("Cube", vk.WindowPos{Left: -1, Top: -1, Width: 1024, Height: 768})
 	app.owner.AddChild(w)
 	go app.renderLoop(w)
 	app.running = true
@@ -77,31 +68,35 @@ func main() {
 
 }
 
-func (a *cubeApp) init() {
+func (a *cubeApp) init() (err error) {
 	// Create a new application
-	a.app = vk.NewApplication(a, "cube")
+	a.app, err = vk.NewApplication("cube")
+	if err != nil {
+		return err
+	}
 	if config.debug {
 		// Add validation layer if requested
-		a.app.AddValidation(a)
+		a.app.AddValidation()
 	}
 	// And new desktop handler. This must be created before application is initialized
 	// Desktop will register operating system dependent Vulkan extensions that are required to show rendered images
-	a.desktop = vk.NewDesktop(a, a.app)
-	a.app.Init(a)
+	a.desktop = vk.NewDesktop(a.app)
+	a.app.Init()
 	// Register application for disposing
 	a.owner.AddChild(a.app)
 	// Check that device exists.
 	// If we don't have device 0 then there is no Vulkan driver available that support all features we requested for
-	pds := a.app.GetDevices(a)
+	pds := a.app.GetDevices()
 	if len(pds) <= config.dev {
 		log.Fatal("No device ", config.dev)
 	}
 	fmt.Println("Using device ", string(pds[config.dev].Name[:pds[config.dev].NameLen]))
 	// Create a new device
-	a.dev = a.app.NewDevice(a, int32(config.dev))
+	a.dev = a.app.NewDevice(int32(config.dev))
+	return nil
 }
 
-func (v *cubeApp) buildModel() {
+func (v *cubeApp) buildModel() (err error) {
 	mb := vmodel.ModelBuilder{}
 	mb.ShaderFactory = unlit.UnlitFactory
 	// Create 1x1x1 cube
@@ -115,10 +110,13 @@ func (v *cubeApp) buildModel() {
 
 	// Create model will prepare model struct. Model will contain a buffer that have all attributes required by VGE standard shaders
 	// including position, normal, tangent and uv0. Model will also copy all attributes to device memory.
-	v.m = mb.ToModel(v, v.dev)
-
+	v.m, err = mb.ToModel(v.dev)
+	if err != nil {
+		return err
+	}
 	// We must dispose model when no longer needed.
 	v.owner.AddChild(v.m)
+	return nil
 }
 
 // Run loop
@@ -127,7 +125,7 @@ func (v *cubeApp) run() {
 	var mb1 bool
 	for true {
 		// Pull desktop event
-		ev, _ := v.desktop.PullEvent(v)
+		ev, _ := v.desktop.PullEvent()
 		if ev.EventType == 0 {
 			<-time.After(time.Millisecond)
 			continue
@@ -177,7 +175,7 @@ func (v *cubeApp) renderLoop(w *vk.Window) {
 	<-time.After(100 * time.Millisecond)
 	for v.running {
 		// Aquire next image
-		im, imageIndex, submitInfo := w.GetNextFrame(v, v.dev)
+		im, imageIndex, submitInfo := w.GetNextFrame(v.dev)
 		// If image index < 0, there was some error acquiring image. Most likely window was resized which in many cases mean that we
 		// must destroy existing rendering assets like depth buffers etc and recreate them. Next call to GetNextFrame should again succeed
 		if imageIndex < 0 {
@@ -200,11 +198,11 @@ func (v *cubeApp) renderLoop(w *vk.Window) {
 			caches = make([]*vk.RenderCache, w.GetImageCount())
 		}
 		if caches[imageIndex] == nil {
-			caches[imageIndex] = vk.NewRenderCache(v, v.dev)
+			caches[imageIndex] = vk.NewRenderCache(v.dev)
 			if v.frp == nil {
 				// Also create a render pass. We can't create render pass before we get an actual image as render pass
 				// must match window image format
-				v.frp = vk.NewForwardRenderPass(v, v.dev, w.WindowDesc.Format, vk.IMAGELayoutPresentSrcKhr, vk.FORMATUndefined)
+				v.frp = vk.NewForwardRenderPass(v.dev, w.WindowDesc.Format, vk.IMAGELayoutPresentSrcKhr, vk.FORMATUndefined)
 				v.owner.AddChild(v.frp)
 			}
 
@@ -220,9 +218,9 @@ func (v *cubeApp) renderLoop(w *vk.Window) {
 		// given constructor function. This is standard way to create assets in VGE. Get api will handle disposing created items
 		// when render cache is disposed. There is separate struct Owner in vk module if you want to implement same pattern in your
 		// own classes
-		iv := rc.Get(kImageView, func(ctx vk.APIContext) interface{} {
+		iv := rc.Get(kImageView, func() interface{} {
 			// Construct default view of image
-			return im.NewView(ctx, 0, 0)
+			return im.NewView(0, 0)
 		}).(*vk.ImageView)
 		// Render image
 		cmd := v.render(dc, iv)
@@ -247,12 +245,12 @@ var kImageView = vk.NewKeys(5)
 func (v *cubeApp) render(dc *vmodel.DrawContext, mainView *vk.ImageView) *vk.Command {
 	rc := dc.Frame.GetCache()
 	// Get or create frame buffer from main image view
-	fb := rc.Get(kFp, func(ctx vk.APIContext) interface{} {
-		return vk.NewFramebuffer(ctx, dc.Pass, []*vk.ImageView{mainView})
+	fb := rc.Get(kFp, func() interface{} {
+		return vk.NewFramebuffer(dc.Pass, []*vk.ImageView{mainView})
 	}).(*vk.Framebuffer)
 	// Create command suitable for graphics (render pass)
-	cmd := rc.Get(kCmd, func(ctx vk.APIContext) interface{} {
-		return vk.NewCommand(ctx, rc.Device, vk.QUEUEGraphicsBit, false)
+	cmd := rc.Get(kCmd, func() interface{} {
+		return vk.NewCommand(rc.Device, vk.QUEUEGraphicsBit, false)
 	}).(*vk.Command)
 	// Start command, bust be always first call to command buffer
 	cmd.Begin()

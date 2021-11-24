@@ -20,7 +20,7 @@ const maxInstances = 1000 // Must match shader value
 // MinEmission is minimum emission to interpret that material is emissive. Otherwise it is non emissive
 const MinEmission = 0.01
 
-func Factory(ctx vk.APIContext, dev *vk.Device, props vmodel.MaterialProperties) (
+func Factory(dev *vk.Device, props vmodel.MaterialProperties) (
 	sh vmodel.Shader, layout *vk.DescriptorLayout, ubf []byte, images []vmodel.ImageIndex) {
 	tx_diffuse := props.GetImage(vmodel.TxAlbedo)
 	tx_metalRoughness := props.GetImage(vmodel.TxMetallicRoughness)
@@ -44,7 +44,7 @@ func Factory(ctx vk.APIContext, dev *vk.Device, props vmodel.MaterialProperties)
 		ub.emissiveColor = mgl32.Vec4{}
 	}
 	b := *(*[unsafe.Sizeof(stdMaterial{})]byte)(unsafe.Pointer(&ub))
-	return &Material{alphaCut: ub.alphaCut, albedoTexture: tx_diffuse}, getStdLayout(ctx, dev), b[:], []vmodel.ImageIndex{tx_diffuse, tx_normal, tx_metalRoughness, tx_emissive}
+	return &Material{alphaCut: ub.alphaCut, albedoTexture: tx_diffuse}, getStdLayout(dev), b[:], []vmodel.ImageIndex{tx_diffuse, tx_normal, tx_metalRoughness, tx_emissive}
 }
 
 func getColorFactor(imIndex vmodel.ImageIndex) mgl32.Vec4 {
@@ -87,8 +87,8 @@ func (u *Material) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world m
 		return
 	}
 	rc := ff.GetCache()
-	gp := dc.Pass.Get(rc.Ctx, kStdSkinnedPipeline, func(ctx vk.APIContext) interface{} {
-		return u.NewPipeline(ctx, dc, true)
+	gp := dc.Pass.Get(kStdSkinnedPipeline, func() interface{} {
+		return u.NewPipeline(dc, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
 	dsFrame := ff.BindDynamicFrame()
@@ -96,13 +96,13 @@ func (u *Material) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, world m
 		// dc.Cache.Ctx.SetError(ErrNoDynamicFrame)
 		return // Only dynamic frame supported
 	}
-	uli := rc.GetPerFrame(kStdSkinnedInstances, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
+	uli := rc.GetPerFrame(kStdSkinnedInstances, func() interface{} {
+		ds, sl := uc.Alloc()
 		return &stdInstance{ds: ds, sl: sl}
 	}).(*stdInstance)
 	dsDecal := decal.BindPainter(rc, extra)
 	dm := stdMatInstance{world: world}
-	dsMesh, slMesh := uc.Alloc(rc.Ctx)
+	dsMesh, slMesh := uc.Alloc()
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	uli.writeInstance(dm)
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindSkinned)...).
@@ -120,8 +120,8 @@ func (u *Material) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Ma
 		return
 	}
 	rc := ff.GetCache()
-	gp := dc.Pass.Get(rc.Ctx, kStdPipeline, func(ctx vk.APIContext) interface{} {
-		return u.NewPipeline(ctx, dc, false)
+	gp := dc.Pass.Get(kStdPipeline, func() interface{} {
+		return u.NewPipeline(dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
 	dsFrame := ff.BindDynamicFrame()
@@ -129,8 +129,8 @@ func (u *Material) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32.Ma
 		// dc.Cache.Ctx.SetError(ErrNoDynamicFrame)
 		return // Not supported
 	}
-	uli := rc.GetPerFrame(kStdInstances, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
+	uli := rc.GetPerFrame(kStdInstances, func() interface{} {
+		ds, sl := uc.Alloc()
 		return &stdInstance{ds: ds, sl: sl}
 	}).(*stdInstance)
 	dsDecal := decal.BindPainter(rc, extra)
@@ -150,13 +150,13 @@ func (u *Material) drawDeferred(dc *vmodel.DrawContext, mesh vmodel.Mesh, world 
 		return
 	}
 	rc := dc.Frame.GetCache()
-	gp := dc.Pass.Get(rc.Ctx, kDefPipeline, func(ctx vk.APIContext) interface{} {
-		return u.NewDeferredPipeline(ctx, dc, false)
+	gp := dc.Pass.Get(kDefPipeline, func() interface{} {
+		return u.NewDeferredPipeline(dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
 	dsFrame := frame.BindDeferredFrame()
-	uli := rc.GetPerFrame(kStdInstances, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
+	uli := rc.GetPerFrame(kStdInstances, func() interface{} {
+		ds, sl := uc.Alloc()
 		return &stdInstance{ds: ds, sl: sl}
 	}).(*stdInstance)
 	uli.writeInstance(stdMatInstance{world: world})
@@ -176,17 +176,17 @@ func (u *Material) drawSkinnedDeferred(dc *vmodel.DrawContext, mesh vmodel.Mesh,
 		return
 	}
 	rc := dc.Frame.GetCache()
-	gp := dc.Pass.Get(rc.Ctx, kDefSkinnedPipeline, func(ctx vk.APIContext) interface{} {
-		return u.NewDeferredPipeline(ctx, dc, true)
+	gp := dc.Pass.Get(kDefSkinnedPipeline, func() interface{} {
+		return u.NewDeferredPipeline(dc, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
 	dsFrame := frame.BindDeferredFrame()
-	uli := rc.GetPerFrame(kStdInstances, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
+	uli := rc.GetPerFrame(kStdInstances, func() interface{} {
+		ds, sl := uc.Alloc()
 		return &stdInstance{ds: ds, sl: sl}
 	}).(*stdInstance)
 	uli.writeInstance(stdMatInstance{world: world})
-	dsMesh, slMesh := uc.Alloc(rc.Ctx)
+	dsMesh, slMesh := uc.Alloc()
 	dsDecal := decal.BindPainter(rc, extra)
 
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
@@ -204,63 +204,63 @@ type stdMatInstance struct {
 	dummy      mgl32.Vec2
 }
 
-func (u *Material) NewPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
+func (u *Material) NewPipeline(dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
 	rc := dc.Frame.GetCache()
-	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
+	gp := vk.NewGraphicsPipeline(rc.Device)
 	if skinned {
-		vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)
-		gp.AddShader(ctx, vk.SHADERStageVertexBit, std_vert_skin_spv)
+		vmodel.AddInput(gp, vmodel.MESHKindSkinned)
+		gp.AddShader(vk.SHADERStageVertexBit, std_vert_skin_spv)
 
 	} else {
-		vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
-		gp.AddShader(ctx, vk.SHADERStageVertexBit, std_vert_spv)
+		vmodel.AddInput(gp, vmodel.MESHKindNormal)
+		gp.AddShader(vk.SHADERStageVertexBit, std_vert_spv)
 	}
-	laFrame := forward.GetDynamicFrameLayout(ctx, rc.Device)
+	laFrame := forward.GetDynamicFrameLayout(rc.Device)
 	if laFrame == nil {
-		ctx.SetError(ErrNoDynamicFrame)
+		rc.Device.ReportError(ErrNoDynamicFrame)
 		return nil
 	}
-	la := vscene.GetUniformLayout(ctx, rc.Device)
-	la2 := getStdLayout(ctx, rc.Device)
-	laUBF := vscene.GetUniformLayout(ctx, rc.Device)
-	gp.AddLayout(ctx, laFrame)
-	gp.AddLayout(ctx, la)
-	gp.AddLayout(ctx, la2)
-	gp.AddLayout(ctx, la) // Decals
+	la := vscene.GetUniformLayout(rc.Device)
+	la2 := getStdLayout(rc.Device)
+	laUBF := vscene.GetUniformLayout(rc.Device)
+	gp.AddLayout(laFrame)
+	gp.AddLayout(la)
+	gp.AddLayout(la2)
+	gp.AddLayout(la) // Decals
 	if skinned {
-		gp.AddLayout(ctx, laUBF) // Transform & decal matrix
+		gp.AddLayout(laUBF) // Transform & decal matrix
 	}
-	gp.AddShader(ctx, vk.SHADERStageFragmentBit, std_frag_spv)
-	gp.AddDepth(ctx, true, true)
-	gp.Create(ctx, dc.Pass)
+	gp.AddShader(vk.SHADERStageFragmentBit, std_frag_spv)
+	gp.AddDepth(true, true)
+	gp.Create(dc.Pass)
 	return gp
 }
 
-func (u *Material) NewDeferredPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
+func (u *Material) NewDeferredPipeline(dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
 	rc := dc.Frame.GetCache()
-	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
+	gp := vk.NewGraphicsPipeline(rc.Device)
 	if skinned {
-		vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)
-		gp.AddShader(ctx, vk.SHADERStageVertexBit, defmat_vert_skin_spv)
+		vmodel.AddInput(gp, vmodel.MESHKindSkinned)
+		gp.AddShader(vk.SHADERStageVertexBit, defmat_vert_skin_spv)
 
 	} else {
-		vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
-		gp.AddShader(ctx, vk.SHADERStageVertexBit, defmat_vert_spv)
+		vmodel.AddInput(gp, vmodel.MESHKindNormal)
+		gp.AddShader(vk.SHADERStageVertexBit, defmat_vert_spv)
 	}
-	laFrame := deferred.GetFrameLayout(ctx, rc.Device)
-	la := vscene.GetUniformLayout(ctx, rc.Device)
-	la2 := getStdLayout(ctx, rc.Device)
-	laUBF := vscene.GetUniformLayout(ctx, rc.Device)
-	gp.AddLayout(ctx, laFrame)
-	gp.AddLayout(ctx, la)
-	gp.AddLayout(ctx, la2)
+	laFrame := deferred.GetFrameLayout(rc.Device)
+	la := vscene.GetUniformLayout(rc.Device)
+	la2 := getStdLayout(rc.Device)
+	laUBF := vscene.GetUniformLayout(rc.Device)
+	gp.AddLayout(laFrame)
+	gp.AddLayout(la)
+	gp.AddLayout(la2)
 	if skinned {
-		gp.AddLayout(ctx, laUBF) // Transform matrix
+		gp.AddLayout(laUBF) // Transform matrix
 	}
-	gp.AddLayout(ctx, la) // Decals
-	gp.AddShader(ctx, vk.SHADERStageFragmentBit, defmat_frag_spv)
-	gp.AddDepth(ctx, true, true)
-	gp.Create(ctx, dc.Pass)
+	gp.AddLayout(la) // Decals
+	gp.AddShader(vk.SHADERStageFragmentBit, defmat_frag_spv)
+	gp.AddDepth(true, true)
+	gp.Create(dc.Pass)
 	return gp
 }
 
@@ -293,9 +293,9 @@ var kStdSkinnedInstances = vk.NewKey()
 var kDefPipeline = vk.NewKey()
 var kDefSkinnedPipeline = vk.NewKey()
 
-func getStdLayout(ctx vk.APIContext, dev *vk.Device) *vk.DescriptorLayout {
-	la := vscene.GetUniformLayout(ctx, dev)
-	return dev.Get(ctx, kStdLayout, func(ctx vk.APIContext) interface{} {
-		return la.AddBinding(ctx, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, 4)
+func getStdLayout(dev *vk.Device) *vk.DescriptorLayout {
+	la := vscene.GetUniformLayout(dev)
+	return dev.Get(kStdLayout, func() interface{} {
+		return la.AddBinding(vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, 4)
 	}).(*vk.DescriptorLayout)
 }

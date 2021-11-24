@@ -5,7 +5,6 @@ import (
 	"math"
 
 	"github.com/go-gl/mathgl/mgl32"
-	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vscene"
 )
 
@@ -31,7 +30,7 @@ func (c *OrbitControl) CameraProjection(size image.Point) (projection, view mgl3
 	return c.pc.CameraProjection(size)
 }
 
-func (c *OrbitControl) eventHandler(ctx vk.APIContext, ev Event) (unregister bool) {
+func (c *OrbitControl) eventHandler(ev Event) (unregister bool) {
 	if c.win.Closed() {
 		return true
 	}
@@ -210,7 +209,7 @@ func (c *WalkControl) Process(pi *vscene.ProcessInfo) {
 	}
 }
 
-func (c *WalkControl) eventHandler(ctx vk.APIContext, ev Event) (unregister bool) {
+func (c *WalkControl) eventHandler(ev Event) (unregister bool) {
 	kd, ok := ev.(*KeyDownEvent)
 	if ok {
 		for idx := 0; idx < 6; idx++ {

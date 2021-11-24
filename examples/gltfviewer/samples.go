@@ -84,7 +84,10 @@ func loadSample(sample *Sample) {
 		log.Fatal("Failed to build model, ", sample.BasePath, ": ", err)
 	}
 	// No we have model builder ready
-	m := mb.ToModel(vapp.Ctx, vapp.Dev)
+	m, err := mb.ToModel(vapp.Dev)
+	if err != nil {
+		log.Fatal("Error converting model ", err)
+	}
 	// Let's reqister model so we remember to dispose it when we close scene
 	app.atEndScene.AddChild(m)
 
@@ -100,7 +103,7 @@ func buildScene(sample *Sample, model *vscene.Node) {
 	// Create
 	if app.probe == nil {
 		// We need probe to sample environment image
-		app.probe = env.NewProbe(vapp.Ctx, vapp.Dev)
+		app.probe = env.NewProbe(vapp.Dev)
 		vapp.AddChild(app.probe)
 	} else {
 		app.probe.Update()
@@ -116,15 +119,15 @@ func buildScene(sample *Sample, model *vscene.Node) {
 		// First parameter kind allows us to use same image for different purposes as this call will recall constructed
 		// object EquiRectBGNode
 		bg = vapp.MustLoadAsset("envhdr/studio.hdr", func(content []byte) (asset interface{}, err error) {
-			return env.NewEquiRectBGNode(vapp.Ctx, vapp.Dev, 100, "hdr", content), nil
+			return env.NewEquiRectBGNode(vapp.Dev, 100, "hdr", content), nil
 		}).(*env.EquiRectBGNode)
 	case 1:
 		bg = vapp.MustLoadAsset("envhdr/kloofendal_48d_partly_cloudy_2k.hdr", func(content []byte) (asset interface{}, err error) {
-			return env.NewEquiRectBGNode(vapp.Ctx, vapp.Dev, 100, "hdr", content), nil
+			return env.NewEquiRectBGNode(vapp.Dev, 100, "hdr", content), nil
 		}).(*env.EquiRectBGNode)
 	case 2:
 		bg = vapp.MustLoadAsset("envhdr/moonless_golf_1k.hdr", func(content []byte) (asset interface{}, err error) {
-			return env.NewEquiRectBGNode(vapp.Ctx, vapp.Dev, 100, "hdr", content), nil
+			return env.NewEquiRectBGNode(vapp.Dev, 100, "hdr", content), nil
 		}).(*env.EquiRectBGNode)
 		// assets/envhdr/moonless_golf_1k.hdr
 	}

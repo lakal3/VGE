@@ -155,9 +155,9 @@ func (mb *ModelBuilder) AddNode(name string, parent *NodeBuilder, transform mgl3
 }
 
 // Convert content of model builder to actual model and uploads model content (except skins) to GPU
-func (mb *ModelBuilder) ToModel(ctx vk.APIContext, dev *vk.Device) *Model {
+func (mb *ModelBuilder) ToModel(dev *vk.Device) (*Model, error) {
 	mb.wg = &sync.WaitGroup{}
-
+	var err error
 	m := &Model{}
 	mb.AddWhite()
 	m.memPool = vk.NewMemoryPool(dev)
@@ -166,10 +166,13 @@ func (mb *ModelBuilder) ToModel(ctx vk.APIContext, dev *vk.Device) *Model {
 	var imMaxLen uint64
 	for _, ib := range mb.Images {
 		if ib.Kind != "raw" {
-			vasset.DescribeImage(ctx, ib.Kind, &ib.Desc, ib.Content)
+			err = vasset.DescribeImage(ib.Kind, &ib.Desc, ib.Content)
+			if err != nil {
+				return nil, err
+			}
 		} else {
 			if ib.Desc.Layers == 0 {
-				ctx.SetError(errors.New("Describe raw images before ToModel"))
+				return nil, errors.New("Describe raw images before ToModel")
 			}
 		}
 		imLen := ib.Desc.ImageSize()
@@ -183,7 +186,7 @@ func (mb *ModelBuilder) ToModel(ctx vk.APIContext, dev *vk.Device) *Model {
 			ib.Desc.MipLevels = mb.MipLevels
 			ib.Usage |= vk.IMAGEUsageStorageBit
 		}
-		img := m.memPool.ReserveImage(ctx, desc, ib.Usage)
+		img := m.memPool.ReserveImage(desc, ib.Usage)
 		m.images = append(m.images, img)
 	}
 	var iLen [MESHMax]uint64
@@ -191,7 +194,10 @@ func (mb *ModelBuilder) ToModel(ctx vk.APIContext, dev *vk.Device) *Model {
 
 	for _, ms := range mb.Meshes {
 		ms.buildUvs()
-		ms.buildNormals()
+		err = ms.buildNormals()
+		if err != nil {
+			return nil, err
+		}
 		ms.buildTangets()
 		// mesh.buildQTangent()
 		hasWeights := ms.buildWeights()
@@ -215,36 +221,39 @@ func (mb *ModelBuilder) ToModel(ctx vk.APIContext, dev *vk.Device) *Model {
 	}
 	for idx := 0; idx < MESHMax; idx++ {
 		if iLen[idx] > 0 {
-			m.vertexies[idx].bIndex = m.memPool.ReserveBuffer(ctx, iLen[idx], false, vk.BUFFERUsageTransferDstBit|vk.BUFFERUsageIndexBufferBit)
-			m.vertexies[idx].bVertex = m.memPool.ReserveBuffer(ctx, vLen[idx], false, vk.BUFFERUsageTransferDstBit|vk.BUFFERUsageVertexBufferBit)
+			m.vertexies[idx].bIndex = m.memPool.ReserveBuffer(iLen[idx], false, vk.BUFFERUsageTransferDstBit|vk.BUFFERUsageIndexBufferBit)
+			m.vertexies[idx].bVertex = m.memPool.ReserveBuffer(vLen[idx], false, vk.BUFFERUsageTransferDstBit|vk.BUFFERUsageVertexBufferBit)
 		}
 	}
-	ubfLen := mb.buildMaterials(ctx, dev, m)
-	if ubfLen > 0 {
-		m.bUbf = m.memPool.ReserveBuffer(ctx, ubfLen, false, vk.BUFFERUsageTransferDstBit|vk.BUFFERUsageUniformBufferBit)
+	ubfLen, err := mb.buildMaterials(dev, m)
+	if err != nil {
+		return nil, err
 	}
-	m.memPool.Allocate(ctx)
-	cp := NewCopier(ctx, dev)
+	if ubfLen > 0 {
+		m.bUbf = m.memPool.ReserveBuffer(ubfLen, false, vk.BUFFERUsageTransferDstBit|vk.BUFFERUsageUniformBufferBit)
+	}
+	m.memPool.Allocate()
+	cp := NewCopier(dev)
 	defer cp.Dispose()
 
 	mb.copyNormalVertex(m, cp)
 	mb.copySkinnedVertex(m, cp)
 	for _, ib := range mb.Images {
 		mb.wg.Add(1)
-		go mb.copyImage(m, ctx, dev, ib)
+		go mb.copyImage(m, dev, ib)
 	}
-	m.sampler = GetDefaultSampler(ctx, dev)
+	m.sampler = GetDefaultSampler(dev)
 	mb.wg.Wait()
 	if len(m.images) > 0 {
 		m.views = make([]*vk.ImageView, len(m.images))
 		for idx, img := range m.images {
-			m.views[idx] = img.DefaultView(ctx)
+			m.views[idx] = img.DefaultView()
 		}
 	}
 	mb.copyUbf(m, cp, ubfLen)
 	mb.addNodes(mb.Root, m)
 	m.skins = mb.Skins
-	return m
+	return m, nil
 }
 
 func (mb *ModelBuilder) copyNormalVertex(m *Model, cp *Copier) {
@@ -294,11 +303,11 @@ func (mb *ModelBuilder) copySkinnedVertex(m *Model, cp *Copier) {
 	}
 }
 
-func (mb *ModelBuilder) copyImage(m *Model, ctx vk.APIContext, dev *vk.Device, ib *ImageBuilder) {
+func (mb *ModelBuilder) copyImage(m *Model, dev *vk.Device, ib *ImageBuilder) {
 	defer func() {
 		mb.wg.Done()
 	}()
-	cp := NewCopier(ctx, dev)
+	cp := NewCopier(dev)
 	defer cp.Dispose()
 	if ib.Desc.MipLevels > ib.orignalMips {
 		r := ib.Desc.FullRange()
@@ -306,7 +315,7 @@ func (mb *ModelBuilder) copyImage(m *Model, ctx vk.APIContext, dev *vk.Device, i
 		r = vk.ImageRange{LayerCount: ib.Desc.Layers, LevelCount: 1}
 		cp.CopyToImage(m.images[ib.index], ib.Kind, ib.Content, r, vk.IMAGELayoutGeneral)
 
-		comp := NewCompute(ctx, dev)
+		comp := NewCompute(dev)
 		defer comp.Dispose()
 		for mip := ib.orignalMips; mip < mb.MipLevels; mip++ {
 			for l := uint32(0); l < ib.Desc.Layers; l++ {
@@ -321,16 +330,16 @@ func (mb *ModelBuilder) copyImage(m *Model, ctx vk.APIContext, dev *vk.Device, i
 	}
 }
 
-func (mb *ModelBuilder) buildMaterials(ctx vk.APIContext, dev *vk.Device, m *Model) uint64 {
+func (mb *ModelBuilder) buildMaterials(dev *vk.Device, m *Model) (uint64, error) {
 	mCounts := make(map[*vk.DescriptorLayout]int)
 	mPools := make(map[*vk.DescriptorLayout]*vk.DescriptorPool)
 	for idx, mt := range mb.Materials {
 		if !mt.Decal {
 			if mb.ShaderFactory == nil {
-				ctx.SetError(errors.New("Set ShaderFactory"))
-				return 0
+
+				return 0, errors.New("Set ShaderFactory")
 			}
-			mt.mat, mt.layout, mt.ubf, mt.images = mb.ShaderFactory(ctx, dev, mt.Props)
+			mt.mat, mt.layout, mt.ubf, mt.images = mb.ShaderFactory(dev, mt.Props)
 			mCounts[mt.layout] = mCounts[mt.layout] + 1
 		}
 		mb.Materials[idx] = mt
@@ -338,7 +347,7 @@ func (mb *ModelBuilder) buildMaterials(ctx vk.APIContext, dev *vk.Device, m *Mod
 	}
 
 	for idx, mCount := range mCounts {
-		pool := vk.NewDescriptorPool(ctx, idx, mCount)
+		pool := vk.NewDescriptorPool(idx, mCount)
 		m.owner.AddChild(pool)
 		mPools[idx] = pool
 	}
@@ -349,7 +358,7 @@ func (mb *ModelBuilder) buildMaterials(ctx vk.APIContext, dev *vk.Device, m *Mod
 			m.materials = append(m.materials, Material{Props: mi.Props, Name: mi.Name})
 			continue
 		}
-		mi.ds = mPools[mi.layout].Alloc(ctx)
+		mi.ds = mPools[mi.layout].Alloc()
 		mi.offset = offset
 		mb.Materials[idx] = mi
 		rem := uint64(len(mi.ubf) % vk.MinUniformBufferOffsetAlignment)
@@ -360,7 +369,7 @@ func (mb *ModelBuilder) buildMaterials(ctx vk.APIContext, dev *vk.Device, m *Mod
 		}
 		m.materials = append(m.materials, Material{Shader: mi.mat, Props: mi.Props, Name: mi.Name})
 	}
-	return offset
+	return offset, nil
 }
 
 func (mb *ModelBuilder) copyUbf(m *Model, cp *Copier, ubfLen uint64) {
@@ -373,9 +382,9 @@ func (mb *ModelBuilder) copyUbf(m *Model, cp *Copier, ubfLen uint64) {
 			continue
 		}
 		copy(ubfs[mi.offset:], mi.ubf)
-		mi.ds.WriteSlice(cp.ctx, 0, 0, m.bUbf.Slice(cp.ctx, mi.offset, mi.offset+uint64(len(mi.ubf))))
+		mi.ds.WriteSlice(0, 0, m.bUbf.Slice(mi.offset, mi.offset+uint64(len(mi.ubf))))
 		for idx, ib := range mi.images {
-			mi.ds.WriteImage(cp.ctx, 1, uint32(idx), m.views[ib], m.sampler)
+			mi.ds.WriteImage(1, uint32(idx), m.views[ib], m.sampler)
 			m.materials[mIndex].Shader.SetDescriptor(mi.ds)
 			sm, ok := m.materials[mIndex].Shader.(BoundShader)
 			if ok {

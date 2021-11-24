@@ -4,8 +4,6 @@ import (
 	"errors"
 	"sort"
 	"sync"
-
-	"github.com/lakal3/vge/vge/vk"
 )
 
 type Event interface {
@@ -17,7 +15,7 @@ type WaitEvent interface {
 	Done()
 }
 
-type EventHandler func(ctx vk.APIContext, ev Event) (unregister bool)
+type EventHandler func(ev Event) (unregister bool)
 
 type ehItem struct {
 	handler  EventHandler
@@ -25,7 +23,6 @@ type ehItem struct {
 }
 
 var eventLoop struct {
-	ctx        vk.APIContext
 	handlers   []ehItem
 	newHandler []ehItem
 	mxHandle   *sync.Mutex
@@ -34,15 +31,15 @@ var eventLoop struct {
 	shutdown   bool
 }
 
-func startEventLoop() {
+func startEventLoop() error {
 	if eventLoop.chPost != nil {
-		Ctx.SetError(errors.New("Already running"))
-		return
+		return errors.New("Already running")
 	}
 	eventLoop.wg = &sync.WaitGroup{}
 	eventLoop.wg.Add(1)
 	eventLoop.chPost = make(chan Event, 100)
 	go runEventLoop()
+	return nil
 }
 
 func stopEventLoop() {
@@ -73,7 +70,7 @@ func runEventLoop() {
 		for idx, ehItem := range eventLoop.handlers {
 			remove := false
 			if !ev.Handled() {
-				remove = ehItem.handler(Ctx, ev)
+				remove = ehItem.handler(ev)
 			}
 			if !remove {
 				if prevIdx != idx {
@@ -112,7 +109,7 @@ func addHandlers() {
 // Post event to event queue
 func Post(ev Event) {
 	if eventLoop.chPost == nil {
-		Ctx.SetError(errors.New("Event loop not started"))
+		Dev.ReportError(errors.New("Event loop not started"))
 	}
 	eventLoop.chPost <- ev
 }
@@ -121,7 +118,7 @@ func Post(ev Event) {
 func WaitForShutdown() {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	RegisterHandler(PRILast, func(ctx vk.APIContext, ev Event) (unregister bool) {
+	RegisterHandler(PRILast, func(ev Event) (unregister bool) {
 		_, ok := ev.(ShutdownEvent)
 		if ok {
 			wg.Done()

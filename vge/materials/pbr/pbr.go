@@ -12,7 +12,7 @@ import (
 	"github.com/lakal3/vge/vge/vscene"
 )
 
-func PbrFactory(ctx vk.APIContext, dev *vk.Device, props vmodel.MaterialProperties) (
+func PbrFactory(dev *vk.Device, props vmodel.MaterialProperties) (
 	sh vmodel.Shader, layout *vk.DescriptorLayout, ubf []byte, images []vmodel.ImageIndex) {
 	tx_diffuse := props.GetImage(vmodel.TxAlbedo)
 	tx_metalRoughness := props.GetImage(vmodel.TxMetallicRoughness)
@@ -33,7 +33,7 @@ func PbrFactory(ctx vk.APIContext, dev *vk.Device, props vmodel.MaterialProperti
 	}
 
 	b := *(*[unsafe.Sizeof(pbrMaterial{})]byte)(unsafe.Pointer(&ub))
-	return &PbrMaterial{}, getPbrLayout(ctx, dev), b[:], []vmodel.ImageIndex{tx_diffuse, tx_normal, tx_metalRoughness, tx_emissive}
+	return &PbrMaterial{}, getPbrLayout(dev), b[:], []vmodel.ImageIndex{tx_diffuse, tx_normal, tx_metalRoughness, tx_emissive}
 }
 
 func getColorFactor(imIndex vmodel.ImageIndex) mgl32.Vec4 {
@@ -59,17 +59,17 @@ func (u *PbrMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, worl
 		return
 	}
 	rc := ff.GetCache()
-	gp := dc.Pass.Get(rc.Ctx, kPbrSkinnedPipeline, func(ctx vk.APIContext) interface{} {
-		return u.NewPipeline(ctx, dc, true)
+	gp := dc.Pass.Get(kPbrSkinnedPipeline, func() interface{} {
+		return u.NewPipeline(dc, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
 	dsFrame := ff.BindForwardFrame()
-	uli := rc.GetPerFrame(kPbrSkinnedInstances, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
+	uli := rc.GetPerFrame(kPbrSkinnedInstances, func() interface{} {
+		ds, sl := uc.Alloc()
 		return &pbrInstance{ds: ds, sl: sl}
 	}).(*pbrInstance)
 	copy(uli.sl.Content[uli.count*64:uli.count*64+64], vk.Float32ToBytes(world[:]))
-	dsMesh, slMesh := uc.Alloc(rc.Ctx)
+	dsMesh, slMesh := uc.Alloc()
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindSkinned)...).
 		AddDescriptors(dsFrame, uli.ds, u.dsMat, dsMesh).SetInstances(uli.count, 1)
@@ -86,13 +86,13 @@ func (u *PbrMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32
 		return
 	}
 	rc := ff.GetCache()
-	gp := dc.Pass.Get(rc.Ctx, kPbrPipeline, func(ctx vk.APIContext) interface{} {
-		return u.NewPipeline(ctx, dc, false)
+	gp := dc.Pass.Get(kPbrPipeline, func() interface{} {
+		return u.NewPipeline(dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
 	dsFrame := ff.BindForwardFrame()
-	uli := rc.GetPerFrame(kPbrInstances, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
+	uli := rc.GetPerFrame(kPbrInstances, func() interface{} {
+		ds, sl := uc.Alloc()
 		return &pbrInstance{ds: ds, sl: sl}
 	}).(*pbrInstance)
 	copy(uli.sl.Content[uli.count*64:uli.count*64+64], vk.Float32ToBytes(world[:]))
@@ -104,30 +104,30 @@ func (u *PbrMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl32
 	}
 }
 
-func (u *PbrMaterial) NewPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
+func (u *PbrMaterial) NewPipeline(dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
 	rc := dc.Frame.GetCache()
-	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
+	gp := vk.NewGraphicsPipeline(rc.Device)
 	if skinned {
-		vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)
-		gp.AddShader(ctx, vk.SHADERStageVertexBit, pbr_vert_skin_spv)
+		vmodel.AddInput(gp, vmodel.MESHKindSkinned)
+		gp.AddShader(vk.SHADERStageVertexBit, pbr_vert_skin_spv)
 
 	} else {
-		vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
-		gp.AddShader(ctx, vk.SHADERStageVertexBit, pbr_vert_spv)
+		vmodel.AddInput(gp, vmodel.MESHKindNormal)
+		gp.AddShader(vk.SHADERStageVertexBit, pbr_vert_spv)
 	}
-	laFrame := forward.GetFrameLayout(ctx, rc.Device)
-	la := vscene.GetUniformLayout(ctx, rc.Device)
-	la2 := getPbrLayout(ctx, rc.Device)
-	laUBF := vscene.GetUniformLayout(ctx, rc.Device)
-	gp.AddLayout(ctx, laFrame)
-	gp.AddLayout(ctx, la)
-	gp.AddLayout(ctx, la2)
+	laFrame := forward.GetFrameLayout(rc.Device)
+	la := vscene.GetUniformLayout(rc.Device)
+	la2 := getPbrLayout(rc.Device)
+	laUBF := vscene.GetUniformLayout(rc.Device)
+	gp.AddLayout(laFrame)
+	gp.AddLayout(la)
+	gp.AddLayout(la2)
 	if skinned {
-		gp.AddLayout(ctx, laUBF) // Transform matrix
+		gp.AddLayout(laUBF) // Transform matrix
 	}
-	gp.AddShader(ctx, vk.SHADERStageFragmentBit, pbr_frag_spv)
-	gp.AddDepth(ctx, true, true)
-	gp.Create(ctx, dc.Pass)
+	gp.AddShader(vk.SHADERStageFragmentBit, pbr_frag_spv)
+	gp.AddDepth(true, true)
+	gp.Create(dc.Pass)
 	return gp
 }
 
@@ -151,9 +151,9 @@ var kPbrSkinnedPipeline = vk.NewKey()
 var kPbrInstances = vk.NewKey()
 var kPbrSkinnedInstances = vk.NewKey()
 
-func getPbrLayout(ctx vk.APIContext, dev *vk.Device) *vk.DescriptorLayout {
-	la := vscene.GetUniformLayout(ctx, dev)
-	return dev.Get(ctx, kPbrLayout, func(ctx vk.APIContext) interface{} {
-		return la.AddBinding(ctx, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, 4)
+func getPbrLayout(dev *vk.Device) *vk.DescriptorLayout {
+	la := vscene.GetUniformLayout(dev)
+	return dev.Get(kPbrLayout, func() interface{} {
+		return la.AddBinding(vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, 4)
 	}).(*vk.DescriptorLayout)
 }

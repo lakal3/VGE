@@ -82,7 +82,7 @@ func (gs *GlyphSet) MeasureString(text string, fontHeight int) int {
 	return int(math.Ceil(float64(pos)))
 }
 
-func newGlyphSet(ctx vk.APIContext, dev *vk.Device, glyphs int, w int, h int, kind SetKind) *GlyphSet {
+func newGlyphSet(dev *vk.Device, glyphs int, w int, h int, kind SetKind) *GlyphSet {
 	gs := &GlyphSet{glyphs: make(map[string]Glyph, glyphs), kind: kind}
 	gs.pool = vk.NewMemoryPool(dev)
 	f := vk.FORMATR8Unorm
@@ -94,8 +94,8 @@ func newGlyphSet(ctx vk.APIContext, dev *vk.Device, glyphs int, w int, h int, ki
 	}
 	gs.Desc = vk.ImageDescription{Width: uint32(w), Height: uint32(h), Depth: 1,
 		Format: f, MipLevels: 1, Layers: 1}
-	gs.image = gs.pool.ReserveImage(ctx, gs.Desc, vk.IMAGEUsageSampledBit|vk.IMAGEUsageStorageBit|vk.IMAGEUsageTransferSrcBit)
-	gs.pool.Allocate(ctx)
+	gs.image = gs.pool.ReserveImage(gs.Desc, vk.IMAGEUsageSampledBit|vk.IMAGEUsageStorageBit|vk.IMAGEUsageTransferSrcBit)
+	gs.pool.Allocate()
 	return gs
 }
 

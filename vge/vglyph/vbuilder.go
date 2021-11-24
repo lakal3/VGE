@@ -301,7 +301,6 @@ func (vb *VectorBuilder) addSegments(fSegs []float32) []float32 {
 
 // VectorSetBuilder converts vector based images (fonts and drawn) to glyph set
 type VectorSetBuilder struct {
-	Ctx         vk.APIContext
 	MaxDistance float32
 	glyphs      []*VectorBuilder
 	b           *sfnt.Buffer
@@ -332,11 +331,8 @@ type Range struct {
 // Add font to vector set builder. Glyph names will be directly font character converted as string
 // Currently only fonts containing lines and quadratics bezier lines are support (this should include all ttf fonts)
 // Cubic bezier lines are not
-func (vsb *VectorSetBuilder) AddFont(ctx vk.APIContext, fontContent []byte, ranges ...Range) {
-	err := vsb.addFont(fontContent, ranges)
-	if err != nil {
-		ctx.SetError(err)
-	}
+func (vsb *VectorSetBuilder) AddFont(fontContent []byte, ranges ...Range) error {
+	return vsb.addFont(fontContent, ranges)
 }
 
 func (vsb *VectorSetBuilder) addFont(content []byte, ranges []Range) error {
@@ -389,7 +385,7 @@ func (vsb *VectorSetBuilder) AddChar(font *sfnt.Font, pixelSize int, r rune) *Ve
 }
 
 // Convert added vector sets to glyph set. This glyph set will be signed depth field
-func (vsb *VectorSetBuilder) Build(ctx vk.APIContext, dev *vk.Device) *GlyphSet {
+func (vsb *VectorSetBuilder) Build(dev *vk.Device) *GlyphSet {
 	for _, vb := range vsb.glyphs {
 		vb.calcSize()
 	}
@@ -399,15 +395,15 @@ func (vsb *VectorSetBuilder) Build(ctx vk.APIContext, dev *vk.Device) *GlyphSet 
 		w = 2 * w
 		h = vsb.calcImageSize(w)
 		if w > MAXImageWidth {
-			ctx.SetError(errors.New("Glyph set too large"))
+			dev.ReportError(errors.New("Glyph set too large"))
 			return nil
 		}
 	}
 	bi := &vectorBuildInfo{}
 	defer bi.owner.Dispose()
-	bi.gs = newGlyphSet(ctx, dev, len(vsb.glyphs), w, h, SETDepthField)
-	bi.prepare(ctx, dev, vsb)
-	bi.render(ctx, dev, vsb)
+	bi.gs = newGlyphSet(dev, len(vsb.glyphs), w, h, SETDepthField)
+	bi.prepare(dev, vsb)
+	bi.render(dev, vsb)
 	vsb.addGlyphs(bi.gs)
 	bi.gs.Advance = DefaultAdvance
 	return bi.gs
@@ -461,63 +457,63 @@ type vectorBuildInfo struct {
 var kVDepthInputLayout = vk.NewKeys(2)
 var kVDepthPipeline = vk.NewKey()
 
-func (bi *vectorBuildInfo) prepare(ctx vk.APIContext, dev *vk.Device, vsb *VectorSetBuilder) {
+func (bi *vectorBuildInfo) prepare(dev *vk.Device, vsb *VectorSetBuilder) {
 	pool := vk.NewMemoryPool(dev)
 	bi.owner.AddChild(pool)
 	segments := 0
 	for _, gl := range vsb.glyphs {
 		segments += len(gl.segments) + 1
 	}
-	bi.segments = pool.ReserveBuffer(ctx, uint64(segments*4*8), true, vk.BUFFERUsageStorageBufferBit)
-	bUniforms := pool.ReserveBuffer(ctx, vk.MinUniformBufferOffsetAlignment*uint64(len(vsb.glyphs)), true,
+	bi.segments = pool.ReserveBuffer(uint64(segments*4*8), true, vk.BUFFERUsageStorageBufferBit)
+	bUniforms := pool.ReserveBuffer(vk.MinUniformBufferOffsetAlignment*uint64(len(vsb.glyphs)), true,
 		vk.BUFFERUsageUniformBufferBit)
-	pool.Allocate(ctx)
-	laIn1 := dev.Get(ctx, kVDepthInputLayout, func(ctx vk.APIContext) interface{} {
-		return vk.NewDescriptorLayout(ctx, dev, vk.DESCRIPTORTypeUniformBuffer, vk.SHADERStageComputeBit, 1)
+	pool.Allocate()
+	laIn1 := dev.Get(kVDepthInputLayout, func() interface{} {
+		return vk.NewDescriptorLayout(dev, vk.DESCRIPTORTypeUniformBuffer, vk.SHADERStageComputeBit, 1)
 	}).(*vk.DescriptorLayout)
-	laIn := dev.Get(ctx, kVDepthInputLayout+1, func(ctx vk.APIContext) interface{} {
-		return laIn1.AddBinding(ctx, vk.DESCRIPTORTypeStorageBuffer, vk.SHADERStageComputeBit, 1)
+	laIn := dev.Get(kVDepthInputLayout+1, func() interface{} {
+		return laIn1.AddBinding(vk.DESCRIPTORTypeStorageBuffer, vk.SHADERStageComputeBit, 1)
 	}).(*vk.DescriptorLayout)
-	laOut := dev.Get(ctx, kOutputLayout, func(ctx vk.APIContext) interface{} {
-		return vk.NewDescriptorLayout(ctx, dev, vk.DESCRIPTORTypeStorageImage, vk.SHADERStageComputeBit, 1)
+	laOut := dev.Get(kOutputLayout, func() interface{} {
+		return vk.NewDescriptorLayout(dev, vk.DESCRIPTORTypeStorageImage, vk.SHADERStageComputeBit, 1)
 	}).(*vk.DescriptorLayout)
 
-	bi.pl = dev.Get(ctx, kVDepthPipeline, func(ctx vk.APIContext) interface{} {
-		cp := vk.NewComputePipeline(ctx, dev)
-		cp.AddShader(ctx, vdepth_comp_spv)
-		cp.AddLayout(ctx, laIn)
-		cp.AddLayout(ctx, laOut)
-		cp.Create(ctx)
+	bi.pl = dev.Get(kVDepthPipeline, func() interface{} {
+		cp := vk.NewComputePipeline(dev)
+		cp.AddShader(vdepth_comp_spv)
+		cp.AddLayout(laIn)
+		cp.AddLayout(laOut)
+		cp.Create()
 		return cp
 	}).(*vk.ComputePipeline)
 
-	dpOut := vk.NewDescriptorPool(ctx, laOut, 1)
+	dpOut := vk.NewDescriptorPool(laOut, 1)
 	bi.owner.AddChild(dpOut)
-	bi.dsOut = dpOut.Alloc(ctx)
-	dpIn := vk.NewDescriptorPool(ctx, laIn, len(vsb.glyphs))
+	bi.dsOut = dpOut.Alloc()
+	dpIn := vk.NewDescriptorPool(laIn, len(vsb.glyphs))
 	bi.owner.AddChild(dpIn)
 	bi.dsIn = make([]*vk.DescriptorSet, len(vsb.glyphs))
 	bi.sUniforms = make([]*vk.Slice, len(vsb.glyphs))
 
 	for idx, _ := range vsb.glyphs {
-		ds := dpIn.Alloc(ctx)
-		sl := bUniforms.Slice(ctx, uint64(idx)*vk.MinUniformBufferOffsetAlignment, uint64(idx+1)*vk.MinUniformBufferOffsetAlignment)
-		ds.WriteSlice(ctx, 0, 0, sl)
-		ds.WriteBuffer(ctx, 1, 0, bi.segments)
+		ds := dpIn.Alloc()
+		sl := bUniforms.Slice(uint64(idx)*vk.MinUniformBufferOffsetAlignment, uint64(idx+1)*vk.MinUniformBufferOffsetAlignment)
+		ds.WriteSlice(0, 0, sl)
+		ds.WriteBuffer(1, 0, bi.segments)
 		bi.sUniforms[idx] = sl
 		bi.dsIn[idx] = ds
 	}
 	fr := bi.gs.image.FullRange()
 	fr.Layout = vk.IMAGELayoutGeneral
-	view := vk.NewImageView(ctx, bi.gs.image, &fr)
+	view := vk.NewImageView(bi.gs.image, &fr)
 	bi.owner.AddChild(view)
-	bi.dsOut.WriteImage(ctx, 0, 0, view, nil)
+	bi.dsOut.WriteImage(0, 0, view, nil)
 }
 
 const wgSize = 16
 
-func (bi *vectorBuildInfo) render(ctx vk.APIContext, dev *vk.Device, vsb *VectorSetBuilder) {
-	cmd := vk.NewCommand(ctx, dev, vk.QUEUEComputeBit, true)
+func (bi *vectorBuildInfo) render(dev *vk.Device, vsb *VectorSetBuilder) {
+	cmd := vk.NewCommand(dev, vk.QUEUEComputeBit, true)
 	defer cmd.Dispose()
 	cmd.Begin()
 	ir := bi.gs.image.FullRange()
@@ -532,7 +528,7 @@ func (bi *vectorBuildInfo) render(ctx vk.APIContext, dev *vk.Device, vsb *Vector
 
 	}
 	cmd.SetLayout(bi.gs.image, &ir, vk.IMAGELayoutShaderReadOnlyOptimal)
-	copy(bi.segments.Bytes(ctx), vk.Float32ToBytes(fSegments))
+	copy(bi.segments.Bytes(), vk.Float32ToBytes(fSegments))
 	cmd.Submit()
 	cmd.Wait()
 }

@@ -27,7 +27,7 @@ type DesktopSettings struct {
 // NewDesktopWithSettings will initialize application with swap chain. You can set requested flags for image usage for main image when
 // vgelib constructs new swapchain for Windows. Default settings are IMAGEUsageColorAttachmentBit | IMAGEUsageTransferSrcBit
 func NewDesktopWithSettings(app *Application, settings DesktopSettings) *Desktop {
-	if !app.IsValid() {
+	if !app.isValid() {
 		return nil
 	}
 	d := &Desktop{windows: &sync.Map{}, app: app}

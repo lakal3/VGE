@@ -83,7 +83,7 @@ func (d *DeferredFrame) BindDeferredFrame() *vk.DescriptorSet {
 var kFrameImages = vk.NewKey()
 
 func (d *DeferredFrame) AddFrameImage(view *vk.ImageView, sampler *vk.Sampler) (imageIndex vmodel.ImageIndex) {
-	hm := d.cache.GetPerFrame(kFrameImages, func(ctx vk.APIContext) interface{} {
+	hm := d.cache.GetPerFrame(kFrameImages, func() interface{} {
 		return make(map[uintptr]vmodel.ImageIndex)
 	}).(map[uintptr]vmodel.ImageIndex)
 	imageIndex, ok := hm[view.Handle()]
@@ -91,8 +91,8 @@ func (d *DeferredFrame) AddFrameImage(view *vk.ImageView, sampler *vk.Sampler) (
 		return imageIndex
 	}
 	d.imagesUsed++
-	d.dsLight.WriteImage(d.cache.Ctx, 1, d.imagesUsed, view, sampler)
-	d.dsDraw.WriteImage(d.cache.Ctx, 1, d.imagesUsed, view, sampler)
+	d.dsLight.WriteImage(1, d.imagesUsed, view, sampler)
+	d.dsDraw.WriteImage(1, d.imagesUsed, view, sampler)
 	imageIndex = vmodel.ImageIndex(d.imagesUsed)
 	hm[view.Handle()] = imageIndex
 	return
@@ -120,8 +120,8 @@ var kBoundDrawFrame = vk.NewKey()
 
 func (f *DeferredFrame) writeDrawFrame() {
 	b := *(*[unsafe.Sizeof(DrawFrame{})]byte)(unsafe.Pointer(&f.DrawPhase))
-	copy(f.bfDrawFrame.Bytes(f.cache.Ctx), b[:])
-	f.dsDraw.WriteBuffer(f.cache.Ctx, 0, 0, f.bfDrawFrame)
+	copy(f.bfDrawFrame.Bytes(), b[:])
+	f.dsDraw.WriteBuffer(0, 0, f.bfDrawFrame)
 }
 
 func (d *DeferredFrame) writeLightsFrame() {
@@ -132,6 +132,6 @@ func (d *DeferredFrame) writeLightsFrame() {
 	d.LightsFrame.View = d.DrawPhase.View
 	d.LightsFrame.EyePos = d.DrawPhase.EyePos
 	b := *(*[unsafe.Sizeof(LightsFrame{})]byte)(unsafe.Pointer(&d.LightsFrame))
-	copy(d.bfLightsFrame.Bytes(d.cache.Ctx), b[:])
-	d.dsLight.WriteBuffer(d.cache.Ctx, 0, 0, d.bfLightsFrame)
+	copy(d.bfLightsFrame.Bytes(), b[:])
+	d.dsLight.WriteBuffer(0, 0, d.bfLightsFrame)
 }

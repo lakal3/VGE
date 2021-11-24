@@ -110,7 +110,7 @@ func (f *FocusPrevEvent) Handled() bool {
 	return f.IsHandled
 }
 
-func (w *UIView) handleEvent(ctx vk.APIContext, ev vapp.Event) (unregister bool) {
+func (w *UIView) handleEvent(ev vapp.Event) (unregister bool) {
 	if !w.visible {
 		return true
 	}

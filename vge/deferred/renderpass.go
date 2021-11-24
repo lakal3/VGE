@@ -26,7 +26,6 @@ type Renderer struct {
 
 	owner   vk.Owner
 	dev     *vk.Device
-	Ctx     vk.APIContext
 	rpFinal *vk.GeneralRenderPass
 	rpSplit *vk.GeneralRenderPass
 	rpBG    *vk.GeneralRenderPass
@@ -54,8 +53,8 @@ type Renderer struct {
 	debugIndex int
 }
 
-func (r *Renderer) GetPerRenderer(key vk.Key, ctor func(ctx vk.APIContext) interface{}) interface{} {
-	return r.owner.Get(r.Ctx, key, ctor)
+func (r *Renderer) GetPerRenderer(key vk.Key, ctor func() interface{}) interface{} {
+	return r.owner.Get(key, ctor)
 }
 
 var _ vscene.Renderer = &Renderer{}
@@ -99,13 +98,13 @@ func (f *Renderer) Dispose() {
 
 }
 
-func (f *Renderer) GetRenderPass() vk.RenderPass {
+func (f *Renderer) GetRenderPass() *vk.GeneralRenderPass {
 	return f.rpFinal
 }
 
-func (f *Renderer) Setup(ctx vk.APIContext, dev *vk.Device, mainImage vk.ImageDescription, images int) {
+func (f *Renderer) Setup(dev *vk.Device, mainImage vk.ImageDescription, images int) {
 	if vscene.FrameMaxDynamicSamplers == 0 {
-		ctx.SetError(errors.New("you must enable DynamicDescriptor and set vscene.FrameMaxDynamicSamplers for DeferredRenderer"))
+		dev.ReportError(errors.New("you must enable DynamicDescriptor and set vscene.FrameMaxDynamicSamplers for DeferredRenderer"))
 	}
 	depthDesc := mainImage
 	f.size = image.Pt(int(mainImage.Width), int(mainImage.Height))
@@ -120,78 +119,78 @@ func (f *Renderer) Setup(ctx vk.APIContext, dev *vk.Device, mainImage vk.ImageDe
 		f.mpImages.Dispose()
 		f.imDepth, f.imColor, f.imMaterial, f.imNormal, f.frameBuffers = nil, nil, nil, nil, nil
 	} else {
-		f.Ctx, f.dev = ctx, dev
-		f.rpSplit = vk.NewGeneralRenderPass(ctx, dev, true, []vk.AttachmentInfo{
+		f.dev = dev
+		f.rpSplit = vk.NewGeneralRenderPass(dev, true, []vk.AttachmentInfo{
 			{InitialLayout: vk.IMAGELayoutColorAttachmentOptimal, FinalLayout: vk.IMAGELayoutShaderReadOnlyOptimal, Format: colorDesc.Format},
 			{InitialLayout: vk.IMAGELayoutUndefined, FinalLayout: vk.IMAGELayoutShaderReadOnlyOptimal, Format: normalDesc.Format},
 			{InitialLayout: vk.IMAGELayoutUndefined, FinalLayout: vk.IMAGELayoutShaderReadOnlyOptimal, Format: materialDesc.Format},
 			{InitialLayout: vk.IMAGELayoutUndefined, FinalLayout: vk.IMAGELayoutGeneral, Format: depthDesc.Format,
 				ClearColor: [4]float32{1, 0, 0, 0}},
 		})
-		f.rpFinal = vk.NewGeneralRenderPass(ctx, dev, false, []vk.AttachmentInfo{
+		f.rpFinal = vk.NewGeneralRenderPass(dev, false, []vk.AttachmentInfo{
 			{InitialLayout: vk.IMAGELayoutUndefined, FinalLayout: vk.IMAGELayoutPresentSrcKhr, Format: mainImage.Format},
 		})
-		f.rpBG = vk.NewGeneralRenderPass(ctx, dev, false, []vk.AttachmentInfo{
+		f.rpBG = vk.NewGeneralRenderPass(dev, false, []vk.AttachmentInfo{
 			{InitialLayout: vk.IMAGELayoutUndefined, FinalLayout: vk.IMAGELayoutColorAttachmentOptimal, Format: colorDesc.Format},
 		})
 
-		la := vscene.GetUniformLayout(ctx, dev)
-		f.laLights = la.AddDynamicBinding(ctx, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit,
+		la := vscene.GetUniformLayout(dev)
+		f.laLights = la.AddDynamicBinding(vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit,
 			vscene.FrameMaxDynamicSamplers, vk.DESCRIPTORBindingPartiallyBoundBitExt)
-		f.laDraw = GetFrameLayout(ctx, dev)
-		f.dpLights = vk.NewDescriptorPool(ctx, f.laLights, images)
-		f.dpDraw = vk.NewDescriptorPool(ctx, f.laDraw, images)
+		f.laDraw = GetFrameLayout(dev)
+		f.dpLights = vk.NewDescriptorPool(f.laLights, images)
+		f.dpDraw = vk.NewDescriptorPool(f.laDraw, images)
 		for idx := 0; idx < images; idx++ {
-			f.dsLights = append(f.dsLights, f.dpLights.Alloc(ctx))
-			f.dsDraw = append(f.dsDraw, f.dpDraw.Alloc(ctx))
+			f.dsLights = append(f.dsLights, f.dpLights.Alloc())
+			f.dsDraw = append(f.dsDraw, f.dpDraw.Alloc())
 		}
-		f.joinPipeline = f.newLightsPipeline(ctx, dev)
+		f.joinPipeline = f.newLightsPipeline(dev)
 	}
 	f.mpImages = vk.NewMemoryPool(dev)
 	for idx := 0; idx < images; idx++ {
-		f.imDepth = append(f.imDepth, f.mpImages.ReserveImage(ctx, depthDesc,
+		f.imDepth = append(f.imDepth, f.mpImages.ReserveImage(depthDesc,
 			vk.IMAGEUsageDepthStencilAttachmentBit|vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageSampledBit))
 	}
 	for idx := 0; idx < images; idx++ {
-		f.imColor = append(f.imColor, f.mpImages.ReserveImage(ctx, colorDesc, vk.IMAGEUsageColorAttachmentBit|vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageSampledBit))
+		f.imColor = append(f.imColor, f.mpImages.ReserveImage(colorDesc, vk.IMAGEUsageColorAttachmentBit|vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageSampledBit))
 	}
 	for idx := 0; idx < images; idx++ {
-		f.imNormal = append(f.imNormal, f.mpImages.ReserveImage(ctx, normalDesc, vk.IMAGEUsageColorAttachmentBit|vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageSampledBit))
+		f.imNormal = append(f.imNormal, f.mpImages.ReserveImage(normalDesc, vk.IMAGEUsageColorAttachmentBit|vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageSampledBit))
 	}
 	for idx := 0; idx < images; idx++ {
-		f.imMaterial = append(f.imMaterial, f.mpImages.ReserveImage(ctx, materialDesc, vk.IMAGEUsageColorAttachmentBit|vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageSampledBit))
+		f.imMaterial = append(f.imMaterial, f.mpImages.ReserveImage(materialDesc, vk.IMAGEUsageColorAttachmentBit|vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageSampledBit))
 	}
 
 	for idx := 0; idx < images*2; idx++ {
-		f.frameBuffers = append(f.frameBuffers, f.mpImages.ReserveBuffer(ctx, 32768, true, vk.BUFFERUsageUniformBufferBit))
+		f.frameBuffers = append(f.frameBuffers, f.mpImages.ReserveBuffer(32768, true, vk.BUFFERUsageUniformBufferBit))
 	}
-	sampler := vmodel.GetDefaultSampler(ctx, f.dev)
-	f.whiteImage = f.mpImages.ReserveImage(ctx, vmodel.DescribeWhiteImage(ctx), vk.IMAGEUsageSampledBit|vk.IMAGEUsageTransferDstBit)
-	f.mpImages.Allocate(ctx)
-	cp := vmodel.NewCopier(ctx, dev)
+	sampler := vmodel.GetDefaultSampler(f.dev)
+	f.whiteImage = f.mpImages.ReserveImage(vmodel.DescribeWhiteImage(), vk.IMAGEUsageSampledBit|vk.IMAGEUsageTransferDstBit)
+	f.mpImages.Allocate()
+	cp := vmodel.NewCopier(dev)
 	defer cp.Dispose()
 	cp.CopyWhiteImage(f.whiteImage)
 	for idx := 0; idx < images; idx++ {
-		f.dsLights[idx].WriteImage(ctx, 1, 0, f.whiteImage.DefaultView(ctx), sampler)
-		f.dsLights[idx].WriteImage(ctx, 1, 1, f.imColor[idx].DefaultView(ctx), sampler)
-		f.dsLights[idx].WriteImage(ctx, 1, 2, f.imNormal[idx].DefaultView(ctx), sampler)
-		f.dsLights[idx].WriteImage(ctx, 1, 3, f.imMaterial[idx].DefaultView(ctx), sampler)
-		f.dsLights[idx].WriteImage(ctx, 1, 4, f.imDepth[idx].DefaultView(ctx), sampler)
+		f.dsLights[idx].WriteImage(1, 0, f.whiteImage.DefaultView(), sampler)
+		f.dsLights[idx].WriteImage(1, 1, f.imColor[idx].DefaultView(), sampler)
+		f.dsLights[idx].WriteImage(1, 2, f.imNormal[idx].DefaultView(), sampler)
+		f.dsLights[idx].WriteImage(1, 3, f.imMaterial[idx].DefaultView(), sampler)
+		f.dsLights[idx].WriteImage(1, 4, f.imDepth[idx].DefaultView(), sampler)
 	}
 
 }
 
-func GetFrameLayout(ctx vk.APIContext, dev *vk.Device) *vk.DescriptorLayout {
-	return dev.Get(ctx, kFrameLayout, func(ctx vk.APIContext) interface{} {
-		la := vscene.GetUniformLayout(ctx, dev)
-		return la.AddDynamicBinding(ctx, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit,
+func GetFrameLayout(dev *vk.Device) *vk.DescriptorLayout {
+	return dev.Get(kFrameLayout, func() interface{} {
+		la := vscene.GetUniformLayout(dev)
+		return la.AddDynamicBinding(vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit,
 			vscene.FrameMaxDynamicSamplers, vk.DESCRIPTORBindingPartiallyBoundBitExt)
 	}).(*vk.DescriptorLayout)
 }
 
 func (f *Renderer) Render(camera vscene.Camera, sc *vscene.Scene, rc *vk.RenderCache, mainImage *vk.Image, imageIndex int, infos []vk.SubmitInfo) {
-	mainView := rc.Get(kImageViews+vk.Key(imageIndex), func(ctx vk.APIContext) interface{} {
-		return mainImage.NewView(ctx, 0, 0)
+	mainView := rc.Get(kImageViews+vk.Key(imageIndex), func() interface{} {
+		return mainImage.NewView(0, 0)
 	}).(*vk.ImageView)
 	f.RenderView(camera, sc, rc, mainView, imageIndex, infos)
 }
@@ -200,35 +199,35 @@ var kTimer = vk.NewKey()
 var kTimerCmd = vk.NewKey()
 
 func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.RenderCache, mainView *vk.ImageView, imageIndex int, infos []vk.SubmitInfo) {
-	depthView := f.imDepth[imageIndex].DefaultView(rc.Ctx)
-	colorView := f.imColor[imageIndex].DefaultView(rc.Ctx)
-	normalView := f.imNormal[imageIndex].DefaultView(rc.Ctx)
-	materialView := f.imMaterial[imageIndex].DefaultView(rc.Ctx)
+	depthView := f.imDepth[imageIndex].DefaultView()
+	colorView := f.imColor[imageIndex].DefaultView()
+	normalView := f.imNormal[imageIndex].DefaultView()
+	materialView := f.imMaterial[imageIndex].DefaultView()
 
 	dsLight := f.dsLights[imageIndex]
-	fbSplit := rc.Get(kFpSplit, func(ctx vk.APIContext) interface{} {
-		return vk.NewFramebuffer(ctx, f.rpSplit, []*vk.ImageView{colorView, normalView, materialView, depthView})
+	fbSplit := rc.Get(kFpSplit, func() interface{} {
+		return vk.NewFramebuffer(f.rpSplit, []*vk.ImageView{colorView, normalView, materialView, depthView})
 	}).(*vk.Framebuffer)
-	fbFinal := rc.Get(kFpFinal, func(ctx vk.APIContext) interface{} {
-		return vk.NewFramebuffer(ctx, f.rpFinal, []*vk.ImageView{mainView})
+	fbFinal := rc.Get(kFpFinal, func() interface{} {
+		return vk.NewFramebuffer(f.rpFinal, []*vk.ImageView{mainView})
 	}).(*vk.Framebuffer)
-	fbBG := rc.Get(kFpBG, func(ctx vk.APIContext) interface{} {
-		return vk.NewFramebuffer(ctx, f.rpBG, []*vk.ImageView{colorView})
+	fbBG := rc.Get(kFpBG, func() interface{} {
+		return vk.NewFramebuffer(f.rpBG, []*vk.ImageView{colorView})
 	}).(*vk.Framebuffer)
 
 	start := time.Now()
 	var tp *vk.TimerPool
 	if f.timedOutput != nil {
-		tp = vk.NewTimerPool(rc.Ctx, rc.Device, 3)
+		tp = vk.NewTimerPool(rc.Device, 3)
 		rc.SetPerFrame(kTimer, tp)
-		timerCmd := vk.NewCommand(rc.Ctx, rc.Device, vk.QUEUEComputeBit, true)
+		timerCmd := vk.NewCommand(rc.Device, vk.QUEUEComputeBit, true)
 		timerCmd.Begin()
 		timerCmd.WriteTimer(tp, 0, vk.PIPELINEStageTopOfPipeBit)
 		infos = append(infos, timerCmd.SubmitForWait(1, vk.PIPELINEStageTopOfPipeBit))
 		rc.SetPerFrame(kTimerCmd, timerCmd)
 	}
-	cmd := rc.Get(kCmd, func(ctx vk.APIContext) interface{} {
-		return vk.NewCommand(f.Ctx, f.dev, vk.QUEUEGraphicsBit, false)
+	cmd := rc.Get(kCmd, func() interface{} {
+		return vk.NewCommand(f.dev, vk.QUEUEGraphicsBit, false)
 	}).(*vk.Command)
 	cmd.Begin()
 	if f.timedOutput != nil {
@@ -278,7 +277,7 @@ func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.Ren
 	cmd.Wait()
 	runtime.KeepAlive(infos)
 	if tp != nil {
-		f.timedOutput(start, tp.Get(rc.Ctx))
+		f.timedOutput(start, tp.Get())
 	}
 	if f.RenderDone != nil {
 		f.RenderDone(start)

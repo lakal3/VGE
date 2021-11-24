@@ -80,7 +80,7 @@ func (mp MaterialProperties) GetImage(prop Property) ImageIndex {
 type Renderer interface {
 	// GetPerRenderer allows nodes to store information that is shared between all frames of renderer. Typically each frame has it's own render
 	// cache where you can store frame relevant assets. Each image of swapchain will get it's own frame.
-	GetPerRenderer(key vk.Key, ctor func(ctx vk.APIContext) interface{}) interface{}
+	GetPerRenderer(key vk.Key, ctor func() interface{}) interface{}
 }
 
 type Frame interface {
@@ -93,7 +93,7 @@ type Frame interface {
 
 type DrawContext struct {
 	Frame Frame
-	Pass  vk.RenderPass
+	Pass  *vk.GeneralRenderPass
 	List  *vk.DrawList
 }
 
@@ -126,5 +126,5 @@ type BoundShader interface {
 	SetModel(model *Model)
 }
 
-type ShaderFactory func(ctx vk.APIContext, dev *vk.Device, propSet MaterialProperties) (
+type ShaderFactory func(dev *vk.Device, propSet MaterialProperties) (
 	sh Shader, layout *vk.DescriptorLayout, ubf []byte, images []ImageIndex)

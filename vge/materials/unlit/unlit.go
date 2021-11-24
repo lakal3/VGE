@@ -11,7 +11,7 @@ import (
 	"github.com/lakal3/vge/vge/vscene"
 )
 
-func UnlitFactory(ctx vk.APIContext, dev *vk.Device, props vmodel.MaterialProperties) (
+func UnlitFactory(dev *vk.Device, props vmodel.MaterialProperties) (
 	sh vmodel.Shader, layout *vk.DescriptorLayout, ubf []byte, images []vmodel.ImageIndex) {
 	ub := unlitMaterial{
 		color: props.GetColor(vmodel.CAlbedo, mgl32.Vec4{0, 0, 0, 1}),
@@ -21,7 +21,7 @@ func UnlitFactory(ctx vk.APIContext, dev *vk.Device, props vmodel.MaterialProper
 		ub.textured = 1
 	}
 	b := *(*[unsafe.Sizeof(unlitMaterial{})]byte)(unsafe.Pointer(&ub))
-	return &UnlitMaterial{}, getUnlitLayout(ctx, dev), b[:], []vmodel.ImageIndex{tx_albedo}
+	return &UnlitMaterial{}, getUnlitLayout(dev), b[:], []vmodel.ImageIndex{tx_albedo}
 }
 
 type UnlitMaterial struct {
@@ -38,13 +38,13 @@ func (u *UnlitMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl
 		return // Simple frame not supported
 	}
 	rc := scf.GetCache()
-	gp := dc.Pass.Get(rc.Ctx, kUnlitPipeline, func(ctx vk.APIContext) interface{} {
-		return u.NewPipeline(ctx, dc, false)
+	gp := dc.Pass.Get(kUnlitPipeline, func() interface{} {
+		return u.NewPipeline(dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
 	dsWorld := scf.BindFrame()
-	uli := rc.GetPerFrame(kUnlitInstances, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
+	uli := rc.GetPerFrame(kUnlitInstances, func() interface{} {
+		ds, sl := uc.Alloc()
 		return &unlitInstances{ds: ds, sl: sl}
 	}).(*unlitInstances)
 	copy(uli.sl.Content[uli.count*64:uli.count*64+64], vk.Float32ToBytes(world[:]))
@@ -63,17 +63,17 @@ func (u *UnlitMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, wo
 		return // Simple frame not supported
 	}
 	rc := scf.GetCache()
-	gp := dc.Pass.Get(rc.Ctx, kUnlitSkinnedPipeline, func(ctx vk.APIContext) interface{} {
-		return u.NewPipeline(ctx, dc, true)
+	gp := dc.Pass.Get(kUnlitSkinnedPipeline, func() interface{} {
+		return u.NewPipeline(dc, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
 	dsWorld := scf.BindFrame()
-	uli := rc.GetPerFrame(kUnlitInstances, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
+	uli := rc.GetPerFrame(kUnlitInstances, func() interface{} {
+		ds, sl := uc.Alloc()
 		return &unlitInstances{ds: ds, sl: sl}
 	}).(*unlitInstances)
 	copy(uli.sl.Content[uli.count*64:uli.count*64+64], vk.Float32ToBytes(world[:]))
-	dsMesh, slMesh := uc.Alloc(rc.Ctx)
+	dsMesh, slMesh := uc.Alloc()
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindNormal)...).
 		AddDescriptors(dsWorld, uli.ds, u.dsMat, dsMesh).SetInstances(uli.count, 1)
@@ -83,28 +83,28 @@ func (u *UnlitMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, wo
 	}
 }
 
-func (u *UnlitMaterial) NewPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
+func (u *UnlitMaterial) NewPipeline(dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
 	rc := dc.Frame.GetCache()
-	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
+	gp := vk.NewGraphicsPipeline(rc.Device)
 	if skinned {
-		vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)
+		vmodel.AddInput(gp, vmodel.MESHKindSkinned)
 	} else {
-		vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
+		vmodel.AddInput(gp, vmodel.MESHKindNormal)
 	}
-	la := vscene.GetUniformLayout(ctx, rc.Device)
-	la2 := getUnlitLayout(ctx, rc.Device)
-	gp.AddLayout(ctx, la)
-	gp.AddLayout(ctx, la)
-	gp.AddLayout(ctx, la2)
+	la := vscene.GetUniformLayout(rc.Device)
+	la2 := getUnlitLayout(rc.Device)
+	gp.AddLayout(la)
+	gp.AddLayout(la)
+	gp.AddLayout(la2)
 	if skinned {
-		gp.AddLayout(ctx, la)
-		gp.AddShader(ctx, vk.SHADERStageVertexBit, unlit_vert_skin_spv)
+		gp.AddLayout(la)
+		gp.AddShader(vk.SHADERStageVertexBit, unlit_vert_skin_spv)
 	} else {
-		gp.AddShader(ctx, vk.SHADERStageVertexBit, unlit_vert_spv)
+		gp.AddShader(vk.SHADERStageVertexBit, unlit_vert_spv)
 	}
-	gp.AddShader(ctx, vk.SHADERStageFragmentBit, unlit_frag_spv)
-	gp.AddDepth(ctx, true, true)
-	gp.Create(ctx, dc.Pass)
+	gp.AddShader(vk.SHADERStageFragmentBit, unlit_frag_spv)
+	gp.AddDepth(true, true)
+	gp.Create(dc.Pass)
 	return gp
 }
 
@@ -125,9 +125,9 @@ var kUnlitSkinnedPipeline = vk.NewKey()
 var kUnlitWorld = vk.NewKey()
 var kUnlitInstances = vk.NewKey()
 
-func getUnlitLayout(ctx vk.APIContext, dev *vk.Device) *vk.DescriptorLayout {
-	la := vscene.GetUniformLayout(ctx, dev)
-	return dev.Get(ctx, kUnlitLayout, func(ctx vk.APIContext) interface{} {
-		return la.AddBinding(ctx, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, 1)
+func getUnlitLayout(dev *vk.Device) *vk.DescriptorLayout {
+	la := vscene.GetUniformLayout(dev)
+	return dev.Get(kUnlitLayout, func() interface{} {
+		return la.AddBinding(vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, 1)
 	}).(*vk.DescriptorLayout)
 }

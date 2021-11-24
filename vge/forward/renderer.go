@@ -21,7 +21,6 @@ type Renderer struct {
 	RenderDone func(started time.Time)
 
 	// API context attached to renderer
-	Ctx vk.APIContext
 
 	timedOutput func(started time.Time, gpuTimes []float64)
 
@@ -35,8 +34,8 @@ type Renderer struct {
 	depthPrePass bool
 }
 
-func (f *Renderer) GetPerRenderer(key vk.Key, ctor func(ctx vk.APIContext) interface{}) interface{} {
-	return f.owner.Get(f.Ctx, key, ctor)
+func (f *Renderer) GetPerRenderer(key vk.Key, ctor func() interface{}) interface{} {
+	return f.owner.Get(key, ctor)
 }
 
 // SetTimedOutput allow you to set function that is called after each frame. Started will be Go time when frame rendering was started
@@ -68,7 +67,7 @@ func (f *Renderer) Dispose() {
 
 }
 
-func (f *Renderer) GetRenderPass() vk.RenderPass {
+func (f *Renderer) GetRenderPass() *vk.GeneralRenderPass {
 	return f.frp
 }
 
@@ -81,7 +80,7 @@ func (f *Renderer) AddDepthPrePass() *Renderer {
 	return f
 }
 
-func (f *Renderer) Setup(ctx vk.APIContext, dev *vk.Device, mainImage vk.ImageDescription, images int) {
+func (f *Renderer) Setup(dev *vk.Device, mainImage vk.ImageDescription, images int) {
 	fDepth := vk.FORMATUndefined
 	f.size.X, f.size.Y = int(mainImage.Width), int(mainImage.Height)
 	if f.depth {
@@ -93,27 +92,27 @@ func (f *Renderer) Setup(ctx vk.APIContext, dev *vk.Device, mainImage vk.ImageDe
 			f.imDepth = nil
 		}
 	} else {
-		f.Ctx, f.dev = ctx, dev
-		f.frp = vk.NewForwardRenderPass(ctx, dev, mainImage.Format, vk.IMAGELayoutPresentSrcKhr, fDepth)
+		f.dev = dev
+		f.frp = vk.NewForwardRenderPass(dev, mainImage.Format, vk.IMAGELayoutPresentSrcKhr, fDepth)
 	}
 	if f.depth {
 		depthDesc := mainImage
 		depthDesc.Format = vk.FORMATD32Sfloat
 		f.mpDepth = vk.NewMemoryPool(dev)
 		for idx := 0; idx < images; idx++ {
-			f.imDepth = append(f.imDepth, f.mpDepth.ReserveImage(ctx, depthDesc, vk.IMAGEUsageDepthStencilAttachmentBit|vk.IMAGEUsageTransferSrcBit))
+			f.imDepth = append(f.imDepth, f.mpDepth.ReserveImage(depthDesc, vk.IMAGEUsageDepthStencilAttachmentBit|vk.IMAGEUsageTransferSrcBit))
 		}
-		f.mpDepth.Allocate(ctx)
+		f.mpDepth.Allocate()
 	}
 }
 
 func (f *Renderer) Render(camera vscene.Camera, sc *vscene.Scene, rc *vk.RenderCache, mainImage *vk.Image, imageIndex int, infos []vk.SubmitInfo) {
-	mainView := rc.Get(kImageViews+vk.Key(imageIndex), func(ctx vk.APIContext) interface{} {
-		return mainImage.NewView(ctx, 0, 0)
+	mainView := rc.Get(kImageViews+vk.Key(imageIndex), func() interface{} {
+		return mainImage.NewView(0, 0)
 	}).(*vk.ImageView)
 	var depthView *vk.ImageView
 	if f.depth {
-		depthView = f.imDepth[imageIndex].DefaultView(rc.Ctx)
+		depthView = f.imDepth[imageIndex].DefaultView()
 	}
 	f.RenderView(camera, sc, rc, mainView, depthView, infos)
 }
@@ -122,25 +121,25 @@ var kTimer = vk.NewKey()
 var kTimerCmd = vk.NewKey()
 
 func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.RenderCache, mainView *vk.ImageView, depthView *vk.ImageView, infos []vk.SubmitInfo) {
-	fb := rc.Get(kFp, func(ctx vk.APIContext) interface{} {
+	fb := rc.Get(kFp, func() interface{} {
 		if f.depth {
-			return vk.NewFramebuffer(ctx, f.frp, []*vk.ImageView{mainView, depthView})
+			return vk.NewFramebuffer(f.frp, []*vk.ImageView{mainView, depthView})
 		}
-		return vk.NewFramebuffer(ctx, f.frp, []*vk.ImageView{mainView})
+		return vk.NewFramebuffer(f.frp, []*vk.ImageView{mainView})
 	}).(*vk.Framebuffer)
 	start := time.Now()
 	var tp *vk.TimerPool
 	if f.timedOutput != nil {
-		tp = vk.NewTimerPool(rc.Ctx, rc.Device, 3)
+		tp = vk.NewTimerPool(rc.Device, 3)
 		rc.SetPerFrame(kTimer, tp)
-		timerCmd := vk.NewCommand(rc.Ctx, rc.Device, vk.QUEUEComputeBit, true)
+		timerCmd := vk.NewCommand(rc.Device, vk.QUEUEComputeBit, true)
 		timerCmd.Begin()
 		timerCmd.WriteTimer(tp, 0, vk.PIPELINEStageTopOfPipeBit)
 		infos = append(infos, timerCmd.SubmitForWait(1, vk.PIPELINEStageTopOfPipeBit))
 		rc.SetPerFrame(kTimerCmd, timerCmd)
 	}
-	cmd := rc.Get(kCmd, func(ctx vk.APIContext) interface{} {
-		return vk.NewCommand(f.Ctx, f.dev, vk.QUEUEGraphicsBit, false)
+	cmd := rc.Get(kCmd, func() interface{} {
+		return vk.NewCommand(f.dev, vk.QUEUEGraphicsBit, false)
 	}).(*vk.Command)
 	cmd.Begin()
 	if f.timedOutput != nil {
@@ -185,7 +184,7 @@ func (f *Renderer) RenderView(camera vscene.Camera, sc *vscene.Scene, rc *vk.Ren
 	cmd.Wait()
 	runtime.KeepAlive(infos)
 	if tp != nil {
-		f.timedOutput(start, tp.Get(rc.Ctx))
+		f.timedOutput(start, tp.Get())
 	}
 	if f.RenderDone != nil {
 		f.RenderDone(start)

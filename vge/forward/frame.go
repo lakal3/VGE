@@ -128,29 +128,29 @@ var kFrameImages = vk.NewKey()
 
 // SetFrameImage sets image for whole frame (like environment) and returns its index. If imageIndex < 0 all image slots has been used
 func (f *Frame) SetFrameImage(rc *vk.RenderCache, view *vk.ImageView, sampler *vk.Sampler) (ii vmodel.ImageIndex) {
-	hm := rc.GetPerFrame(kFrameImages, func(ctx vk.APIContext) interface{} {
+	hm := rc.GetPerFrame(kFrameImages, func() interface{} {
 		return make(map[uintptr]vmodel.ImageIndex)
 	}).(map[uintptr]vmodel.ImageIndex)
 	imageIndex, ok := hm[view.Handle()]
 	if ok {
 		return imageIndex
 	}
-	lt := GetFrameLayout(rc.Ctx, rc.Device)
-	ltDyn := GetDynamicFrameLayout(rc.Ctx, rc.Device)
-	fd := rc.Get(kBoundFrame, func(ctx vk.APIContext) interface{} {
+	lt := GetFrameLayout(rc.Device)
+	ltDyn := GetDynamicFrameLayout(rc.Device)
+	fd := rc.Get(kBoundFrame, func() interface{} {
 		return newFrameDescriptor(rc, lt)
 	}).(*frameDescriptor)
 	var fdDyn *frameDescriptor
 	if ltDyn != nil {
-		fdDyn = rc.Get(kBoundDynamicFrame, func(ctx vk.APIContext) interface{} {
+		fdDyn = rc.Get(kBoundDynamicFrame, func() interface{} {
 			return newDynamicFrameDescriptor(rc, ltDyn)
 		}).(*frameDescriptor)
 	}
-	fi := rc.GetPerFrame(kFrameInfo, func(ctx vk.APIContext) interface{} {
+	fi := rc.GetPerFrame(kFrameInfo, func() interface{} {
 		return &frameInfo{idx: 1}
 	}).(*frameInfo)
 	if fi.idx < MAX_IMAGES {
-		fd.ds.WriteImage(rc.Ctx, 1, uint32(fi.idx), view, sampler)
+		fd.ds.WriteImage(1, uint32(fi.idx), view, sampler)
 		ii = fi.idx
 	} else {
 		ii = -1
@@ -161,9 +161,9 @@ func (f *Frame) SetFrameImage(rc *vk.RenderCache, view *vk.ImageView, sampler *v
 		return ii
 	}
 	if fi.idx < vmodel.ImageIndex(fdDyn.maxSize) {
-		fdDyn.ds.WriteImage(rc.Ctx, 1, uint32(fi.idx), view, sampler)
+		fdDyn.ds.WriteImage(1, uint32(fi.idx), view, sampler)
 		if fi.idx < MAX_IMAGES {
-			fd.ds.WriteImage(rc.Ctx, 1, uint32(fi.idx), view, sampler)
+			fd.ds.WriteImage(1, uint32(fi.idx), view, sampler)
 		}
 		ii = fi.idx
 	} else {
@@ -176,13 +176,13 @@ func (f *Frame) SetFrameImage(rc *vk.RenderCache, view *vk.ImageView, sampler *v
 
 func (f *Frame) writeFrame() {
 	rc := f.cache
-	lt := GetFrameLayout(rc.Ctx, rc.Device)
-	fd := rc.Get(kBoundFrame, func(ctx vk.APIContext) interface{} {
+	lt := GetFrameLayout(rc.Device)
+	fd := rc.Get(kBoundFrame, func() interface{} {
 		return newFrameDescriptor(rc, lt)
 
 	}).(*frameDescriptor)
-	f.ds = rc.GetPerFrame(kBoundFrame, func(ctx vk.APIContext) interface{} {
-		fd.buffer.Bytes(rc.Ctx)
+	f.ds = rc.GetPerFrame(kBoundFrame, func() interface{} {
+		fd.buffer.Bytes()
 		f.copyTo(fd.sl)
 		return fd.ds
 	}).(*vk.DescriptorSet)
@@ -190,16 +190,16 @@ func (f *Frame) writeFrame() {
 
 func (f *Frame) writeDynamicFrame() {
 	rc := f.cache
-	lt := GetDynamicFrameLayout(rc.Ctx, rc.Device)
+	lt := GetDynamicFrameLayout(rc.Device)
 	if lt == nil {
 		return
 	}
-	fd := rc.Get(kBoundDynamicFrame, func(ctx vk.APIContext) interface{} {
+	fd := rc.Get(kBoundDynamicFrame, func() interface{} {
 		return newDynamicFrameDescriptor(rc, lt)
 
 	}).(*frameDescriptor)
-	f.dsDynamic = rc.GetPerFrame(kBoundDynamicFrame, func(ctx vk.APIContext) interface{} {
-		fd.buffer.Bytes(rc.Ctx)
+	f.dsDynamic = rc.GetPerFrame(kBoundDynamicFrame, func() interface{} {
+		fd.buffer.Bytes()
 		f.copyTo(fd.sl)
 		return fd.ds
 	}).(*vk.DescriptorSet)
@@ -224,61 +224,60 @@ func (f *Frame) BindDynamicFrame() *vk.DescriptorSet {
 }
 
 func newFrameDescriptor(rc *vk.RenderCache, lt *vk.DescriptorLayout) *frameDescriptor {
-	ctx := rc.Ctx
+
 	fdTmp := &frameDescriptor{}
-	fdTmp.dsPool = vk.NewDescriptorPool(ctx, lt, 1)
-	fdTmp.ds = fdTmp.dsPool.Alloc(ctx)
+	fdTmp.dsPool = vk.NewDescriptorPool(lt, 1)
+	fdTmp.ds = fdTmp.dsPool.Alloc()
 	fdTmp.pool = vk.NewMemoryPool(rc.Device)
 	lf := uint64(unsafe.Sizeof(Frame{}))
-	fdTmp.buffer = fdTmp.pool.ReserveBuffer(rc.Ctx, lf, true, vk.BUFFERUsageUniformBufferBit)
-	fdTmp.whiteImage = fdTmp.pool.ReserveImage(ctx, vmodel.DescribeWhiteImage(ctx), vk.IMAGEUsageSampledBit|vk.IMAGEUsageTransferDstBit)
-	fdTmp.pool.Allocate(rc.Ctx)
-	fdTmp.sl = fdTmp.buffer.Slice(rc.Ctx, 0, lf)
-	cp := vmodel.NewCopier(ctx, rc.Device)
+	fdTmp.buffer = fdTmp.pool.ReserveBuffer(lf, true, vk.BUFFERUsageUniformBufferBit)
+	fdTmp.whiteImage = fdTmp.pool.ReserveImage(vmodel.DescribeWhiteImage(), vk.IMAGEUsageSampledBit|vk.IMAGEUsageTransferDstBit)
+	fdTmp.pool.Allocate()
+	fdTmp.sl = fdTmp.buffer.Slice(0, lf)
+	cp := vmodel.NewCopier(rc.Device)
 	defer cp.Dispose()
 	cp.CopyWhiteImage(fdTmp.whiteImage)
-	sampler := vmodel.GetDefaultSampler(ctx, rc.Device)
+	sampler := vmodel.GetDefaultSampler(rc.Device)
 	for idx := uint32(0); idx < MAX_IMAGES; idx++ {
-		fdTmp.ds.WriteImage(ctx, 1, idx, fdTmp.whiteImage.DefaultView(ctx), sampler)
+		fdTmp.ds.WriteImage(1, idx, fdTmp.whiteImage.DefaultView(), sampler)
 	}
-	fdTmp.ds.WriteSlice(ctx, 0, 0, fdTmp.sl)
+	fdTmp.ds.WriteSlice(0, 0, fdTmp.sl)
 	return fdTmp
 }
 
 func newDynamicFrameDescriptor(rc *vk.RenderCache, lt *vk.DescriptorLayout) *frameDescriptor {
-	ctx := rc.Ctx
 	fdTmp := &frameDescriptor{maxSize: vscene.FrameMaxDynamicSamplers}
-	fdTmp.dsPool = vk.NewDescriptorPool(ctx, lt, 1)
-	fdTmp.ds = fdTmp.dsPool.Alloc(ctx)
+	fdTmp.dsPool = vk.NewDescriptorPool(lt, 1)
+	fdTmp.ds = fdTmp.dsPool.Alloc()
 	fdTmp.pool = vk.NewMemoryPool(rc.Device)
 	lf := uint64(unsafe.Sizeof(Frame{}))
-	fdTmp.buffer = fdTmp.pool.ReserveBuffer(rc.Ctx, lf, true, vk.BUFFERUsageUniformBufferBit)
-	fdTmp.whiteImage = fdTmp.pool.ReserveImage(ctx, vmodel.DescribeWhiteImage(ctx), vk.IMAGEUsageSampledBit|vk.IMAGEUsageTransferDstBit)
-	fdTmp.pool.Allocate(rc.Ctx)
-	fdTmp.sl = fdTmp.buffer.Slice(rc.Ctx, 0, lf)
-	cp := vmodel.NewCopier(ctx, rc.Device)
+	fdTmp.buffer = fdTmp.pool.ReserveBuffer(lf, true, vk.BUFFERUsageUniformBufferBit)
+	fdTmp.whiteImage = fdTmp.pool.ReserveImage(vmodel.DescribeWhiteImage(), vk.IMAGEUsageSampledBit|vk.IMAGEUsageTransferDstBit)
+	fdTmp.pool.Allocate()
+	fdTmp.sl = fdTmp.buffer.Slice(0, lf)
+	cp := vmodel.NewCopier(rc.Device)
 	defer cp.Dispose()
 	cp.CopyWhiteImage(fdTmp.whiteImage)
-	sampler := vmodel.GetDefaultSampler(ctx, rc.Device)
-	fdTmp.ds.WriteImage(ctx, 1, 0, fdTmp.whiteImage.DefaultView(ctx), sampler)
-	fdTmp.ds.WriteSlice(ctx, 0, 0, fdTmp.sl)
+	sampler := vmodel.GetDefaultSampler(rc.Device)
+	fdTmp.ds.WriteImage(1, 0, fdTmp.whiteImage.DefaultView(), sampler)
+	fdTmp.ds.WriteSlice(0, 0, fdTmp.sl)
 	return fdTmp
 }
 
-func GetFrameLayout(ctx vk.APIContext, dev *vk.Device) *vk.DescriptorLayout {
-	return dev.Get(ctx, kFrameLayout, func(ctx vk.APIContext) interface{} {
-		dl := dev.NewDescriptorLayout(ctx, vk.DESCRIPTORTypeUniformBuffer, vk.SHADERStageAllGraphics, 1)
-		return dl.AddBinding(ctx, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, MAX_IMAGES)
+func GetFrameLayout(dev *vk.Device) *vk.DescriptorLayout {
+	return dev.Get(kFrameLayout, func() interface{} {
+		dl := dev.NewDescriptorLayout(vk.DESCRIPTORTypeUniformBuffer, vk.SHADERStageAllGraphics, 1)
+		return dl.AddBinding(vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, MAX_IMAGES)
 	}).(*vk.DescriptorLayout)
 }
 
-func GetDynamicFrameLayout(ctx vk.APIContext, dev *vk.Device) *vk.DescriptorLayout {
+func GetDynamicFrameLayout(dev *vk.Device) *vk.DescriptorLayout {
 	if vscene.FrameMaxDynamicSamplers == 0 {
 		return nil
 	}
-	return dev.Get(ctx, kFrameDynamicLayout, func(ctx vk.APIContext) interface{} {
-		dl := dev.NewDescriptorLayout(ctx, vk.DESCRIPTORTypeUniformBuffer, vk.SHADERStageAllGraphics, 1)
-		return dl.AddDynamicBinding(ctx, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageAllGraphics, vscene.FrameMaxDynamicSamplers,
+	return dev.Get(kFrameDynamicLayout, func() interface{} {
+		dl := dev.NewDescriptorLayout(vk.DESCRIPTORTypeUniformBuffer, vk.SHADERStageAllGraphics, 1)
+		return dl.AddDynamicBinding(vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageAllGraphics, vscene.FrameMaxDynamicSamplers,
 			vk.DESCRIPTORBindingPartiallyBoundBitExt|vk.DESCRIPTORBindingUpdateUnusedWhilePendingBitExt)
 	}).(*vk.DescriptorLayout)
 }

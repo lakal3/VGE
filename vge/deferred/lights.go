@@ -40,12 +40,12 @@ func (dl *DrawLights) atEnd() {
 	dl.cmd.Draw(dl.dl)
 }
 
-func (r *Renderer) newLightsPipeline(ctx vk.APIContext, dev *vk.Device) *vk.GraphicsPipeline {
-	gp := vk.NewGraphicsPipeline(ctx, dev)
-	gp.AddLayout(ctx, r.laLights)
-	gp.AddShader(ctx, vk.SHADERStageVertexBit, lights_vert_spv)
-	gp.AddShader(ctx, vk.SHADERStageFragmentBit, lights_frag_spv)
-	gp.AddDepth(ctx, true, true)
-	gp.Create(ctx, r.rpFinal)
+func (r *Renderer) newLightsPipeline(dev *vk.Device) *vk.GraphicsPipeline {
+	gp := vk.NewGraphicsPipeline(dev)
+	gp.AddLayout(r.laLights)
+	gp.AddShader(vk.SHADERStageVertexBit, lights_vert_spv)
+	gp.AddShader(vk.SHADERStageFragmentBit, lights_frag_spv)
+	gp.AddDepth(true, true)
+	gp.Create(r.rpFinal)
 	return gp
 }

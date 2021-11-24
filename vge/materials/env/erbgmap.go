@@ -47,45 +47,44 @@ func (eq *EquiRectBGNode) Draw(dc *vmodel.DrawContext) {
 		return // Not supported
 	}
 	cache := sfc.GetCache()
-	pl := dc.Pass.Get(cache.Ctx, kEqPipeline, func(ctx vk.APIContext) interface{} {
+	pl := dc.Pass.Get(kEqPipeline, func() interface{} {
 		return eq.newPipeline(dc)
 	}).(vk.Pipeline)
 	dsFrame := sfc.BindFrame()
-	cb := getCube(cache.Ctx, cache.Device)
+	cb := getCube(cache.Device)
 	dc.Draw(pl, 0, 36).AddInputs(cb.bVtx).AddDescriptors(dsFrame, eq.ds)
 }
 
 func (eq *EquiRectBGNode) newPipeline(dc *vmodel.DrawContext) *vk.GraphicsPipeline {
 	cache := dc.Frame.GetCache()
-	ctx := cache.Ctx
-	gp := vk.NewGraphicsPipeline(ctx, cache.Device)
-	gp.AddVextexInput(ctx, vk.VERTEXInputRateVertex, vk.FORMATR32g32b32Sfloat)
-	la := getLayout(ctx, cache.Device)
-	laFrame := vscene.GetUniformLayout(ctx, cache.Device)
-	gp.AddLayout(ctx, laFrame)
-	gp.AddLayout(ctx, la)
-	gp.AddShader(ctx, vk.SHADERStageVertexBit, eqrect_vert_spv)
-	gp.AddShader(ctx, vk.SHADERStageFragmentBit, eqrect_frag_spv)
-	gp.Create(ctx, dc.Pass)
+	gp := vk.NewGraphicsPipeline(cache.Device)
+	gp.AddVextexInput(vk.VERTEXInputRateVertex, vk.FORMATR32g32b32Sfloat)
+	la := getLayout(cache.Device)
+	laFrame := vscene.GetUniformLayout(cache.Device)
+	gp.AddLayout(laFrame)
+	gp.AddLayout(la)
+	gp.AddShader(vk.SHADERStageVertexBit, eqrect_vert_spv)
+	gp.AddShader(vk.SHADERStageFragmentBit, eqrect_frag_spv)
+	gp.Create(dc.Pass)
 	return gp
 
 }
 
-func NewEquiRectBGNode(ctx vk.APIContext, dev *vk.Device, far float32, bgKind string, bgContent []byte) *EquiRectBGNode {
-	la := getLayout(ctx, dev)
-	sampler := getEnvSampler(ctx, dev)
+func NewEquiRectBGNode(dev *vk.Device, far float32, bgKind string, bgContent []byte) *EquiRectBGNode {
+	la := getLayout(dev)
+	sampler := getEnvSampler(dev)
 	eq := &EquiRectBGNode{}
-	eq.dsPool = vk.NewDescriptorPool(ctx, la, 1)
-	eq.ds = eq.dsPool.Alloc(ctx)
+	eq.dsPool = vk.NewDescriptorPool(la, 1)
+	eq.ds = eq.dsPool.Alloc()
 	eq.pool = vk.NewMemoryPool(dev)
 	var desc vk.ImageDescription
-	vasset.DescribeImage(ctx, bgKind, &desc, bgContent)
-	eq.imBg = eq.pool.ReserveImage(ctx, desc, vk.IMAGEUsageTransferDstBit|vk.IMAGEUsageSampledBit)
-	eq.pool.Allocate(ctx)
-	cp := vmodel.NewCopier(ctx, dev)
+	vasset.DescribeImage(bgKind, &desc, bgContent)
+	eq.imBg = eq.pool.ReserveImage(desc, vk.IMAGEUsageTransferDstBit|vk.IMAGEUsageSampledBit)
+	eq.pool.Allocate()
+	cp := vmodel.NewCopier(dev)
 	defer cp.Dispose()
 	cp.CopyToImage(eq.imBg, bgKind, bgContent, desc.FullRange(), vk.IMAGELayoutShaderReadOnlyOptimal)
-	eq.ds.WriteImage(ctx, 0, 0, eq.imBg.DefaultView(ctx), sampler)
+	eq.ds.WriteImage(0, 0, eq.imBg.DefaultView(), sampler)
 	return eq
 }
 
@@ -132,30 +131,30 @@ func (cv *cubeVertex) addPos(aPos []float32, tr mgl32.Mat4, pos mgl32.Vec3) []fl
 	return aPos
 }
 
-func getCube(ctx vk.APIContext, dev *vk.Device) *cubeVertex {
-	return dev.Get(ctx, kCube, func(ctx vk.APIContext) interface{} {
+func getCube(dev *vk.Device) *cubeVertex {
+	return dev.Get(kCube, func() interface{} {
 		cv := &cubeVertex{}
 		cv.pool = vk.NewMemoryPool(dev)
-		cv.bVtx = cv.pool.ReserveBuffer(ctx, 36*4*4, false, vk.BUFFERUsageTransferDstBit|vk.BUFFERUsageVertexBufferBit)
-		cv.pool.Allocate(ctx)
+		cv.bVtx = cv.pool.ReserveBuffer(36*4*4, false, vk.BUFFERUsageTransferDstBit|vk.BUFFERUsageVertexBufferBit)
+		cv.pool.Allocate()
 
 		aPos := cv.addCube(mgl32.Ident4())
-		cp := vmodel.NewCopier(ctx, dev)
+		cp := vmodel.NewCopier(dev)
 		defer cp.Dispose()
 		cp.CopyToBuffer(cv.bVtx, vk.Float32ToBytes(aPos))
 		return cv
 	}).(*cubeVertex)
 }
 
-func getLayout(ctx vk.APIContext, dev *vk.Device) *vk.DescriptorLayout {
-	return dev.Get(ctx, kEqLayout, func(ctx vk.APIContext) interface{} {
-		return vk.NewDescriptorLayout(ctx, dev, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, 1)
+func getLayout(dev *vk.Device) *vk.DescriptorLayout {
+	return dev.Get(kEqLayout, func() interface{} {
+		return vk.NewDescriptorLayout(dev, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, 1)
 	}).(*vk.DescriptorLayout)
 }
 
-func getEnvSampler(ctx vk.APIContext, dev *vk.Device) *vk.Sampler {
-	sampler := dev.Get(ctx, kEnvSampler, func(ctx vk.APIContext) interface{} {
-		return vk.NewSampler(ctx, dev, vk.SAMPLERAddressModeClampToEdge)
+func getEnvSampler(dev *vk.Device) *vk.Sampler {
+	sampler := dev.Get(kEnvSampler, func() interface{} {
+		return vk.NewSampler(dev, vk.SAMPLERAddressModeClampToEdge)
 	}).(*vk.Sampler)
 	return sampler
 }

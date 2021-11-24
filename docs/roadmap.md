@@ -3,15 +3,17 @@
 Planned VGE features (not in priority order)
 
 ### Simpler, near-term goals
-- [ ] Support for multiple probes in a scene.
-- [ ] Forward+ render pass that supports post processing effects like the depth fog.
-   - Some shaders like fire should also use postprocessing so that they could sample an already rendered scene
-   - Depth effects like the fog
+- [ ] Support for glsl compilation with Khronos glslang
+    - This allows compiling shaders when application is already running
 - [x] Shadows for directional lights (in version 0.20.1)
 - [x] Spot lights (with shadows) (in version 0.20.1)
 - [x] Deferred renderer (experimental version available in 0.20.1)
 - [ ] Improved decals in deferred shader
 - [ ] Basic dialogs like yes/no
+- [ ] Support for multiple probes in a scene.
+- [ ] Forward+ render pass that supports post processing effects like the depth fog.
+    - Some shaders like fire should also use postprocessing so that they could sample an already rendered scene
+    - Depth effects like the fog
 - [ ] Water shader (Needs Forward+ render pass)
 - [ ] Asset packing
    - Currently the VGE processes all raw assets at the start of each run, like: Rendering fonts, uncompressing images and parsing models files and converting them to GPU renderable assets.

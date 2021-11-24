@@ -77,8 +77,8 @@ func (pl *DirectionalLight) Process(pi *vscene.ProcessInfo) {
 		}
 		eyePos, _ := vscene.GetEyePosition(pi.Frame)
 
-		rsr := pi.Frame.GetRenderer().GetPerRenderer(pl.key, func(ctx vk.APIContext) interface{} {
-			return pl.makeRenderResources(ctx, pi.Frame.GetCache().Device)
+		rsr := pi.Frame.GetRenderer().GetPerRenderer(pl.key, func() interface{} {
+			return pl.makeRenderResources(pi.Frame.GetCache().Device)
 		}).(*renderResources)
 		if rsr.updateCount > 0 {
 			rsr.updateCount--
@@ -89,15 +89,15 @@ func (pl *DirectionalLight) Process(pi *vscene.ProcessInfo) {
 
 	lp, ok := pi.Phase.(vscene.LightPhase)
 	if ok {
-		rsr := pi.Frame.GetRenderer().GetPerRenderer(pl.key, func(ctx vk.APIContext) interface{} {
-			return pl.makeRenderResources(ctx, pi.Frame.GetCache().Device)
+		rsr := pi.Frame.GetRenderer().GetPerRenderer(pl.key, func() interface{} {
+			return pl.makeRenderResources(pi.Frame.GetCache().Device)
 		}).(*renderResources)
 		imFrame, ok := pi.Frame.(vscene.ImageFrame)
 		l := vscene.Light{Intensity: pl.Intensity.Vec4(1), Direction: pl.Direction.Vec4(0), Attenuation: mgl32.Vec4{1, 0, 0, pl.MaxShadowDistance}}
 		l.Position = pl.GetShadowmapPos(pi.Frame)
 		var imIndex vmodel.ImageIndex
 		if ok && rsr.lastImage >= 0 {
-			imIndex = imFrame.AddFrameImage(rsr.shadowImages[rsr.lastImage].DefaultView(pi.Frame.GetCache().Ctx), rsr.sampler)
+			imIndex = imFrame.AddFrameImage(rsr.shadowImages[rsr.lastImage].DefaultView(), rsr.sampler)
 		}
 		if imIndex > 0 {
 			l.ShadowMapMethod = 5
@@ -124,7 +124,6 @@ type dirResources struct {
 }
 
 type shadowPass struct {
-	ctx         vk.APIContext
 	cmd         *vk.Command
 	rc          *vk.RenderCache
 	dl          *vk.DrawList
@@ -168,7 +167,7 @@ func (s *shadowPass) BindFrame() *vk.DescriptorSet {
 	if s.siInstance == nil {
 		uc := vscene.GetUniformCache(s.rc)
 		s.siInstance = &shaderInstances{}
-		s.dsInst, s.slInst = uc.Alloc(s.rc.Ctx)
+		s.dsInst, s.slInst = uc.Alloc()
 	}
 	return s.dsFrame
 }
@@ -196,7 +195,7 @@ func (s *shadowPass) DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, mater
 	_ = s.BindFrame()
 	uc := vscene.GetUniformCache(s.rc)
 	s.siInstance.instances[s.siCount] = s.makeInstance(world, mesh, material)
-	dsMesh, slMesh := uc.Alloc(s.ctx)
+	dsMesh, slMesh := uc.Alloc()
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	s.dl.DrawIndexed(s.plSkin, mesh.From, mesh.Count).AddDescriptors(s.dsFrame, s.dsInst, dsMesh).
 		AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindSkinned)...).SetInstances(uint32(s.siCount), 1)
@@ -232,7 +231,7 @@ func (s *shadowPass) makeInstance(world mgl32.Mat4, mesh vmodel.Mesh, material v
 		inst.tx_albedo = float32(imIndex)
 		return inst
 	}
-	dsFrame.WriteImage(s.ctx, 1, s.imCount, view, sampler)
+	dsFrame.WriteImage(1, s.imCount, view, sampler)
 	inst.tx_albedo = float32(s.imCount)
 	s.imMap[view.Handle()] = s.imCount
 	s.imCount++
@@ -262,14 +261,14 @@ var kDirSkinnedDepthPipeline = vk.NewKey()
 
 func (pl *DirectionalLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.ProcessInfo, rsr *renderResources, eyePos mgl32.Vec3) {
 	cache := pi.Frame.GetCache()
-	sr := cache.Get(pl.key, func(ctx vk.APIContext) interface{} {
-		return makeDirResources(ctx, cache.Device, rsr.rp)
+	sr := cache.Get(pl.key, func() interface{} {
+		return makeDirResources(cache.Device, rsr.rp)
 	}).(*dirResources)
-	gpl := rsr.rp.Get(cache.Ctx, kDepthPipeline, func(ctx vk.APIContext) interface{} {
-		return pl.makeShadowPipeline(ctx, cache.Device, rsr.rp)
+	gpl := rsr.rp.Get(kDepthPipeline, func() interface{} {
+		return pl.makeShadowPipeline(cache.Device, rsr.rp)
 	}).(*vk.GraphicsPipeline)
-	gSkinnedPl := rsr.rp.Get(cache.Ctx, kSkinnedDepthPipeline, func(ctx vk.APIContext) interface{} {
-		return pl.makeSkinnedShadowPipeline(ctx, cache.Device, rsr.rp)
+	gSkinnedPl := rsr.rp.Get(kSkinnedDepthPipeline, func() interface{} {
+		return pl.makeSkinnedShadowPipeline(cache.Device, rsr.rp)
 	}).(*vk.GraphicsPipeline)
 	cmd := sr.cmd
 	cmd.Begin()
@@ -277,12 +276,12 @@ func (pl *DirectionalLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.
 	if imageIndex >= 2 {
 		imageIndex = 0
 	}
-	fbs := cache.GetPerFrame(pl.key, func(ctx vk.APIContext) interface{} {
+	fbs := cache.GetPerFrame(pl.key, func() interface{} {
 		return makeDirFrameResource(cache, rsr, imageIndex)
 	}).(*dirFrameResources)
 	fb := fbs.fb
 	cmd.BeginRenderPass(rsr.rp, fb)
-	sp := &shadowPass{ctx: cache.Ctx, cmd: cmd, dl: &vk.DrawList{}, rc: cache, renderer: pi.Frame.GetRenderer(),
+	sp := &shadowPass{cmd: cmd, dl: &vk.DrawList{}, rc: cache, renderer: pi.Frame.GetRenderer(),
 		pl: gpl, plSkin: gSkinnedPl, maxDistance: pl.MaxShadowDistance, sampler: rsr.sampler,
 		dsFrame: rsr.dsFrame[imageIndex], slFrame: rsr.slFrame[imageIndex]}
 	sp.dir = pl.Direction
@@ -300,9 +299,9 @@ func (pl *DirectionalLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.
 	return
 }
 
-func (pl *DirectionalLight) makeRenderPass(ctx vk.APIContext, dev *vk.Device) *vk.GeneralRenderPass {
-	rp := dev.Get(ctx, kDepthPass, func(ctx vk.APIContext) interface{} {
-		return vk.NewGeneralRenderPass(ctx, dev, true, []vk.AttachmentInfo{
+func (pl *DirectionalLight) makeRenderPass(dev *vk.Device) *vk.GeneralRenderPass {
+	rp := dev.Get(kDepthPass, func() interface{} {
+		return vk.NewGeneralRenderPass(dev, true, []vk.AttachmentInfo{
 			vk.AttachmentInfo{Format: ShadowFormat, InitialLayout: vk.IMAGELayoutUndefined, FinalLayout: vk.IMAGELayoutShaderReadOnlyOptimal,
 				ClearColor: [4]float32{1, 0, 0, 0}},
 		})
@@ -310,80 +309,80 @@ func (pl *DirectionalLight) makeRenderPass(ctx vk.APIContext, dev *vk.Device) *v
 	return rp
 }
 
-func makeDirResources(ctx vk.APIContext, dev *vk.Device, rp *vk.DepthRenderPass) *dirResources {
+func makeDirResources(dev *vk.Device, rp *vk.DepthRenderPass) *dirResources {
 	sr := &dirResources{}
-	sr.cmd = vk.NewCommand(ctx, dev, vk.QUEUEGraphicsBit, false)
+	sr.cmd = vk.NewCommand(dev, vk.QUEUEGraphicsBit, false)
 	return sr
 }
 
-func (pl *DirectionalLight) makeShadowPipeline(ctx vk.APIContext, dev *vk.Device, rp *vk.DepthRenderPass) *vk.GraphicsPipeline {
-	gp := vk.NewGraphicsPipeline(ctx, dev)
-	vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
-	gp.AddLayout(ctx, getShadowFrameLayout(ctx, dev))
-	gp.AddLayout(ctx, vscene.GetUniformLayout(ctx, dev))
-	gp.AddShader(ctx, vk.SHADERStageVertexBit, dir_shadow_vert_spv)
+func (pl *DirectionalLight) makeShadowPipeline(dev *vk.Device, rp *vk.DepthRenderPass) *vk.GraphicsPipeline {
+	gp := vk.NewGraphicsPipeline(dev)
+	vmodel.AddInput(gp, vmodel.MESHKindNormal)
+	gp.AddLayout(getShadowFrameLayout(dev))
+	gp.AddLayout(vscene.GetUniformLayout(dev))
+	gp.AddShader(vk.SHADERStageVertexBit, dir_shadow_vert_spv)
 	if vscene.FrameMaxDynamicSamplers > 0 {
-		gp.AddShader(ctx, vk.SHADERStageFragmentBit, point_shadow_dyn_frag_spv)
+		gp.AddShader(vk.SHADERStageFragmentBit, point_shadow_dyn_frag_spv)
 	} else {
-		gp.AddShader(ctx, vk.SHADERStageFragmentBit, point_shadow_frag_spv)
+		gp.AddShader(vk.SHADERStageFragmentBit, point_shadow_frag_spv)
 	}
-	gp.AddDepth(ctx, true, true)
-	gp.Create(ctx, rp)
+	gp.AddDepth(true, true)
+	gp.Create(rp)
 	return gp
 }
 
-func (pl *DirectionalLight) makeSkinnedShadowPipeline(ctx vk.APIContext, dev *vk.Device, rp *vk.DepthRenderPass) *vk.GraphicsPipeline {
-	gp := vk.NewGraphicsPipeline(ctx, dev)
-	vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)
-	gp.AddLayout(ctx, getShadowFrameLayout(ctx, dev))
-	gp.AddLayout(ctx, vscene.GetUniformLayout(ctx, dev))
-	gp.AddLayout(ctx, vscene.GetUniformLayout(ctx, dev))
-	gp.AddShader(ctx, vk.SHADERStageVertexBit, dir_shadow_vert_skin_spv)
+func (pl *DirectionalLight) makeSkinnedShadowPipeline(dev *vk.Device, rp *vk.DepthRenderPass) *vk.GraphicsPipeline {
+	gp := vk.NewGraphicsPipeline(dev)
+	vmodel.AddInput(gp, vmodel.MESHKindSkinned)
+	gp.AddLayout(getShadowFrameLayout(dev))
+	gp.AddLayout(vscene.GetUniformLayout(dev))
+	gp.AddLayout(vscene.GetUniformLayout(dev))
+	gp.AddShader(vk.SHADERStageVertexBit, dir_shadow_vert_skin_spv)
 	if vscene.FrameMaxDynamicSamplers > 0 {
-		gp.AddShader(ctx, vk.SHADERStageFragmentBit, point_shadow_dyn_frag_spv)
+		gp.AddShader(vk.SHADERStageFragmentBit, point_shadow_dyn_frag_spv)
 
 	} else {
-		gp.AddShader(ctx, vk.SHADERStageFragmentBit, point_shadow_frag_spv)
+		gp.AddShader(vk.SHADERStageFragmentBit, point_shadow_frag_spv)
 	}
-	gp.AddDepth(ctx, true, true)
-	gp.Create(ctx, rp)
+	gp.AddDepth(true, true)
+	gp.Create(rp)
 	return gp
 }
 
-func getShadowFrameLayout(ctx vk.APIContext, dev *vk.Device) *vk.DescriptorLayout {
-	return dev.Get(ctx, kShadowLayout, func(ctx vk.APIContext) interface{} {
-		la := vscene.GetUniformLayout(ctx, dev)
+func getShadowFrameLayout(dev *vk.Device) *vk.DescriptorLayout {
+	return dev.Get(kShadowLayout, func() interface{} {
+		la := vscene.GetUniformLayout(dev)
 		if vscene.FrameMaxDynamicSamplers > 0 {
-			return la.AddDynamicBinding(ctx, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, vscene.FrameMaxDynamicSamplers,
+			return la.AddDynamicBinding(vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, vscene.FrameMaxDynamicSamplers,
 				vk.DESCRIPTORBindingUpdateAfterBindBitExt)
 		}
 		return la
 	}).(*vk.DescriptorLayout)
 }
 
-func (pl *DirectionalLight) makeRenderResources(ctx vk.APIContext, dev *vk.Device) *renderResources {
+func (pl *DirectionalLight) makeRenderResources(dev *vk.Device) *renderResources {
 	rsr := renderResources{lastImage: -1}
-	rsr.rp = makeRenderPass(ctx, dev)
+	rsr.rp = makeRenderPass(dev)
 	rsr.pool = vk.NewMemoryPool(dev)
 	desc := vk.ImageDescription{Width: pl.mapSize, Height: pl.mapSize, Depth: 1, Layers: 1, MipLevels: 1,
 		Format: vk.FORMATD32Sfloat}
 	var buffers []*vk.Buffer
 	for idx := 0; idx < 2; idx++ {
-		rsr.shadowImages = append(rsr.shadowImages, rsr.pool.ReserveImage(ctx, desc, vk.IMAGEUsageDepthStencilAttachmentBit|
+		rsr.shadowImages = append(rsr.shadowImages, rsr.pool.ReserveImage(desc, vk.IMAGEUsageDepthStencilAttachmentBit|
 			vk.IMAGEUsageSampledBit))
-		buffers = append(buffers, rsr.pool.ReserveBuffer(ctx, vk.MinUniformBufferOffsetAlignment, true, vk.BUFFERUsageUniformBufferBit))
+		buffers = append(buffers, rsr.pool.ReserveBuffer(vk.MinUniformBufferOffsetAlignment, true, vk.BUFFERUsageUniformBufferBit))
 	}
-	rsr.dpFrame = vk.NewDescriptorPool(ctx, getShadowFrameLayout(ctx, dev), 2)
+	rsr.dpFrame = vk.NewDescriptorPool(getShadowFrameLayout(dev), 2)
 
-	rsr.pool.Allocate(ctx)
-	rsr.sampler = vmodel.GetDefaultSampler(ctx, dev)
+	rsr.pool.Allocate()
+	rsr.sampler = vmodel.GetDefaultSampler(dev)
 	for idx := 0; idx < 2; idx++ {
-		rsr.dsFrame = append(rsr.dsFrame, rsr.dpFrame.Alloc(ctx))
-		sl := buffers[idx].Slice(ctx, 0, vk.MinUniformBufferOffsetAlignment)
-		rsr.dsFrame[idx].WriteSlice(ctx, 0, 0, sl)
+		rsr.dsFrame = append(rsr.dsFrame, rsr.dpFrame.Alloc())
+		sl := buffers[idx].Slice(0, vk.MinUniformBufferOffsetAlignment)
+		rsr.dsFrame[idx].WriteSlice(0, 0, sl)
 		rsr.slFrame = append(rsr.slFrame, sl)
 		rg := vk.ImageRange{FirstLayer: 0, LayerCount: 1, LevelCount: 1}
-		rsr.shadowViews = append(rsr.shadowViews, vk.NewImageView(ctx, rsr.shadowImages[idx], &rg))
+		rsr.shadowViews = append(rsr.shadowViews, vk.NewImageView(rsr.shadowImages[idx], &rg))
 	}
 	return &rsr
 }
@@ -402,6 +401,6 @@ func (pl *DirectionalLight) GetShadowmapPos(f vmodel.Frame) mgl32.Vec4 {
 
 func makeDirFrameResource(cache *vk.RenderCache, rsr *renderResources, imageIndex int) *dirFrameResources {
 	fr := dirFrameResources{}
-	fr.fb = vk.NewFramebuffer(cache.Ctx, rsr.rp, []*vk.ImageView{rsr.shadowViews[imageIndex]})
+	fr.fb = vk.NewFramebuffer(rsr.rp, []*vk.ImageView{rsr.shadowViews[imageIndex]})
 	return &fr
 }

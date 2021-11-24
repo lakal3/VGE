@@ -36,30 +36,30 @@ func (g *GrayBg) Draw(dc *vmodel.DrawContext) {
 		return // Not supported
 	}
 	cache := sfc.GetCache()
-	pl := dc.Pass.Get(cache.Ctx, kGrayPipeline, func(ctx vk.APIContext) interface{} {
+	pl := dc.Pass.Get(kGrayPipeline, func() interface{} {
 		return g.newPipeline(dc)
 	}).(vk.Pipeline)
 	dsFrame := sfc.BindFrame()
 	uc := vscene.GetUniformCache(cache)
-	dsColor, slCol := uc.Alloc(cache.Ctx)
+	dsColor, slCol := uc.Alloc()
 	b := *(*[unsafe.Sizeof(GrayBg{})]byte)(unsafe.Pointer(g))
 	copy(slCol.Content, b[:])
-	cb := getCube(cache.Ctx, cache.Device)
+	cb := getCube(cache.Device)
 	dc.Draw(pl, 0, 36).AddInputs(cb.bVtx).AddDescriptors(dsFrame, dsColor)
 }
 
 func (g *GrayBg) newPipeline(dc *vmodel.DrawContext) *vk.GraphicsPipeline {
 	cache := dc.Frame.GetCache()
-	ctx := cache.Ctx
-	gp := vk.NewGraphicsPipeline(ctx, cache.Device)
-	gp.AddVextexInput(ctx, vk.VERTEXInputRateVertex, vk.FORMATR32g32b32Sfloat)
-	la := vscene.GetUniformLayout(ctx, cache.Device) // Dynamic layout for colors
-	laFrame := vscene.GetUniformLayout(ctx, cache.Device)
-	gp.AddLayout(ctx, laFrame)
-	gp.AddLayout(ctx, la)
-	gp.AddShader(ctx, vk.SHADERStageVertexBit, eqrect_vert_spv)
-	gp.AddShader(ctx, vk.SHADERStageFragmentBit, graybg_frag_spv)
-	gp.Create(ctx, dc.Pass)
+
+	gp := vk.NewGraphicsPipeline(cache.Device)
+	gp.AddVextexInput(vk.VERTEXInputRateVertex, vk.FORMATR32g32b32Sfloat)
+	la := vscene.GetUniformLayout(cache.Device) // Dynamic layout for colors
+	laFrame := vscene.GetUniformLayout(cache.Device)
+	gp.AddLayout(laFrame)
+	gp.AddLayout(la)
+	gp.AddShader(vk.SHADERStageVertexBit, eqrect_vert_spv)
+	gp.AddShader(vk.SHADERStageFragmentBit, graybg_frag_spv)
+	gp.Create(dc.Pass)
 	return gp
 }
 

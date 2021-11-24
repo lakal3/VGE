@@ -38,7 +38,6 @@ type cubeShadowInstance struct {
 }
 
 type cubeShadowPass struct {
-	ctx         vk.APIContext
 	cmd         *vk.Command
 	maxDistance float32
 	pos         mgl32.Vec3
@@ -65,7 +64,7 @@ func (s *cubeShadowPass) ViewProjection() (projection, view mgl32.Mat4) {
 func (s *cubeShadowPass) BindFrame() *vk.DescriptorSet {
 	uc := vscene.GetUniformCache(s.rc)
 	if s.ds == nil {
-		s.ds, s.sl = uc.Alloc(s.ctx)
+		s.ds, s.sl = uc.Alloc()
 		s.si = &cubeShadowInstance{}
 		s.si.projection = mgl32.Perspective(math.Pi/2, 1, s.maxDistance/2000, s.maxDistance*2)
 		pos := s.pos
@@ -103,7 +102,7 @@ func (s *cubeShadowPass) DrawSkinnedShadow(mesh vmodel.Mesh, world mgl32.Mat4, m
 	s.BindFrame()
 	uc := vscene.GetUniformCache(s.rc)
 	s.si.instances[s.siCount] = world
-	dsMesh, slMesh := uc.Alloc(s.ctx)
+	dsMesh, slMesh := uc.Alloc()
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	s.dl.DrawIndexed(s.plSkin, mesh.From, mesh.Count).AddDescriptors(s.ds, dsMesh).
 		AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindSkinned)...).SetInstances(uint32(s.siCount), 1)
@@ -172,7 +171,7 @@ func (pl *CubePointLight) Process(pi *vscene.ProcessInfo) {
 
 	lp, ok := pi.Phase.(vscene.LightPhase)
 	if ok {
-		hasShadowmap := pi.Frame.GetCache().GetPerFrame(pl.key, func(ctx vk.APIContext) interface{} {
+		hasShadowmap := pi.Frame.GetCache().GetPerFrame(pl.key, func() interface{} {
 			return false
 		}).(bool)
 		pos := pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1})
@@ -181,7 +180,7 @@ func (pl *CubePointLight) Process(pi *vscene.ProcessInfo) {
 			Position: pos, Attenuation: pl.Attenuation.Vec4(pl.MaxDistance)}
 		var imIndex vmodel.ImageIndex
 		if ok && hasShadowmap {
-			sr := pi.Frame.GetCache().Get(pl.key, func(ctx vk.APIContext) interface{} {
+			sr := pi.Frame.GetCache().Get(pl.key, func() interface{} {
 				return nil
 			}).(*cubeShadowResources)
 			imIndex = imFrame.AddFrameImage(sr.cubeView, sr.sampler)
@@ -196,23 +195,23 @@ func (pl *CubePointLight) Process(pi *vscene.ProcessInfo) {
 
 func (pl *CubePointLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.ProcessInfo) *cubeShadowResources {
 	cache := pi.Frame.GetCache()
-	rp := cache.Device.Get(cache.Ctx, kDepthPass, func(ctx vk.APIContext) interface{} {
-		return vk.NewDepthRenderPass(ctx, cache.Device, vk.IMAGELayoutShaderReadOnlyOptimal, ShadowFormat)
+	rp := cache.Device.Get(kDepthPass, func() interface{} {
+		return vk.NewDepthRenderPass(cache.Device, vk.IMAGELayoutShaderReadOnlyOptimal, ShadowFormat)
 	}).(*vk.DepthRenderPass)
-	sr := cache.Get(pl.key, func(ctx vk.APIContext) interface{} {
-		return pl.makeResources(ctx, cache.Device, rp)
+	sr := cache.Get(pl.key, func() interface{} {
+		return pl.makeResources(cache.Device, rp)
 	}).(*cubeShadowResources)
 
-	gpl := rp.Get(cache.Ctx, kDepthPipeline, func(ctx vk.APIContext) interface{} {
-		return pl.makeShadowPipeline(ctx, cache.Device, rp)
+	gpl := rp.Get(kDepthPipeline, func() interface{} {
+		return pl.makeShadowPipeline(cache.Device, rp)
 	}).(*vk.GraphicsPipeline)
-	gSkinnedPl := rp.Get(cache.Ctx, kSkinnedDepthPipeline, func(ctx vk.APIContext) interface{} {
-		return pl.makeSkinnedShadowPipeline(ctx, cache.Device, rp)
+	gSkinnedPl := rp.Get(kSkinnedDepthPipeline, func() interface{} {
+		return pl.makeSkinnedShadowPipeline(cache.Device, rp)
 	}).(*vk.GraphicsPipeline)
 	cmd := sr.cmd
 	cmd.Begin()
 	cmd.BeginRenderPass(rp, sr.fb)
-	sp := &cubeShadowPass{ctx: cache.Ctx, cmd: cmd, dl: &vk.DrawList{}, maxDistance: pl.MaxDistance,
+	sp := &cubeShadowPass{cmd: cmd, dl: &vk.DrawList{}, maxDistance: pl.MaxDistance,
 		pl: gpl, plSkin: gSkinnedPl, rc: cache, renderer: pi.Frame.GetRenderer()}
 	sp.pos = pi.World.Mul4x1(mgl32.Vec4{0, 0, 0, 1}).Vec3()
 	pd.Scene.Process(pi.Time, sp, sp)
@@ -223,53 +222,53 @@ func (pl *CubePointLight) renderShadowMap(pd *vscene.PredrawPhase, pi *vscene.Pr
 		pd.Needeed = append(pd.Needeed, waitFor)
 		cmd.Wait()
 	})
-	sr.sampler = getShadowSampler(cache.Ctx, cache.Device)
+	sr.sampler = getShadowSampler(cache.Device)
 	cache.SetPerFrame(pl.key, true)
 	return sr
 }
 
-func (pl *CubePointLight) makeResources(ctx vk.APIContext, dev *vk.Device, rp *vk.DepthRenderPass) *cubeShadowResources {
+func (pl *CubePointLight) makeResources(dev *vk.Device, rp *vk.DepthRenderPass) *cubeShadowResources {
 	sr := &cubeShadowResources{}
 	sr.pool = vk.NewMemoryPool(dev)
 	desc := vk.ImageDescription{Width: pl.mapSize, Height: pl.mapSize, Layers: 6, MipLevels: 1,
 		Format: ShadowFormat, Depth: 1}
-	sr.shadowImage = sr.pool.ReserveImage(ctx, desc, vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageDepthStencilAttachmentBit|
+	sr.shadowImage = sr.pool.ReserveImage(desc, vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageDepthStencilAttachmentBit|
 		vk.IMAGEUsageSampledBit)
-	sr.pool.Allocate(ctx)
-	sr.cubeView = sr.shadowImage.NewCubeView(ctx, 0)
-	sr.fb = vk.NewFramebuffer(ctx, rp, []*vk.ImageView{sr.cubeView})
-	sr.cmd = vk.NewCommand(ctx, dev, vk.QUEUEGraphicsBit, false)
+	sr.pool.Allocate()
+	sr.cubeView = sr.shadowImage.NewCubeView(0)
+	sr.fb = vk.NewFramebuffer(rp, []*vk.ImageView{sr.cubeView})
+	sr.cmd = vk.NewCommand(dev, vk.QUEUEGraphicsBit, false)
 	return sr
 }
 
-func (pl *CubePointLight) makeShadowPipeline(ctx vk.APIContext, dev *vk.Device, rp *vk.DepthRenderPass) *vk.GraphicsPipeline {
-	gp := vk.NewGraphicsPipeline(ctx, dev)
-	vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
-	gp.AddDepth(ctx, true, true)
-	gp.AddLayout(ctx, vscene.GetUniformLayout(ctx, dev))
-	gp.AddShader(ctx, vk.SHADERStageVertexBit, shadow_vert_spv)
-	gp.AddShader(ctx, vk.SHADERStageGeometryBit, shadow_geom_spv)
-	gp.AddShader(ctx, vk.SHADERStageFragmentBit, shadow_frag_spv)
-	gp.Create(ctx, rp)
+func (pl *CubePointLight) makeShadowPipeline(dev *vk.Device, rp *vk.DepthRenderPass) *vk.GraphicsPipeline {
+	gp := vk.NewGraphicsPipeline(dev)
+	vmodel.AddInput(gp, vmodel.MESHKindNormal)
+	gp.AddDepth(true, true)
+	gp.AddLayout(vscene.GetUniformLayout(dev))
+	gp.AddShader(vk.SHADERStageVertexBit, shadow_vert_spv)
+	gp.AddShader(vk.SHADERStageGeometryBit, shadow_geom_spv)
+	gp.AddShader(vk.SHADERStageFragmentBit, shadow_frag_spv)
+	gp.Create(rp)
 	return gp
 }
 
-func (pl *CubePointLight) makeSkinnedShadowPipeline(ctx vk.APIContext, dev *vk.Device, rp *vk.DepthRenderPass) *vk.GraphicsPipeline {
-	gp := vk.NewGraphicsPipeline(ctx, dev)
-	vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)
-	gp.AddDepth(ctx, true, true)
-	gp.AddLayout(ctx, vscene.GetUniformLayout(ctx, dev))
-	gp.AddLayout(ctx, vscene.GetUniformLayout(ctx, dev))
-	gp.AddShader(ctx, vk.SHADERStageVertexBit, shadow_vert_skin_spv)
-	gp.AddShader(ctx, vk.SHADERStageGeometryBit, shadow_geom_spv)
-	gp.AddShader(ctx, vk.SHADERStageFragmentBit, shadow_frag_spv)
-	gp.Create(ctx, rp)
+func (pl *CubePointLight) makeSkinnedShadowPipeline(dev *vk.Device, rp *vk.DepthRenderPass) *vk.GraphicsPipeline {
+	gp := vk.NewGraphicsPipeline(dev)
+	vmodel.AddInput(gp, vmodel.MESHKindSkinned)
+	gp.AddDepth(true, true)
+	gp.AddLayout(vscene.GetUniformLayout(dev))
+	gp.AddLayout(vscene.GetUniformLayout(dev))
+	gp.AddShader(vk.SHADERStageVertexBit, shadow_vert_skin_spv)
+	gp.AddShader(vk.SHADERStageGeometryBit, shadow_geom_spv)
+	gp.AddShader(vk.SHADERStageFragmentBit, shadow_frag_spv)
+	gp.Create(rp)
 	return gp
 }
 
-func getShadowSampler(ctx vk.APIContext, dev *vk.Device) *vk.Sampler {
-	sampler := dev.Get(ctx, kShadowSampler, func(ctx vk.APIContext) interface{} {
-		return vk.NewSampler(ctx, dev, vk.SAMPLERAddressModeClampToEdge)
+func getShadowSampler(dev *vk.Device) *vk.Sampler {
+	sampler := dev.Get(kShadowSampler, func() interface{} {
+		return vk.NewSampler(dev, vk.SAMPLERAddressModeClampToEdge)
 	}).(*vk.Sampler)
 	return sampler
 }

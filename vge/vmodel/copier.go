@@ -8,14 +8,13 @@ import (
 type Copier struct {
 	dev *vk.Device
 	cmd *vk.Command
-	ctx vk.APIContext
 }
 
 var kDefaultSampler = vk.NewKey()
 
-func GetDefaultSampler(ctx vk.APIContext, dev *vk.Device) *vk.Sampler {
-	return dev.Get(ctx, kDefaultSampler, func(ctx vk.APIContext) interface{} {
-		return vk.NewSampler(ctx, dev, vk.SAMPLERAddressModeRepeat)
+func GetDefaultSampler(dev *vk.Device) *vk.Sampler {
+	return dev.Get(kDefaultSampler, func() interface{} {
+		return vk.NewSampler(dev, vk.SAMPLERAddressModeRepeat)
 	}).(*vk.Sampler)
 }
 
@@ -26,23 +25,23 @@ func (c *Copier) Dispose() {
 	}
 }
 
-func DescribeWhiteImage(ctx vk.APIContext) (desc vk.ImageDescription) {
-	vasset.DescribeImage(ctx, "dds", &desc, white_bin)
+func DescribeWhiteImage() (desc vk.ImageDescription) {
+	_ = vasset.DescribeImage("dds", &desc, white_bin)
 	return
 }
 
-func NewCopier(ctx vk.APIContext, dev *vk.Device) *Copier {
-	c := &Copier{dev: dev, ctx: ctx}
-	c.cmd = vk.NewCommand(ctx, dev, vk.QUEUETransferBit, false)
+func NewCopier(dev *vk.Device) *Copier {
+	c := &Copier{dev: dev}
+	c.cmd = vk.NewCommand(dev, vk.QUEUETransferBit, false)
 	return c
 }
 
 func (c *Copier) CopyToBuffer(dst *vk.Buffer, content []byte) {
 	mb := vk.NewMemoryPool(c.dev)
 	defer mb.Dispose()
-	bTmp := mb.ReserveBuffer(c.ctx, uint64(len(content)), true, vk.BUFFERUsageTransferSrcBit)
-	mb.Allocate(c.ctx)
-	copy(bTmp.Bytes(c.ctx), content)
+	bTmp := mb.ReserveBuffer(uint64(len(content)), true, vk.BUFFERUsageTransferSrcBit)
+	mb.Allocate()
+	copy(bTmp.Bytes(), content)
 	c.cmd.Begin()
 	c.cmd.CopyBuffer(dst, bTmp)
 	c.cmd.Submit()
@@ -52,9 +51,9 @@ func (c *Copier) CopyToBuffer(dst *vk.Buffer, content []byte) {
 func (c *Copier) CopyToImage(dst *vk.Image, kind string, content []byte, imRange vk.ImageRange, finalLayout vk.ImageLayout) {
 	mb := vk.NewMemoryPool(c.dev)
 	defer mb.Dispose()
-	bTmp := mb.ReserveBuffer(c.ctx, dst.Description.ImageRangeSize(imRange), true, vk.BUFFERUsageTransferSrcBit)
-	mb.Allocate(c.ctx)
-	vasset.LoadImage(c.ctx, kind, content, bTmp)
+	bTmp := mb.ReserveBuffer(dst.Description.ImageRangeSize(imRange), true, vk.BUFFERUsageTransferSrcBit)
+	mb.Allocate()
+	vasset.LoadImage(kind, content, bTmp)
 	c.cmd.Begin()
 	c.cmd.SetLayout(dst, &imRange, vk.IMAGELayoutTransferDstOptimal)
 	imRange.Layout = vk.IMAGELayoutTransferDstOptimal
@@ -71,12 +70,12 @@ func (c *Copier) SetLayout(dst *vk.Image, imRange vk.ImageRange, finalLayout vk.
 	c.cmd.Wait()
 }
 
-func (c *Copier) CopyFromImage(src *vk.Image, imRange vk.ImageRange, kind string, finalLayout vk.ImageLayout) (content []byte) {
+func (c *Copier) CopyFromImage(src *vk.Image, imRange vk.ImageRange, kind string, finalLayout vk.ImageLayout) (content []byte, err error) {
 	mb := vk.NewMemoryPool(c.dev)
 	defer mb.Dispose()
 	dstSize := src.Description.ImageRangeSize(imRange)
-	bTmp := mb.ReserveBuffer(c.ctx, dstSize, true, vk.BUFFERUsageTransferDstBit)
-	mb.Allocate(c.ctx)
+	bTmp := mb.ReserveBuffer(dstSize, true, vk.BUFFERUsageTransferDstBit)
+	mb.Allocate()
 	c.cmd.Begin()
 	c.cmd.SetLayout(src, &imRange, vk.IMAGELayoutTransferSrcOptimal)
 
@@ -90,7 +89,7 @@ func (c *Copier) CopyFromImage(src *vk.Image, imRange vk.ImageRange, kind string
 				subRange.FirstMipLevel = mip
 				subRange.FirstLayer = layer
 				mipSize := src.Description.ImageRangeSize(subRange)
-				c.cmd.CopyImageToSlice(bTmp.Slice(c.ctx, offset, offset+mipSize), src, &subRange)
+				c.cmd.CopyImageToSlice(bTmp.Slice(offset, offset+mipSize), src, &subRange)
 				offset += mipSize
 			}
 		}
@@ -103,7 +102,7 @@ func (c *Copier) CopyFromImage(src *vk.Image, imRange vk.ImageRange, kind string
 	}
 	c.cmd.Submit()
 	c.cmd.Wait()
-	return vasset.SaveImage(c.ctx, kind, src.Description, bTmp)
+	return vasset.SaveImage(kind, src.Description, bTmp)
 }
 
 func (c *Copier) CopyWhiteImage(dst *vk.Image) {

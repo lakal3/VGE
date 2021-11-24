@@ -15,7 +15,7 @@ import (
 
 const maxInstaces = 600 // Must match to shader definition!
 
-func DebugMatFactory(ctx vk.APIContext, dev *vk.Device, props vmodel.MaterialProperties) (
+func DebugMatFactory(dev *vk.Device, props vmodel.MaterialProperties) (
 	sh vmodel.Shader, layout *vk.DescriptorLayout, ubf []byte, images []vmodel.ImageIndex) {
 
 	tx_diffuse := props.GetImage(vmodel.TxAlbedo)
@@ -31,7 +31,7 @@ func DebugMatFactory(ctx vk.APIContext, dev *vk.Device, props vmodel.MaterialPro
 	}
 
 	b := *(*[unsafe.Sizeof(debugMaterial{})]byte)(unsafe.Pointer(&ub))
-	return &DebugMaterial{}, getDebugLayout(ctx, dev), b[:], []vmodel.ImageIndex{tx_diffuse, tx_normal, 1, tx_specular, tx_emissive,
+	return &DebugMaterial{}, getDebugLayout(dev), b[:], []vmodel.ImageIndex{tx_diffuse, tx_normal, 1, tx_specular, tx_emissive,
 		tx_metalRoughness, 0, 0}
 }
 
@@ -59,13 +59,13 @@ func (u *DebugMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, wo
 	if dsFrame == nil {
 		return
 	}
-	gp := dc.Pass.Get(rc.Ctx, kDebugPipelineSkinned, func(ctx vk.APIContext) interface{} {
-		return u.NewPipeline(ctx, dc, true)
+	gp := dc.Pass.Get(kDebugPipelineSkinned, func() interface{} {
+		return u.NewPipeline(dc, true)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
 
-	uli := rc.GetPerFrame(kDebugInstances, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
+	uli := rc.GetPerFrame(kDebugInstances, func() interface{} {
+		ds, sl := uc.Alloc()
 		return &debugInstance{ds: ds, sl: sl}
 	}).(*debugInstance)
 	dm := debugMatInstance{world: world, modes: DebugModes}
@@ -73,7 +73,7 @@ func (u *DebugMaterial) DrawSkinned(dc *vmodel.DrawContext, mesh vmodel.Mesh, wo
 	b := *(*[unsafe.Sizeof(debugMatInstance{})]byte)(unsafe.Pointer(&dm))
 	copy(uli.sl.Content[uli.count*lInst:(uli.count+1)*lInst], b[:])
 	decals := decal.BindPainter(rc, extra)
-	dsMesh, slMesh := uc.Alloc(rc.Ctx)
+	dsMesh, slMesh := uc.Alloc()
 	copy(slMesh.Content, vscene.Mat4ToBytes(aniMatrix))
 	dc.DrawIndexed(gp, mesh.From, mesh.Count).AddInputs(mesh.Model.VertexBuffers(vmodel.MESHKindSkinned)...).
 		AddDescriptors(dsFrame, uli.ds, u.dsMat, decals, dsMesh).SetInstances(uli.count, 1)
@@ -97,13 +97,13 @@ func (u *DebugMaterial) Draw(dc *vmodel.DrawContext, mesh vmodel.Mesh, world mgl
 	if dsFrame == nil {
 		return
 	}
-	gp := dc.Pass.Get(rc.Ctx, kDebugPipeline, func(ctx vk.APIContext) interface{} {
-		return u.NewPipeline(ctx, dc, false)
+	gp := dc.Pass.Get(kDebugPipeline, func() interface{} {
+		return u.NewPipeline(dc, false)
 	}).(*vk.GraphicsPipeline)
 	uc := vscene.GetUniformCache(rc)
 
-	uli := rc.GetPerFrame(kDebugInstances, func(ctx vk.APIContext) interface{} {
-		ds, sl := uc.Alloc(ctx)
+	uli := rc.GetPerFrame(kDebugInstances, func() interface{} {
+		ds, sl := uc.Alloc()
 		return &debugInstance{ds: ds, sl: sl}
 	}).(*debugInstance)
 	decals := decal.BindPainter(rc, extra)
@@ -129,32 +129,32 @@ type debugMatInstance struct {
 	dummy      mgl32.Vec2
 }
 
-func (u *DebugMaterial) NewPipeline(ctx vk.APIContext, dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
+func (u *DebugMaterial) NewPipeline(dc *vmodel.DrawContext, skinned bool) *vk.GraphicsPipeline {
 	rc := dc.Frame.GetCache()
-	gp := vk.NewGraphicsPipeline(ctx, rc.Device)
+	gp := vk.NewGraphicsPipeline(rc.Device)
 	if skinned {
-		vmodel.AddInput(ctx, gp, vmodel.MESHKindSkinned)
-		gp.AddShader(ctx, vk.SHADERStageVertexBit, debugmat_vert_skinned_spv)
+		vmodel.AddInput(gp, vmodel.MESHKindSkinned)
+		gp.AddShader(vk.SHADERStageVertexBit, debugmat_vert_skinned_spv)
 
 	} else {
-		vmodel.AddInput(ctx, gp, vmodel.MESHKindNormal)
-		gp.AddShader(ctx, vk.SHADERStageVertexBit, debugmat_vert_spv)
+		vmodel.AddInput(gp, vmodel.MESHKindNormal)
+		gp.AddShader(vk.SHADERStageVertexBit, debugmat_vert_spv)
 	}
-	laFrame := forward.GetDynamicFrameLayout(ctx, rc.Device)
-	laUBF := vscene.GetUniformLayout(ctx, rc.Device)
+	laFrame := forward.GetDynamicFrameLayout(rc.Device)
+	laUBF := vscene.GetUniformLayout(rc.Device)
 
-	la2 := getDebugLayout(ctx, rc.Device)
-	gp.AddLayout(ctx, laFrame)
-	gp.AddLayout(ctx, laUBF)
-	gp.AddLayout(ctx, la2)
-	gp.AddLayout(ctx, laUBF) // Decals
+	la2 := getDebugLayout(rc.Device)
+	gp.AddLayout(laFrame)
+	gp.AddLayout(laUBF)
+	gp.AddLayout(la2)
+	gp.AddLayout(laUBF) // Decals
 	if skinned {
-		gp.AddLayout(ctx, laUBF) // Transform matrix
+		gp.AddLayout(laUBF) // Transform matrix
 	}
 
-	gp.AddShader(ctx, vk.SHADERStageFragmentBit, debugmat_frag_spv)
-	gp.AddDepth(ctx, true, true)
-	gp.Create(ctx, dc.Pass)
+	gp.AddShader(vk.SHADERStageFragmentBit, debugmat_frag_spv)
+	gp.AddDepth(true, true)
+	gp.Create(dc.Pass)
 	return gp
 }
 
@@ -174,9 +174,9 @@ var kDebugPipeline = vk.NewKey()
 var kDebugPipelineSkinned = vk.NewKey()
 var kDebugInstances = vk.NewKey()
 
-func getDebugLayout(ctx vk.APIContext, dev *vk.Device) *vk.DescriptorLayout {
-	la := vscene.GetUniformLayout(ctx, dev)
-	return dev.Get(ctx, kDebugLayout, func(ctx vk.APIContext) interface{} {
-		return la.AddBinding(ctx, vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, 8)
+func getDebugLayout(dev *vk.Device) *vk.DescriptorLayout {
+	la := vscene.GetUniformLayout(dev)
+	return dev.Get(kDebugLayout, func() interface{} {
+		return la.AddBinding(vk.DESCRIPTORTypeCombinedImageSampler, vk.SHADERStageFragmentBit, 8)
 	}).(*vk.DescriptorLayout)
 }

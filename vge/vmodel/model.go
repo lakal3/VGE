@@ -13,15 +13,15 @@ const (
 	MESHMax         = 2
 )
 
-func AddInput(ctx vk.APIContext, gr *vk.GraphicsPipeline, kind MeshKind) {
+func AddInput(gr *vk.GraphicsPipeline, kind MeshKind) {
 	switch kind {
 	case MESHKindNormal:
 		// Position, uv , normal, tangent, color
-		gr.AddVextexInput(ctx, vk.VERTEXInputRateVertex, vk.FORMATR32g32b32Sfloat,
+		gr.AddVextexInput(vk.VERTEXInputRateVertex, vk.FORMATR32g32b32Sfloat,
 			vk.FORMATR32g32Sfloat, vk.FORMATR32g32b32Sfloat, vk.FORMATR32g32b32Sfloat, vk.FORMATR32g32b32a32Sfloat)
 	case MESHKindSkinned:
 		// Position, uv , normal, tangent, color, weights, joints
-		gr.AddVextexInput(ctx, vk.VERTEXInputRateVertex, vk.FORMATR32g32b32Sfloat,
+		gr.AddVextexInput(vk.VERTEXInputRateVertex, vk.FORMATR32g32b32Sfloat,
 			vk.FORMATR32g32Sfloat, vk.FORMATR32g32b32Sfloat, vk.FORMATR32g32b32Sfloat, vk.FORMATR32g32b32a32Sfloat,
 			vk.FORMATR32g32b32a32Sfloat, vk.FORMATR16g16b16a16Uint)
 	}

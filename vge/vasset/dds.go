@@ -13,8 +13,8 @@ import (
 type DdsImageLoader struct {
 }
 
-func (d DdsImageLoader) SaveImage(ctx vk.APIContext, kind string, desc vk.ImageDescription, buffer *vk.Buffer) (content []byte) {
-	return saveDds(ctx, desc, buffer)
+func (d DdsImageLoader) SaveImage(kind string, desc vk.ImageDescription, buffer *vk.Buffer) (content []byte, err error) {
+	return saveDds(desc, buffer)
 }
 
 func (d DdsImageLoader) SupportsImage(kind string) (read bool, write bool) {
@@ -24,12 +24,12 @@ func (d DdsImageLoader) SupportsImage(kind string) (read bool, write bool) {
 	return false, false
 }
 
-func (d DdsImageLoader) DescribeImage(ctx vk.APIContext, kind string, desc *vk.ImageDescription, content []byte) {
-	describeDds(ctx, desc, content)
+func (d DdsImageLoader) DescribeImage(kind string, desc *vk.ImageDescription, content []byte) error {
+	return describeDds(desc, content)
 }
 
-func (d DdsImageLoader) LoadImage(ctx vk.APIContext, kind string, content []byte, buffer *vk.Buffer) {
-	loadDds(ctx, content, buffer)
+func (d DdsImageLoader) LoadImage(kind string, content []byte, buffer *vk.Buffer) error {
+	return loadDds(content, buffer)
 }
 
 const ddsMagic = uint32(0x20534444)
@@ -125,19 +125,14 @@ func newDdsHeader() ddsHeader {
 	return h
 }
 
-func describeDds(ctx vk.APIContext, desc *vk.ImageDescription, content []byte) {
-	if !ctx.IsValid() {
-		return
-	}
+func describeDds(desc *vk.ImageDescription, content []byte) error {
 	if len(content) < ddsHeaderLength {
-		ctx.SetError(errors.New("Header too short"))
-		return
+		return errors.New("Header too short")
 	}
 	var header ddsHeader
 	copy(header[:], content)
 	if !header.checkDDS10() {
-		ctx.SetError(errors.New("Only new DX10 format supported"))
-		return
+		return errors.New("Only new DX10 format supported")
 	}
 	header.getSize(desc)
 	desc.MipLevels = header.getMidmaps()
@@ -145,35 +140,29 @@ func describeDds(ctx vk.APIContext, desc *vk.ImageDescription, content []byte) {
 	desc.Format = header.getFormat()
 
 	if desc.Format == vk.FORMATUndefined {
-		ctx.SetError(fmt.Errorf("Unknown DDS format %d", binary.LittleEndian.Uint32(header[128:132])))
-		return
+		return fmt.Errorf("Unknown DDS format %d", binary.LittleEndian.Uint32(header[128:132]))
 	}
-	return
+	return nil
 }
 
-func loadDds(ctx vk.APIContext, content []byte, buffer *vk.Buffer) {
-	buffer.IsValid(ctx)
-	if !ctx.IsValid() {
-		return
-	}
+func loadDds(content []byte, buffer *vk.Buffer) error {
 	raw := content[ddsHeaderLength:]
 	if uint64(len(raw)) > buffer.Size {
-		ctx.SetError(fmt.Errorf("Buffer length should be %d not %d", len(raw), buffer.Size))
+		return fmt.Errorf("Buffer length should be %d not %d", len(raw), buffer.Size)
 	}
-	copy(buffer.Bytes(ctx), raw)
+	copy(buffer.Bytes(), raw)
+	return nil
 }
 
-func saveDds(ctx vk.APIContext, desc vk.ImageDescription, buffer *vk.Buffer) []byte {
-	if !buffer.IsValid(ctx) || !ctx.IsValid() {
-		return nil
-	}
-	content := buffer.Bytes(ctx)
+func saveDds(desc vk.ImageDescription, buffer *vk.Buffer) ([]byte, error) {
+
+	content := buffer.Bytes()
 	w := &bytes.Buffer{}
 	err := WriteDDS(w, desc, content)
 	if err != nil {
-		ctx.SetError(err)
+		return nil, err
 	}
-	return w.Bytes()
+	return w.Bytes(), nil
 }
 
 func WriteDDS(writer io.Writer, desc vk.ImageDescription, bytes []byte) error {

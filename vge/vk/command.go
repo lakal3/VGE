@@ -5,7 +5,6 @@ import "runtime"
 type Command struct {
 	dev       *Device
 	hCmd      hCommand
-	Ctx       APIContext
 	recording bool
 }
 
@@ -17,32 +16,28 @@ type SubmitInfo struct {
 	info hSubmitInfo
 }
 
-func NewCommand(ctx APIContext, dev *Device, cmdQueue QueueFlags, once bool) *Command {
-	dev.IsValid(ctx)
-	if !ctx.IsValid() {
-		return nil
-	}
-	c := &Command{dev: dev, Ctx: ctx}
-	call_Device_NewCommand(ctx, dev.hDev, cmdQueue, once, &c.hCmd)
+func NewCommand(dev *Device, cmdQueue QueueFlags, once bool) *Command {
+	c := &Command{dev: dev}
+	call_Device_NewCommand(dev, dev.hDev, cmdQueue, once, &c.hCmd)
 	return c
 }
 
-func (c *Command) IsValid(ctx APIContext) bool {
+func (c *Command) isValid() bool {
 	if c.hCmd == 0 {
-		ctx.SetError(ErrDisposed)
+		c.dev.setError(ErrDisposed)
 		return false
 	}
 	return true
 }
 
 func (c *Command) Begin() {
-	if c.IsValid(c.Ctx) {
-		call_Command_Begin(c.Ctx, c.hCmd)
+	if c.isValid() {
+		call_Command_Begin(c.dev, c.hCmd)
 	}
 }
 
 func (c *Command) Submit(infos ...SubmitInfo) {
-	if !c.IsValid(c.Ctx) {
+	if !c.isValid() {
 		return
 	}
 	var infoList []hSubmitInfo
@@ -51,13 +46,13 @@ func (c *Command) Submit(infos ...SubmitInfo) {
 	}
 	c.dev.mxQueue.Lock()
 	var dummy hSubmitInfo
-	call_Device_Submit(c.Ctx, c.dev.hDev, c.hCmd, 0, infoList, 0, &dummy)
+	call_Device_Submit(c.dev, c.dev.hDev, c.hCmd, 0, infoList, 0, &dummy)
 	c.dev.mxQueue.Unlock()
 	runtime.KeepAlive(infoList)
 }
 
 func (c *Command) SubmitForWait(priority uint32, stage PipelineStageFlags, infos ...SubmitInfo) SubmitInfo {
-	if !c.IsValid(c.Ctx) {
+	if !c.isValid() {
 		return SubmitInfo{}
 	}
 	var infoList []hSubmitInfo
@@ -66,14 +61,14 @@ func (c *Command) SubmitForWait(priority uint32, stage PipelineStageFlags, infos
 	}
 	var si hSubmitInfo
 	c.dev.mxQueue.Lock()
-	call_Device_Submit(c.Ctx, c.dev.hDev, c.hCmd, priority, infoList, stage, &si)
+	call_Device_Submit(c.dev, c.dev.hDev, c.hCmd, priority, infoList, stage, &si)
 	c.dev.mxQueue.Unlock()
 	return SubmitInfo{info: si}
 }
 
 func (c *Command) Wait() {
-	if c.IsValid(c.Ctx) {
-		call_Command_Wait(c.Ctx, c.hCmd)
+	if c.isValid() {
+		call_Command_Wait(c.dev, c.hCmd)
 	}
 }
 
@@ -85,55 +80,55 @@ func (c *Command) Dispose() {
 }
 
 func (c *Command) CopyBuffer(dst *Buffer, src *Buffer) {
-	if c.IsValid(c.Ctx) && src.IsValid(c.Ctx) && dst.IsValid(c.Ctx) {
-		call_Command_CopyBuffer(c.Ctx, c.hCmd, src.hBuf, dst.hBuf)
+	if c.isValid() && src.isValid() && dst.isValid() {
+		call_Command_CopyBuffer(c.dev, c.hCmd, src.hBuf, dst.hBuf)
 	}
 }
 
 func (c *Command) CopyImageToBuffer(dst *Buffer, src *Image, imRange *ImageRange) {
-	if c.IsValid(c.Ctx) && src.IsValid(c.Ctx) && dst.IsValid(c.Ctx) {
-		call_Command_CopyImageToBuffer(c.Ctx, c.hCmd, src.hImage, dst.hBuf, imRange, 0)
+	if c.isValid() && src.isValid() && dst.isValid() {
+		call_Command_CopyImageToBuffer(c.dev, c.hCmd, src.hImage, dst.hBuf, imRange, 0)
 	}
 }
 
 func (c *Command) CopyImageToSlice(sl *Slice, src *Image, imRange *ImageRange) {
-	if c.IsValid(c.Ctx) && src.IsValid(c.Ctx) && sl.IsValid(c.Ctx) {
-		call_Command_CopyImageToBuffer(c.Ctx, c.hCmd, src.hImage, sl.buffer.hBuf, imRange, sl.from)
+	if c.isValid() && src.isValid() && sl.isValid() {
+		call_Command_CopyImageToBuffer(c.dev, c.hCmd, src.hImage, sl.buffer.hBuf, imRange, sl.from)
 	}
 }
 
 func (c *Command) CopyBufferToImage(dst *Image, src *Buffer, imRange *ImageRange) {
-	if c.IsValid(c.Ctx) && src.IsValid(c.Ctx) && dst.IsValid(c.Ctx) {
-		call_Command_CopyBufferToImage(c.Ctx, c.hCmd, src.hBuf, dst.hImage, imRange, 0)
+	if c.isValid() && src.isValid() && dst.isValid() {
+		call_Command_CopyBufferToImage(c.dev, c.hCmd, src.hBuf, dst.hImage, imRange, 0)
 	}
 }
 
 func (c *Command) ClearImage(dst *Image, imRange *ImageRange, color float32, alpha float32) {
-	if c.IsValid(c.Ctx) && dst.IsValid(c.Ctx) {
-		call_Command_ClearImage(c.Ctx, c.hCmd, dst.hImage, imRange, imRange.Layout, color, alpha)
+	if c.isValid() && dst.isValid() {
+		call_Command_ClearImage(c.dev, c.hCmd, dst.hImage, imRange, imRange.Layout, color, alpha)
 	}
 }
-func (c *Command) BeginRenderPass(renderPass RenderPass, fb *Framebuffer) {
-	if !renderPass.IsValid(c.Ctx) || !fb.IsValid(c.Ctx) || !c.IsValid(c.Ctx) {
+func (c *Command) BeginRenderPass(renderPass *GeneralRenderPass, fb *Framebuffer) {
+	if !renderPass.isValid() || !fb.isValid() || !c.isValid() {
 		return
 	}
-	call_Command_BeginRenderPass(c.Ctx, c.hCmd, hRenderPass(renderPass.GetRenderPass()), fb.hFb)
+	call_Command_BeginRenderPass(c.dev, c.hCmd, renderPass.hRp, fb.hFb)
 }
 
 func (c *Command) EndRenderPass() {
-	call_Command_EndRenderPass(c.Ctx, c.hCmd)
+	call_Command_EndRenderPass(c.dev, c.hCmd)
 }
 
 func (c *Command) Draw(dl *DrawList) {
-	if !c.IsValid(c.Ctx) {
+	if !c.isValid() {
 		return
 	}
 	dl.optimize()
-	call_Command_Draw(c.Ctx, c.hCmd, dl.list)
+	call_Command_Draw(c.dev, c.hCmd, dl.list)
 }
 
 func (c *Command) SetLayout(img *Image, imRange *ImageRange, newLayout ImageLayout) {
-	call_Command_SetLayout(c.Ctx, c.hCmd, img.hImage, imRange, newLayout)
+	call_Command_SetLayout(c.dev, c.hCmd, img.hImage, imRange, newLayout)
 	imRange.Layout = newLayout
 }
 
@@ -145,12 +140,12 @@ func (c *Command) Compute(cp *ComputePipeline, x uint32, y uint32, z uint32, des
 			hds[idx] = ds.hSet
 		}
 	}
-	call_Command_Compute(c.Ctx, c.hCmd, cp.hPl, x, y, z, hds)
+	call_Command_Compute(c.dev, c.hCmd, cp.hPl, x, y, z, hds)
 }
 
 // Write value of timer after all commands in stage has completed
 func (c *Command) WriteTimer(tp *TimerPool, timerIndex uint32, stage PipelineStageFlags) {
-	call_Command_WriteTimer(c.Ctx, c.hCmd, tp.pool, stage, timerIndex)
+	call_Command_WriteTimer(c.dev, c.hCmd, tp.pool, stage, timerIndex)
 }
 
 type TimerPool struct {
@@ -169,10 +164,10 @@ func (t *TimerPool) Dispose() {
 // Get retrieve recorded values converted to nanosecond. Values are valid only after command(s) have completed.
 // Only difference of values make any sense and if you record time events from multiple queues, times may no be comparable
 // Use WriteTimer in command to record actual timer values.
-func (t *TimerPool) Get(ctx APIContext) []float64 {
+func (t *TimerPool) Get() []float64 {
 	result := make([]uint64, t.size)
 	var multiplier float32
-	call_QueryPool_Get(ctx, t.pool, result, &multiplier)
+	call_QueryPool_Get(t.dev, t.pool, result, &multiplier)
 	fresult := make([]float64, t.size)
 	for idx, r := range result {
 		fresult[idx] = float64(r) * float64(multiplier)
@@ -183,9 +178,9 @@ func (t *TimerPool) Get(ctx APIContext) []float64 {
 // NewTimerPool creates a QueryPool for timing.
 // You must specify how many time events you want to write to in one pool
 // Currently pool can be used only once. Dispose and create a new pool if you need multiple recording
-func NewTimerPool(ctx APIContext, dev *Device, size uint32) *TimerPool {
+func NewTimerPool(dev *Device, size uint32) *TimerPool {
 	t := &TimerPool{dev: dev, size: size}
-	call_Device_NewTimestampQuery(ctx, dev.hDev, size, &t.pool)
+	call_Device_NewTimestampQuery(dev, dev.hDev, size, &t.pool)
 	return t
 }
 

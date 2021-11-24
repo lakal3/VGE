@@ -133,7 +133,7 @@ func (g *generator) emitMethodBody(writer io.Writer, mi reflect.Method) {
 func (g *generator) emitGoBody(mi reflect.Method) error {
 	g.emit("func", " call_"+mi.Name, "(")
 	if !isVoid(mi) {
-		g.emit("ctx APIContext,")
+		g.emit("ctx apicontext,")
 	}
 	g.eachParam(mi, func(idx int, p reflect.StructField) error {
 		if idx > 0 {
@@ -151,7 +151,7 @@ func (g *generator) emitGoBody(mi reflect.Method) error {
 		return nil
 	})
 	if !isVoid(mi) {
-		g.emitLn("    atEnd := ctx.Begin(\"" + mi.Name + "\")")
+		g.emitLn("    atEnd := ctx.begin(\"" + mi.Name + "\")")
 		g.emitLn("    if atEnd != nil {")
 		g.emitLn("    	defer atEnd()")
 		g.emitLn("    }")

@@ -14,11 +14,10 @@ func NewKeys(howMany uint64) Key {
 	return Key(atomic.AddUint64(&lastKey, howMany) - howMany + 1)
 }
 
-type Constructor func(ctx APIContext) interface{}
+type Constructor func() interface{}
 
 type RenderCache struct {
 	Device   *Device
-	Ctx      APIContext
 	perCache Owner
 	perFrame Owner
 }
@@ -28,16 +27,16 @@ func (rc *RenderCache) Dispose() {
 	rc.perCache.Dispose()
 }
 
-func NewRenderCache(ctx APIContext, dev *Device) *RenderCache {
-	return &RenderCache{Ctx: ctx, Device: dev}
+func NewRenderCache(dev *Device) *RenderCache {
+	return &RenderCache{Device: dev}
 }
 
 func (rc *RenderCache) Get(key Key, cons Constructor) interface{} {
-	return rc.perCache.Get(rc.Ctx, key, cons)
+	return rc.perCache.Get(key, cons)
 }
 
 func (rc *RenderCache) GetPerFrame(key Key, cons Constructor) interface{} {
-	return rc.perFrame.Get(rc.Ctx, key, cons)
+	return rc.perFrame.Get(key, cons)
 }
 
 func (rc *RenderCache) SetPerFrame(key Key, val interface{}) {

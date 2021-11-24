@@ -2,36 +2,66 @@ package vk
 
 import (
 	"errors"
+	"fmt"
+	"os"
 	"runtime"
 	"strings"
 	"sync"
 )
 
 type Application struct {
+	OnFatalError    func(fatalError error)
 	owner           Owner
 	hApp            hApplication
 	hInst           hInstance
 	dynamicIndexing bool
+	fatalError      error
+}
+
+func (a *Application) setError(err error) {
+	a.fatalError = err
+	if a.OnFatalError != nil {
+		a.OnFatalError(err)
+	} else {
+		panic("Fatal application error: " + err.Error())
+	}
+}
+
+func (a *Application) isValid() bool {
+	return a.fatalError == nil
+}
+
+func (a *Application) begin(callName string) (atEnd func()) {
+	return nil
 }
 
 type Device struct {
-	Props   DeviceInfo
-	hDev    hDevice
-	owner   Owner
-	keyMap  map[Key]interface{}
-	mxQueue *sync.Mutex
-	mxMap   *sync.Mutex
-	app     *Application
+	Props        DeviceInfo
+	OnFatalError func(fatalError error)
+	OnError      func(err error)
+	hDev         hDevice
+	owner        Owner
+	keyMap       map[Key]interface{}
+	mxQueue      *sync.Mutex
+	mxMap        *sync.Mutex
+	app          *Application
+	fatalError   error
 }
 
-type DebugContext struct {
+func (d *Device) setError(err error) {
+	d.fatalError = err
+	if d.OnFatalError != nil {
+		d.OnFatalError(err)
+	} else {
+		panic("Fatal device error: " + err.Error())
+	}
 }
 
-func (d DebugContext) SetError(err error) {
-	panic(err.Error())
+func (d *Device) isValid() bool {
+	return d.hDev != 0 && d.fatalError == nil
 }
 
-func (d DebugContext) Begin(callName string) (atEnd func()) {
+func (d *Device) begin(callName string) (atEnd func()) {
 	return nil
 }
 
@@ -57,22 +87,22 @@ var GetDllPath = func() string {
 // Some errors are not always valid and call to AddValidationException can put validation message to ignore list
 //
 // In VGE validation ignore list is global, not per application instance
-func AddValidationException(ctx APIContext, msgId int32) {
-	call_AddValidationException(ctx, msgId)
+func AddValidationException(msgId int32) {
+	call_AddValidationException(&errContext{}, msgId)
 }
 
-func NewApplication(ctx APIContext, name string) *Application {
+func NewApplication(name string) (*Application, error) {
 	err := loadLib()
 	if err != nil {
-		ctx.SetError(err)
-		return nil
+		return nil, err
 	}
-	AddValidationException(ctx, 0x9cacd67a-0x100000000) // UNASSIGNED-CoreValidation-DrawState-QueryNotReset
+	AddValidationException(0x9cacd67a - 0x100000000) // UNASSIGNED-CoreValidation-DrawState-QueryNotReset
 	// VGE bind cube and normal images on same descriptor slot using slot override in glsl
-	AddValidationException(ctx, 0xa44449d4-0x100000000) // VUID-vkCmdDrawIndexed-None-02699
+	AddValidationException(0xa44449d4 - 0x100000000) // VUID-vkCmdDrawIndexed-None-02699
 	a := &Application{}
-	call_NewApplication(ctx, []byte(name), &a.hApp)
-	return a
+	var ec errContext
+	call_NewApplication(&ec, []byte(name), &a.hApp)
+	return a, ec.err
 }
 
 // AddValidation will load Vulkan Validations layers and register them when application is initialize.
@@ -82,12 +112,12 @@ func NewApplication(ctx APIContext, name string) *Application {
 //
 // Validation layer can be also configured with Vulkan Configurator from Vulkan SDK. If you use Vulkan Configurator to validate application,
 // you should not add validation layer to application.
-func (a *Application) AddValidation(ctx APIContext) {
+func (a *Application) AddValidation() {
 	if a.hInst != 0 {
-		ctx.SetError(errors.New("Already initialized"))
+		a.setError(errors.New("Already initialized"))
 		return
 	}
-	call_AddValidation(ctx, a.hApp)
+	call_AddValidation(a, a.hApp)
 }
 
 // AddDynamicDescriptors adds dynamics descriptor support to device.
@@ -96,23 +126,22 @@ func (a *Application) AddValidation(ctx APIContext) {
 //
 // This call must be done before any device is created.
 // Note that device creating will fail if dynamic descriptor are not supported or request maxSize is too high
-func (a *Application) AddDynamicDescriptors(ctx APIContext) {
+func (a *Application) AddDynamicDescriptors() {
 	if a.hInst != 0 {
-		ctx.SetError(errors.New("Already initialized"))
+		a.setError(errors.New("Already initialized"))
 		return
 	}
-	call_AddDynamicDescriptors(ctx, a.hApp)
+	call_AddDynamicDescriptors(a, a.hApp)
 	a.dynamicIndexing = true
 }
 
 // Initialize Vulkan application. Create Vulkan application and Vulkan instance.
 // See https://gpuopen.com/understanding-vulkan-objects/ about Vulkan object and their dependencies
-func (a *Application) Init(ctx APIContext) {
+func (a *Application) Init() {
 	if a.hInst != 0 {
-		ctx.SetError(errors.New("Already initialized"))
-		return
+		a.setError(errors.New("Already initialized"))
 	}
-	call_Application_Init(ctx, a.hApp, &a.hInst)
+	call_Application_Init(a, a.hApp, &a.hInst)
 }
 
 // Dispose Vulkan application. This will dispose device, instance and all resources bound to them.
@@ -127,34 +156,34 @@ func (a *Application) Dispose() {
 
 // NewDevice allocates actual device that will be used to execute Vulkan rendering commands.
 // pdIndex is index of physical device on your machine. 0 is default
-func (a *Application) NewDevice(ctx APIContext, pdIndex int32) *Device {
-	d := NewDevice(ctx, a, pdIndex)
+func (a *Application) NewDevice(pdIndex int32) *Device {
+	d := NewDevice(a, pdIndex)
 	a.owner.AddChild(d)
 	return d
 }
 
 // IsValid checks that application is created and not disposed.
 // Can be used to validate application before calling any api requiring Vulkan Application or Vulkan Instance.
-func (a *Application) IsValid(ctx APIContext) bool {
+func (a *Application) IsValid() bool {
 	if a.hInst == 0 {
-		ctx.SetError(errors.New("Application not initialize"))
 		return false
 	}
 	return true
 }
 
 // List all physical devices available
-func (a *Application) GetDevices(ctx APIContext) (result []DeviceInfo) {
-	if !a.IsValid(ctx) {
-		return
+func (a *Application) GetDevices() (result []DeviceInfo) {
+	if !a.IsValid() {
+		a.setError(errors.New("Application not initialized"))
+		return nil
 	}
 	idx := int32(0)
 	var di DeviceInfo
-	call_Instance_GetPhysicalDevice(ctx, a.hInst, idx, &di)
+	call_Instance_GetPhysicalDevice(a, a.hInst, idx, &di)
 	for di.Valid < 2 {
 		result = append(result, di)
 		idx++
-		call_Instance_GetPhysicalDevice(ctx, a.hInst, idx, &di)
+		call_Instance_GetPhysicalDevice(a, a.hInst, idx, &di)
 	}
 	return result
 }
@@ -162,23 +191,23 @@ func (a *Application) GetDevices(ctx APIContext) (result []DeviceInfo) {
 // NewDevice will create new device from valid application.
 // Unlike with app.NewDevice, you are now responsible of disposing device before disposing application.
 // It is possible to use multiple devices. However, there is currently no support to directly copy assets between devices using this library
-func NewDevice(ctx APIContext, app *Application, pdIndex int32) *Device {
-	app.IsValid(ctx)
-	if !ctx.IsValid() {
+func NewDevice(app *Application, pdIndex int32) *Device {
+	if !app.IsValid() {
+		app.setError(errors.New("Application not initialized"))
 		return nil
 	}
-	pds := app.GetDevices(ctx)
+	pds := app.GetDevices()
 	if pdIndex < 0 || pdIndex >= int32(len(pds)) {
-		ctx.SetError(errors.New("No such device"))
+		app.setError(errors.New("No such device"))
 		return nil
 	}
 	pd := pds[pdIndex]
 	if pd.ReasonLen > 0 {
-		ctx.SetError(errors.New("Device not support: " + string(pd.Reason[:pd.ReasonLen])))
+		app.setError(errors.New("Device misses support for: " + string(pd.Reason[:pd.ReasonLen])))
 		return nil
 	}
 	d := &Device{keyMap: make(map[Key]interface{}), mxMap: &sync.Mutex{}, mxQueue: &sync.Mutex{}, app: app, Props: pd}
-	call_Instance_NewDevice(ctx, app.hInst, pdIndex, &d.hDev)
+	call_Instance_NewDevice(app, app.hInst, pdIndex, &d.hDev)
 	d.owner = NewOwner(true)
 	return d
 }
@@ -200,42 +229,54 @@ func (d *Device) NewMemoryPool() *MemoryPool {
 }
 
 // Create a new sampler that will be disposed when device is disposed. Safe for concurrent access.
-func (d *Device) NewSampler(ctx APIContext, mode SamplerAddressMode) *Sampler {
-	s := NewSampler(ctx, d, mode)
+func (d *Device) NewSampler(mode SamplerAddressMode) *Sampler {
+	s := NewSampler(d, mode)
 	d.owner.AddChild(s)
 	return s
 }
 
 // IsValid check that device is created and not disposed. Used to validate device before calling some Vulkan API requiring active device
-func (d *Device) IsValid(ctx APIContext) bool {
+func (d *Device) IsValid() bool {
 	if d.hDev == 0 {
-		ctx.SetError(ErrDisposed)
+		return false
+	}
+	if d.fatalError != nil {
 		return false
 	}
 	return true
 }
 
 // NewDescriptorLayout will create new DescriptorLayout that will be disposed when device is disposed. Safe for concurrent access.
-func (d *Device) NewDescriptorLayout(ctx APIContext, descriptorType DescriptorType, stages ShaderStageFlags, elements uint32) *DescriptorLayout {
-	dl := NewDescriptorLayout(ctx, d, descriptorType, stages, elements)
+func (d *Device) NewDescriptorLayout(descriptorType DescriptorType, stages ShaderStageFlags, elements uint32) *DescriptorLayout {
+	dl := NewDescriptorLayout(d, descriptorType, stages, elements)
 	d.owner.AddChild(dl)
 	return dl
 }
 
 // NewDynamicDescriptorLayout will create new DescriptorLayout that will be disposed when device is disposed. Safe for concurrent access.
-func (d *Device) NewDynamicDescriptorLayout(ctx APIContext, descriptorType DescriptorType, stages ShaderStageFlags,
+func (d *Device) NewDynamicDescriptorLayout(descriptorType DescriptorType, stages ShaderStageFlags,
 	elements uint32, flags DescriptorBindingFlagBitsEXT) *DescriptorLayout {
-	dl := NewDynamicDescriptorLayout(ctx, d, descriptorType, stages, elements, flags)
+	dl := NewDynamicDescriptorLayout(d, descriptorType, stages, elements, flags)
 	d.owner.AddChild(dl)
 	return dl
 }
 
 // See Owner.Get. Safe for concurrent access.
-func (d *Device) Get(ctx APIContext, key Key, cons Constructor) interface{} {
-	return d.owner.Get(ctx, key, cons)
+func (d *Device) Get(key Key, cons Constructor) interface{} {
+	return d.owner.Get(key, cons)
 }
 
 // Application returns application that device was created from.
 func (d *Device) Application() *Application {
 	return d.app
+}
+
+// ReportError report non fatal usage error that can be recovered but most likely should be fixed. Override OnError to handle errors
+// Default implementation will write them to os.Stderr
+func (d *Device) ReportError(err error) {
+	if d.OnError != nil {
+		d.OnError(err)
+	} else {
+		_, _ = fmt.Fprintln(os.Stderr, "VGE error: ", err)
+	}
 }

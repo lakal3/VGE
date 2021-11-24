@@ -3,7 +3,6 @@ package vk
 import (
 	"errors"
 	"reflect"
-	"runtime"
 	"sync"
 	"unsafe"
 )
@@ -35,47 +34,35 @@ func sliceToUintptr(views interface{}) uintptr {
 	return v.Pointer()
 }
 
-func handleError(ctx APIContext, rc uintptr) {
+func handleError(ctx apicontext, rc uintptr) {
 	if rc != 0 {
 		var msg [4096]byte
 		var lMsg int32
 		call_Exception_GetError(hException(rc), msg[:], &lMsg)
 		err := errors.New(string(msg[:lMsg]))
 		call_Disposable_Dispose(hDisposable(rc))
-		ctx.SetError(err)
+		ctx.setError(err)
 	}
 }
 
 func Float32ToBytes(src []float32) []byte {
-	dPtr := (*reflect.SliceHeader)(unsafe.Pointer(&src))
-	d2Ptr := &reflect.SliceHeader{Len: dPtr.Len * 4, Cap: dPtr.Cap * 4, Data: dPtr.Data}
-	d2 := (*[]byte)(unsafe.Pointer(d2Ptr))
-	runtime.KeepAlive(src)
-	return *d2
+	p := unsafe.Pointer(&src[0])
+	return unsafe.Slice((*byte)(p), len(src)*4)
 }
 
 func BytesToFloat32(src []byte) []float32 {
-	dPtr := (*reflect.SliceHeader)(unsafe.Pointer(&src))
-	d2Ptr := &reflect.SliceHeader{Len: dPtr.Len / 4, Cap: dPtr.Cap / 4, Data: dPtr.Data}
-	d2 := (*[]float32)(unsafe.Pointer(d2Ptr))
-	runtime.KeepAlive(src)
-	return *d2
+	p := unsafe.Pointer(&src[0])
+	return unsafe.Slice((*float32)(p), len(src)/4)
 }
 
 func UInt32ToBytes(src []uint32) []byte {
-	dPtr := (*reflect.SliceHeader)(unsafe.Pointer(&src))
-	d2Ptr := &reflect.SliceHeader{Len: dPtr.Len * 4, Cap: dPtr.Cap * 4, Data: dPtr.Data}
-	d2 := (*[]byte)(unsafe.Pointer(d2Ptr))
-	runtime.KeepAlive(src)
-	return *d2
+	p := unsafe.Pointer(&src[0])
+	return unsafe.Slice((*byte)(p), len(src)*4)
 }
 
 func UInt16ToBytes(src []uint16) []byte {
-	dPtr := (*reflect.SliceHeader)(unsafe.Pointer(&src))
-	d2Ptr := &reflect.SliceHeader{Len: dPtr.Len * 2, Cap: dPtr.Cap * 2, Data: dPtr.Data}
-	d2 := (*[]byte)(unsafe.Pointer(d2Ptr))
-	runtime.KeepAlive(src)
-	return *d2
+	p := unsafe.Pointer(&src[0])
+	return unsafe.Slice((*byte)(p), len(src)*2)
 }
 
 // Disposable interface will be implemented on object that have allocate external, typically Vulkan devices.
@@ -110,14 +97,14 @@ func (o *Owner) Dispose() {
 // Retrieve object by key. You can create unique key with NewKey. If key does not exists, constructor will be called to create one.
 // If constructed item is Disposable, it will be disposed when Owner collection is disposed
 // It is possible to contruct non Disposable objects also. They will still be remembered by key
-func (o *Owner) Get(ctx APIContext, key Key, cons Constructor) interface{} {
+func (o *Owner) Get(key Key, cons Constructor) interface{} {
 	if o.mx == nil {
 		if o.keyMap == nil {
 			o.keyMap = make(map[Key]interface{})
 		}
 		v, ok := o.keyMap[key]
 		if !ok {
-			v = cons(ctx)
+			v = cons()
 			o.keyMap[key] = v
 			disp, okDisp := v.(Disposable)
 			if okDisp {
@@ -133,7 +120,7 @@ func (o *Owner) Get(ctx APIContext, key Key, cons Constructor) interface{} {
 		v, ok := o.keyMap[key]
 		if !ok {
 			o.mx.Unlock()
-			vNew := cons(ctx)
+			vNew := cons()
 			o.mx.Lock()
 			defer o.mx.Unlock()
 			v, ok = o.keyMap[key]

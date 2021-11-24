@@ -5,28 +5,17 @@ import (
 	"testing"
 )
 
-type testContext struct {
-	t *testing.T
-}
-
-func (t *testContext) IsValid() bool {
-	return true
-}
-
-func (t *testContext) SetError(err error) {
-	t.t.Fatal("Vulcan api error ", err)
-}
-
-func (t *testContext) Begin(callName string) (atEnd func()) {
-	return nil
-}
-
 func TestAddDynamicDescriptors(t *testing.T) {
-	tc := &testContext{t: t}
-	a := NewApplication(tc, "IndexTest")
-	a.AddDynamicDescriptors(tc)
-	a.Init(tc)
-	devices := a.GetDevices(tc)
+	a, err := NewApplication("IndexTest")
+	if err != nil {
+		t.Fatal("New application ", err)
+	}
+	a.OnFatalError = func(fatalError error) {
+		t.Fatal(fatalError)
+	}
+	a.AddDynamicDescriptors()
+	a.Init()
+	devices := a.GetDevices()
 	for idx, dev := range devices {
 		t.Logf("%d. %s", idx+1, string(dev.Name[:dev.NameLen]))
 		if dev.ReasonLen > 0 {
@@ -39,18 +28,26 @@ func TestAddDynamicDescriptors(t *testing.T) {
 
 func TestNewApplication(t *testing.T) {
 	// VGEDllPath = "vgelibd.dll"
-	tc := &testContext{t: t}
-	a := NewApplication(tc, "Test")
-	a.AddValidation(tc)
-	a.Init(tc)
+	a, err := NewApplication("Test")
+	if err != nil {
+		t.Fatal("New application ", err)
+	}
+	a.OnFatalError = func(fatalError error) {
+		t.Fatal(fatalError)
+	}
+	a.AddValidation()
+	a.Init()
 	if a.hInst == 0 {
 		t.Error("No instance for initialize app")
 	}
-	d := NewDevice(tc, a, 0)
+	d := NewDevice(a, 0)
 	if d == nil {
 		t.Error("Failed to initialize application")
 	}
-	err := testCopy(tc, d)
+	d.OnFatalError = func(fatalError error) {
+		t.Fatal(fatalError)
+	}
+	err = testCopy(d)
 	if err != nil {
 		t.Error("Copy failed ", err)
 	}
@@ -58,22 +55,22 @@ func TestNewApplication(t *testing.T) {
 	a.Dispose()
 }
 
-func testCopy(ctx *testContext, dev *Device) error {
+func testCopy(dev *Device) error {
 	mp := NewMemoryPool(dev)
 	defer mp.Dispose()
-	b1 := mp.ReserveBuffer(ctx, 999, true, BUFFERUsageTransferSrcBit)
-	b2 := mp.ReserveBuffer(ctx, 1234, false, BUFFERUsageTransferSrcBit|BUFFERUsageTransferDstBit)
-	b3 := mp.ReserveBuffer(ctx, 999, true, BUFFERUsageTransferDstBit)
-	mp.Allocate(ctx)
-	if len(b1.Bytes(ctx)) != 999 {
-		return fmt.Errorf("Invalid buffer length %d", len(b1.Bytes(ctx)))
+	b1 := mp.ReserveBuffer(999, true, BUFFERUsageTransferSrcBit)
+	b2 := mp.ReserveBuffer(1234, false, BUFFERUsageTransferSrcBit|BUFFERUsageTransferDstBit)
+	b3 := mp.ReserveBuffer(999, true, BUFFERUsageTransferDstBit)
+	mp.Allocate()
+	if len(b1.Bytes()) != 999 {
+		return fmt.Errorf("Invalid buffer length %d", len(b1.Bytes()))
 	}
 	var testBuf [1024]byte
 	for idx := 0; idx < len(testBuf); idx++ {
 		testBuf[idx] = byte(idx)
 	}
-	copy(b1.Bytes(ctx), testBuf[:])
-	cmd := NewCommand(ctx, dev, QUEUETransferBit, false)
+	copy(b1.Bytes(), testBuf[:])
+	cmd := NewCommand(dev, QUEUETransferBit, false)
 	defer cmd.Dispose()
 	cmd.Begin()
 	cmd.CopyBuffer(b2, b1)
@@ -83,7 +80,7 @@ func testCopy(ctx *testContext, dev *Device) error {
 	cmd.CopyBuffer(b3, b2)
 	cmd.Submit()
 	cmd.Wait()
-	endBytes := b3.Bytes(ctx)
+	endBytes := b3.Bytes()
 	for idx, b := range endBytes {
 		if b != byte(idx) {
 			return fmt.Errorf("Error at %d (%d)", idx, b)

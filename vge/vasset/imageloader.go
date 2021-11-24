@@ -8,18 +8,14 @@ import (
 
 var ErrImageNotSupported = errors.New("Image kind is not supported")
 
-func SaveImage(ctx vk.APIContext, kind string, desc vk.ImageDescription, buffer *vk.Buffer) []byte {
-	if !buffer.IsValid(ctx) || !ctx.IsValid() {
-		return nil
-	}
+func SaveImage(kind string, desc vk.ImageDescription, buffer *vk.Buffer) ([]byte, error) {
 	for _, il := range imageLoaders {
 		_, w := il.SupportsImage(kind)
 		if w {
-			return il.SaveImage(ctx, kind, desc, buffer)
+			return il.SaveImage(kind, desc, buffer)
 		}
 	}
-	ctx.SetError(ErrImageNotSupported)
-	return nil
+	return nil, ErrImageNotSupported
 }
 
 func SupportsImage(kind string) (read bool, write bool) {
@@ -31,32 +27,24 @@ func SupportsImage(kind string) (read bool, write bool) {
 	return
 }
 
-func DescribeImage(ctx vk.APIContext, kind string, desc *vk.ImageDescription, content []byte) {
-	if !ctx.IsValid() {
-		return
-	}
+func DescribeImage(kind string, desc *vk.ImageDescription, content []byte) error {
 	for _, il := range imageLoaders {
 		r, _ := il.SupportsImage(kind)
 		if r {
-			il.DescribeImage(ctx, kind, desc, content)
-			return
+			return il.DescribeImage(kind, desc, content)
 		}
 	}
-	ctx.SetError(ErrImageNotSupported)
+	return ErrImageNotSupported
 }
 
-func LoadImage(ctx vk.APIContext, kind string, content []byte, buffer *vk.Buffer) {
-	if !buffer.IsValid(ctx) || !ctx.IsValid() {
-		return
-	}
+func LoadImage(kind string, content []byte, buffer *vk.Buffer) error {
 	for _, il := range imageLoaders {
 		r, _ := il.SupportsImage(kind)
 		if r {
-			il.LoadImage(ctx, kind, content, buffer)
-			return
+			return il.LoadImage(kind, content, buffer)
 		}
 	}
-	ctx.SetError(ErrImageNotSupported)
+	return ErrImageNotSupported
 }
 
 var imageLoaders []vk.ImageLoader
@@ -68,8 +56,8 @@ func RegisterImageLoader(loader vk.ImageLoader) {
 }
 
 // RegisterNativeImageLoader register loader implemented in vgelib (using stb_image.h image loaders)
-func RegisterNativeImageLoader(ctx vk.APIContext, app *vk.Application) {
-	ld := vk.NewNativeImageLoader(ctx, app)
+func RegisterNativeImageLoader(app *vk.Application) {
+	ld := vk.NewNativeImageLoader(app)
 	if ld != nil {
 		RegisterImageLoader(ld)
 	}
@@ -78,10 +66,10 @@ func RegisterNativeImageLoader(ctx vk.APIContext, app *vk.Application) {
 type RawImageLoader struct {
 }
 
-func (r RawImageLoader) SaveImage(ctx vk.APIContext, kind string, desc vk.ImageDescription, buffer *vk.Buffer) []byte {
+func (r RawImageLoader) SaveImage(kind string, desc vk.ImageDescription, buffer *vk.Buffer) ([]byte, error) {
 	tmp := make([]byte, desc.ImageSize())
-	copy(tmp, buffer.Bytes(ctx))
-	return tmp
+	copy(tmp, buffer.Bytes())
+	return tmp, nil
 }
 
 func (r RawImageLoader) SupportsImage(kind string) (read bool, write bool) {
@@ -91,12 +79,13 @@ func (r RawImageLoader) SupportsImage(kind string) (read bool, write bool) {
 	return false, false
 }
 
-func (r RawImageLoader) DescribeImage(ctx vk.APIContext, kind string, desc *vk.ImageDescription, content []byte) {
-	ctx.SetError(errors.New("Raw images don't support describe"))
+func (r RawImageLoader) DescribeImage(kind string, desc *vk.ImageDescription, content []byte) error {
+	return errors.New("Raw images don't support describe")
 }
 
-func (r RawImageLoader) LoadImage(ctx vk.APIContext, kind string, content []byte, buffer *vk.Buffer) {
-	copy(buffer.Bytes(ctx), content)
+func (r RawImageLoader) LoadImage(kind string, content []byte, buffer *vk.Buffer) error {
+	copy(buffer.Bytes(), content)
+	return nil
 }
 
 func init() {

@@ -21,8 +21,11 @@ func TestNewGlyphBuilder(t *testing.T) {
 	vtestapp.Init(ctx, "glyphbuilder")
 	// vasset.RegisterNativeImageLoader(ctx, vtestapp.TestApp.App)
 	pngloader.RegisterPngLoader()
-	gb := NewSetBuilder(ctx, SETGrayScale)
-	testLoadImage(ctx, gb, "btn_focus", tl, "button_focus.png", RED, image.Rect(40, 40, 50, 50))
+	gb := NewSetBuilder(SETGrayScale)
+	err := testLoadImage(gb, "btn_focus", tl, "button_focus.png", RED, image.Rect(40, 40, 50, 50))
+	if err != nil {
+		t.Fatal("Load image ", err)
+	}
 	gb.AddComputedGray("white", image.Pt(64, 64), image.Rect(16, 16, 16, 16),
 		func(x, y int) (float32, float32) {
 			return 1, 1
@@ -40,18 +43,17 @@ func TestNewGlyphBuilder(t *testing.T) {
 	vtestapp.Terminate()
 }
 
-func testLoadImage(ctx vk.APIContext, gb *SetBuilder, name string, tl vtestapp.TestLoader, image string, color ColorIndex,
-	edges image.Rectangle) {
+func testLoadImage(gb *SetBuilder, name string, tl vtestapp.TestLoader, image string, color ColorIndex,
+	edges image.Rectangle) error {
 	rd, err := tl.Open(image)
 	if err != nil {
-		ctx.SetError(err)
-		return
+		return err
 	}
 	defer rd.Close()
 	context, err := ioutil.ReadAll(rd)
 	if err != nil {
-		ctx.SetError(err)
-		return
+		return err
 	}
 	gb.AddEdgedGlyph(name, color, "png", context, edges)
+	return nil
 }

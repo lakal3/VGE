@@ -18,7 +18,10 @@ func TestDrawInfo_Draw(t *testing.T) {
 	vtestapp.Init(ctx, "drawtest")
 	// vasset.RegisterNativeImageLoader(ctx, vtestapp.TestApp.App)
 	pngloader.RegisterPngLoader()
-	theme := testBuildPalette(ctx)
+	theme, err := testBuildPalette(ctx)
+	if err != nil {
+		t.Fatal("Build palette ", err)
+	}
 	mm := vtestapp.NewMainImage()
 	vtestapp.AddChild(mm)
 	mm.ForwardRender(false, func(cmd *vk.Command, dc *vmodel.DrawContext) {
@@ -67,10 +70,13 @@ func TestDrawInfo_Draw(t *testing.T) {
 	vtestapp.Terminate()
 }
 
-func testBuildPalette(ctx vtestapp.TestContext) *Palette {
-	gb := NewSetBuilder(ctx, SETGrayScale)
+func testBuildPalette(ctx vtestapp.TestContext) (*Palette, error) {
+	gb := NewSetBuilder(SETGrayScale)
 	tl := vtestapp.TestLoader{Path: "glyphs/test"}
-	testLoadImage(ctx, gb, "btn_focus", tl, "button_focus.png", RED_GREENA, image.Rect(40, 40, 50, 50))
+	err := testLoadImage(gb, "btn_focus", tl, "button_focus.png", RED_GREENA, image.Rect(40, 40, 50, 50))
+	if err != nil {
+		return nil, err
+	}
 	gb.AddComputedGray("white", image.Pt(64, 64), image.Rect(16, 16, 16, 16),
 		func(x, y int) (float32, float32) {
 			return 1, 1
@@ -87,22 +93,25 @@ func testBuildPalette(ctx vtestapp.TestContext) *Palette {
 		})
 	gs := gb.Build(vtestapp.TestApp.Dev)
 	vtestapp.AddChild(gs)
-	gb = NewSetBuilder(ctx, SETRGBA)
-	testLoadImage(ctx, gb, "btn_next", tl, "next_button.png", 0, image.Rect(40, 40, 40, 40))
+	gb = NewSetBuilder(SETRGBA)
+	err = testLoadImage(gb, "btn_next", tl, "next_button.png", 0, image.Rect(40, 40, 40, 40))
+	if err != nil {
+		return nil, err
+	}
 	gs3 := gb.Build(vtestapp.TestApp.Dev)
 	vtestapp.AddChild(gs3)
 
 	vb := testVectorSet1()
-	gs2 := vb.Build(ctx, vtestapp.TestApp.Dev)
+	gs2 := vb.Build(vtestapp.TestApp.Dev)
 	vtestapp.AddChild(gs2)
-	th := NewPalette(ctx, vtestapp.TestApp.Dev, 4, 128)
-	th.ComputeMask(ctx, vtestapp.TestApp.Dev, func(x, y, maskSize int) color.RGBA {
+	th := NewPalette(vtestapp.TestApp.Dev, 4, 128)
+	th.ComputeMask(vtestapp.TestApp.Dev, func(x, y, maskSize int) color.RGBA {
 		return color.RGBA{A: 255, B: 0,
 			R: byte(127 * (1 + math.Sin(float64(x)*math.Pi*2/float64(maskSize)))),
 			G: byte(127 * (1 + math.Sin(float64(y)*math.Pi*2/float64(maskSize)))),
 		}
 	})
-	th.ComputeMask(ctx, vtestapp.TestApp.Dev, func(x, y, maskSize int) color.RGBA {
+	th.ComputeMask(vtestapp.TestApp.Dev, func(x, y, maskSize int) color.RGBA {
 		c := color.RGBA{A: 255}
 		c.B = byte(x)
 		if x&0x10 == 0 {
@@ -110,9 +119,9 @@ func testBuildPalette(ctx vtestapp.TestContext) *Palette {
 		}
 		return c
 	})
-	th.AddGlyphSet(ctx, gs)
-	th.AddGlyphSet(ctx, gs2)
-	th.AddGlyphSet(ctx, gs3)
+	th.AddGlyphSet(gs)
+	th.AddGlyphSet(gs2)
+	th.AddGlyphSet(gs3)
 	vtestapp.AddChild(th)
-	return th
+	return th, nil
 }

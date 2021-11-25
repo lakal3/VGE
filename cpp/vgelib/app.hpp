@@ -139,6 +139,7 @@ namespace vge {
 		void NewSampler(vk::SamplerAddressMode mode, Sampler*& sampler);
 		void NewTimestampQuery(uint32_t size, QueryPool*& qp);
 		void Submit(Command* command, uint32_t priority, SubmitInfo **info, size_t info_len, vk::PipelineStageFlags waitForStage, SubmitInfo*& waitFor);
+		void NewGlslCompiler(GlslCompiler *&compiler);
 
 		const vk::DispatchLoaderDynamic& get_dispatch() const {
 			return _dispatchLoader;

@@ -59,6 +59,8 @@ type hSubmitInfo uintptr
 
 type hQueryPool uintptr
 
+type hGlslCompiler uintptr
+
 type MainLib interface {
 	Exception_GetError(struct {
 		ex     hException
@@ -153,6 +155,11 @@ type MainLib interface {
 		dev  hDevice
 		size uint32
 		qp   *hQueryPool
+	})
+
+	Device_NewGlslCompiler(struct {
+		dev  hDevice
+		comp *hGlslCompiler
 	})
 
 	MemoryBlock_Reserve(struct {
@@ -427,5 +434,32 @@ type MainLib interface {
 		qp              hQueryPool
 		values          []uint64
 		timestampPeriod *float32
+	})
+
+	GlslCompiler_Compile(struct {
+		comp     hGlslCompiler
+		stage    vk.ShaderStageFlags
+		src      []byte
+		instance *uintptr
+	})
+
+	GlslCompiler_GetOutput(struct {
+		comp     hGlslCompiler
+		instance uintptr
+		msg      *uintptr
+		msg_len  *uint64
+		result   *uint32 // 0 - OK, 1 - warnings, 10 - failed
+	})
+
+	GlslCompiler_GetSpirv(struct {
+		comp      hGlslCompiler
+		instance  uintptr
+		spirv     *uintptr
+		spirv_len *uint64
+	})
+
+	GlslCompiler_Free(struct {
+		comp     hGlslCompiler
+		instance uintptr
 	})
 }

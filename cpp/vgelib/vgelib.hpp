@@ -36,6 +36,7 @@ namespace vge {
     class Desktop;
     class Window;
     class QueryPool;
+    class GlslCompiler;
     struct SubmitInfo;
 }
 
@@ -56,6 +57,7 @@ namespace vge {
 #include "vgelib/pipeline.hpp"
 #include "vgelib/command.hpp"
 #include "vgelib/desktop.hpp"
+#include "vgelib/glslcompiler.hpp"
 
 #ifndef DLLEXPORT
 #ifdef _WIN32

@@ -7,7 +7,6 @@ package vk
 
 import (
 	_ "embed"
-	"errors"
 	"image"
 	"image/png"
 	"io/ioutil"
@@ -81,7 +80,10 @@ func testRender(t *testing.T, d *Device, ld ImageLoader) error {
 		return err
 	}
 	var testImageDesc ImageDescription
-	ld.DescribeImage("png", &testImageDesc, testPattern)
+	err = ld.DescribeImage("png", &testImageDesc, testPattern)
+	if err != nil {
+		t.Fatal("Describe image", err)
+	}
 	fp := NewGeneralRenderPass(d, false, []AttachmentInfo{
 		AttachmentInfo{FinalLayout: IMAGELayoutTransferSrcOptimal, Format: FORMATR8g8b8a8Unorm, ClearColor: [4]float32{0.1, 0.1, 0.1, 1}},
 		AttachmentInfo{FinalLayout: IMAGELayoutTransferSrcOptimal, Format: FORMATR8g8b8a8Unorm, ClearColor: [4]float32{0.8, 0.8, 0.8, 1}},
@@ -129,7 +131,11 @@ func testRender(t *testing.T, d *Device, ld ImageLoader) error {
 	defer fb.Dispose()
 	tp := &testPipeline{rp: fp, testImage: testImage, ubWorld: ubWorld}
 	tp.copyImage(d, bImage, testImage)
-	tp.build(d)
+	err = tp.build(d)
+	if err != nil {
+		return err
+	}
+
 	defer tp.Dispose()
 	cmd := NewCommand(d, QUEUEGraphicsBit, true)
 	if cmd == nil {
@@ -191,11 +197,43 @@ func testRender(t *testing.T, d *Device, ld ImageLoader) error {
 	return nil
 }
 
-//go:embed testsh/testsh.frag.spv
-var testsh_frag []byte
+// go:embed testsh/testsh.frag.spv
+// var testsh_frag []byte
 
-//go:embed testsh/testsh.vert.spv
-var testsh_vert []byte
+const testsh_frag = `
+#version 450
+
+layout(location = 0) out vec4 outColor;
+layout(location = 1) out vec4 outGray;
+layout(location = 0) in vec2 i_uv;
+
+layout(set = 0, binding = 0) uniform sampler2D tx_color[];
+
+void main() {
+    outColor = texture(tx_color[1], i_uv);
+    float c = (outColor.r + outColor.g + outColor.b) / 3;
+    outGray = vec4(c,c,c,1);
+}
+`
+
+// go:embed testsh/testsh.vert.spv
+// var testsh_vert []byte
+
+const testsh_vert = `
+#version 450
+
+layout (location = 0) in vec2 i_position;
+layout (location = 0) out vec2 o_uv;
+
+layout(set = 1, binding = 0) uniform WorldUBF {
+    mat4 world;
+} World;
+
+void main() {
+    o_uv = i_position;
+    gl_Position = World.world * vec4(i_position, 0.0, 1.0);
+}
+`
 
 func (tp *testPipeline) build(dev *Device) error {
 	tp.l1 = dev.NewDynamicDescriptorLayout(DESCRIPTORTypeCombinedImageSampler, SHADERStageFragmentBit,
@@ -218,11 +256,20 @@ func (tp *testPipeline) build(dev *Device) error {
 	tp.pl.AddLayout(tp.l1)
 	tp.pl.AddLayout(tp.l2)
 	tp.pl.AddVextexInput(VERTEXInputRateVertex, FORMATR32g32Sfloat)
-	if len(testsh_frag) == 0 {
-		return errors.New("No fragment shader code. Ensure that you are using go1.16 or later!")
+
+	comp := NewCompiler(dev)
+	defer comp.Dispose()
+	spir_frag, _, err := comp.Compile(SHADERStageFragmentBit, testsh_frag)
+	if err != nil {
+		return err
 	}
-	tp.pl.AddShader(SHADERStageFragmentBit, testsh_frag)
-	tp.pl.AddShader(SHADERStageVertexBit, testsh_vert)
+	spir_vert, _, err := comp.Compile(SHADERStageVertexBit, testsh_vert)
+	if err != nil {
+		return err
+	}
+
+	tp.pl.AddShader(SHADERStageFragmentBit, spir_frag)
+	tp.pl.AddShader(SHADERStageVertexBit, spir_vert)
 	tp.pl.Create(tp.rp)
 	return nil
 }

@@ -44,6 +44,7 @@ var libcall struct {
 	t_Device_NewCommand                 uintptr
 	t_Device_NewComputePipeline         uintptr
 	t_Device_NewDescriptorLayout        uintptr
+	t_Device_NewGlslCompiler            uintptr
 	t_Device_NewGraphicsPipeline        uintptr
 	t_Device_NewImage                   uintptr
 	t_Device_NewMemoryBlock             uintptr
@@ -52,6 +53,10 @@ var libcall struct {
 	t_Device_Submit                     uintptr
 	t_Disposable_Dispose                uintptr
 	t_Exception_GetError                uintptr
+	t_GlslCompiler_Compile              uintptr
+	t_GlslCompiler_Free                 uintptr
+	t_GlslCompiler_GetOutput            uintptr
+	t_GlslCompiler_GetSpirv             uintptr
 	t_GraphicsPipeline_AddAlphaBlend    uintptr
 	t_GraphicsPipeline_AddDepth         uintptr
 	t_GraphicsPipeline_AddVertexBinding uintptr
@@ -227,6 +232,10 @@ func loadLib() (err error) {
 	if err != nil {
 		return err
 	}
+	libcall.t_Device_NewGlslCompiler, err = syscall.GetProcAddress(libcall.h_lib, "Device_NewGlslCompiler")
+	if err != nil {
+		return err
+	}
 	libcall.t_Device_NewGraphicsPipeline, err = syscall.GetProcAddress(libcall.h_lib, "Device_NewGraphicsPipeline")
 	if err != nil {
 		return err
@@ -256,6 +265,22 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_Exception_GetError, err = syscall.GetProcAddress(libcall.h_lib, "Exception_GetError")
+	if err != nil {
+		return err
+	}
+	libcall.t_GlslCompiler_Compile, err = syscall.GetProcAddress(libcall.h_lib, "GlslCompiler_Compile")
+	if err != nil {
+		return err
+	}
+	libcall.t_GlslCompiler_Free, err = syscall.GetProcAddress(libcall.h_lib, "GlslCompiler_Free")
+	if err != nil {
+		return err
+	}
+	libcall.t_GlslCompiler_GetOutput, err = syscall.GetProcAddress(libcall.h_lib, "GlslCompiler_GetOutput")
+	if err != nil {
+		return err
+	}
+	libcall.t_GlslCompiler_GetSpirv, err = syscall.GetProcAddress(libcall.h_lib, "GlslCompiler_GetSpirv")
 	if err != nil {
 		return err
 	}
@@ -677,6 +702,16 @@ func call_Device_NewDescriptorLayout(ctx apicontext, dev hDevice, descriptorType
 	handleError(ctx, rc)
 	*dsLayout = _tmp_dsLayout
 }
+func call_Device_NewGlslCompiler(ctx apicontext, dev hDevice, comp *hGlslCompiler) {
+	_tmp_comp := *comp
+	atEnd := ctx.begin("Device_NewGlslCompiler")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall(libcall.t_Device_NewGlslCompiler, 2, uintptr(dev), uintptr(unsafe.Pointer(&_tmp_comp)), 0)
+	handleError(ctx, rc)
+	*comp = _tmp_comp
+}
 func call_Device_NewGraphicsPipeline(ctx apicontext, dev hDevice, gp *hGraphicsPipeline) {
 	_tmp_gp := *gp
 	atEnd := ctx.begin("Device_NewGraphicsPipeline")
@@ -746,6 +781,50 @@ func call_Exception_GetError(ex hException, msg []byte, msgLen *int32) {
 	_tmp_msgLen := *msgLen
 	_, _, _ = syscall.Syscall6(libcall.t_Exception_GetError, 4, uintptr(ex), byteArrayToUintptr(msg), uintptr(len(msg)), uintptr(unsafe.Pointer(&_tmp_msgLen)), 0, 0)
 	*msgLen = _tmp_msgLen
+}
+func call_GlslCompiler_Compile(ctx apicontext, comp hGlslCompiler, stage ShaderStageFlags, src []uint8, instance *uintptr) {
+	_tmp_instance := *instance
+	atEnd := ctx.begin("GlslCompiler_Compile")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall6(libcall.t_GlslCompiler_Compile, 5, uintptr(comp), uintptr(stage), sliceToUintptr(src), uintptr(len(src)), uintptr(unsafe.Pointer(&_tmp_instance)), 0)
+	handleError(ctx, rc)
+	*instance = _tmp_instance
+}
+func call_GlslCompiler_Free(ctx apicontext, comp hGlslCompiler, instance uintptr) {
+	atEnd := ctx.begin("GlslCompiler_Free")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall(libcall.t_GlslCompiler_Free, 2, uintptr(comp), uintptr(instance), 0)
+	handleError(ctx, rc)
+}
+func call_GlslCompiler_GetOutput(ctx apicontext, comp hGlslCompiler, instance uintptr, msg *uintptr, msg_len *uint64, result *uint32) {
+	_tmp_msg := *msg
+	_tmp_msg_len := *msg_len
+	_tmp_result := *result
+	atEnd := ctx.begin("GlslCompiler_GetOutput")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall6(libcall.t_GlslCompiler_GetOutput, 5, uintptr(comp), uintptr(instance), uintptr(unsafe.Pointer(&_tmp_msg)), uintptr(unsafe.Pointer(&_tmp_msg_len)), uintptr(unsafe.Pointer(&_tmp_result)), 0)
+	handleError(ctx, rc)
+	*msg = _tmp_msg
+	*msg_len = _tmp_msg_len
+	*result = _tmp_result
+}
+func call_GlslCompiler_GetSpirv(ctx apicontext, comp hGlslCompiler, instance uintptr, spirv *uintptr, spirv_len *uint64) {
+	_tmp_spirv := *spirv
+	_tmp_spirv_len := *spirv_len
+	atEnd := ctx.begin("GlslCompiler_GetSpirv")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall6(libcall.t_GlslCompiler_GetSpirv, 4, uintptr(comp), uintptr(instance), uintptr(unsafe.Pointer(&_tmp_spirv)), uintptr(unsafe.Pointer(&_tmp_spirv_len)), 0, 0)
+	handleError(ctx, rc)
+	*spirv = _tmp_spirv
+	*spirv_len = _tmp_spirv_len
 }
 func call_GraphicsPipeline_AddAlphaBlend(ctx apicontext, pl hGraphicsPipeline) {
 	atEnd := ctx.begin("GraphicsPipeline_AddAlphaBlend")

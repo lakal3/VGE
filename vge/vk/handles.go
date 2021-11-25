@@ -56,6 +56,8 @@ type hSubmitInfo uintptr
 
 type hQueryPool hDisposable
 
+type hGlslCompiler hDisposable
+
 type ImageDescription struct {
 	Width     uint32
 	Height    uint32

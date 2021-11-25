@@ -42,7 +42,7 @@ func TestNewApplication(t *testing.T) {
 	}
 	d := NewDevice(a, 0)
 	if d == nil {
-		t.Error("Failed to initialize application")
+		t.Error("Failed to initialize device")
 	}
 	d.OnFatalError = func(fatalError error) {
 		t.Fatal(fatalError)

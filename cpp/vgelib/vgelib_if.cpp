@@ -39,6 +39,7 @@ DLLEXPORT Exception * Device_NewBuffer(Device* dev, uint64_t size, bool hostMemo
 DLLEXPORT Exception * Device_NewCommand(Device* dev, int32_t queueType, bool once, Command*& command);
 DLLEXPORT Exception * Device_NewComputePipeline(Device* dev, ComputePipeline*& cp);
 DLLEXPORT Exception * Device_NewDescriptorLayout(Device* dev, int32_t descriptorType, int32_t stages, uint32_t element, int32_t flags, DescriptorLayout* prevLayout, DescriptorLayout*& dsLayout);
+DLLEXPORT Exception * Device_NewGlslCompiler(Device* dev, GlslCompiler*& comp);
 DLLEXPORT Exception * Device_NewGraphicsPipeline(Device* dev, GraphicsPipeline*& gp);
 DLLEXPORT Exception * Device_NewImage(Device* dev, int32_t usage, ImageDescription* desc, Image*& image);
 DLLEXPORT Exception * Device_NewMemoryBlock(Device* dev, MemoryBlock*& memBlock);
@@ -47,6 +48,10 @@ DLLEXPORT Exception * Device_NewTimestampQuery(Device* dev, uint32_t size, Query
 DLLEXPORT Exception * Device_Submit(Device* dev, Command* cmd, uint32_t priority, SubmitInfo** info, size_t info_len, int32_t waitStage, SubmitInfo*& waitInfo);
 DLLEXPORT void Disposable_Dispose(Disposable* disp);
 DLLEXPORT void Exception_GetError(Exception* ex, char * msg, size_t msg_len, int32_t& msgLen);
+DLLEXPORT Exception * GlslCompiler_Compile(GlslCompiler* comp, int32_t stage, uint8_t* src, size_t src_len, void *& instance);
+DLLEXPORT Exception * GlslCompiler_Free(GlslCompiler* comp, void * instance);
+DLLEXPORT Exception * GlslCompiler_GetOutput(GlslCompiler* comp, void * instance, void *& msg, uint64_t& msg_len, uint32_t& result);
+DLLEXPORT Exception * GlslCompiler_GetSpirv(GlslCompiler* comp, void * instance, void *& spirv, uint64_t& spirv_len);
 DLLEXPORT Exception * GraphicsPipeline_AddAlphaBlend(GraphicsPipeline* pl);
 DLLEXPORT Exception * GraphicsPipeline_AddDepth(GraphicsPipeline* pl, bool write, bool check);
 DLLEXPORT Exception * GraphicsPipeline_AddVertexBinding(GraphicsPipeline* pl, uint32_t stride, int32_t rate);
@@ -380,6 +385,15 @@ Exception * Device_NewDescriptorLayout(Device* dev, int32_t descriptorType, int3
     return Exception::getValidationError();
 }
 
+Exception * Device_NewGlslCompiler(Device* dev, GlslCompiler*& comp) {
+    try {
+        dev->NewGlslCompiler(comp);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
 Exception * Device_NewGraphicsPipeline(Device* dev, GraphicsPipeline*& gp) {
     try {
         dev->NewGraphicsPipeline(gp);
@@ -440,6 +454,42 @@ void Disposable_Dispose(Disposable* disp) {
 
 void Exception_GetError(Exception* ex, char * msg, size_t msg_len, int32_t& msgLen) {
         ex->GetError(msg, msg_len, msgLen);
+}
+
+Exception * GlslCompiler_Compile(GlslCompiler* comp, int32_t stage, uint8_t* src, size_t src_len, void *& instance) {
+    try {
+        comp->Compile(vk::ShaderStageFlags(stage), src, src_len, instance);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * GlslCompiler_Free(GlslCompiler* comp, void * instance) {
+    try {
+        comp->Free(instance);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * GlslCompiler_GetOutput(GlslCompiler* comp, void * instance, void *& msg, uint64_t& msg_len, uint32_t& result) {
+    try {
+        comp->GetOutput(instance, msg, msg_len, result);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * GlslCompiler_GetSpirv(GlslCompiler* comp, void * instance, void *& spirv, uint64_t& spirv_len) {
+    try {
+        comp->GetSpirv(instance, spirv, spirv_len);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
 }
 
 Exception * GraphicsPipeline_AddAlphaBlend(GraphicsPipeline* pl) {

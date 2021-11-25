@@ -324,6 +324,9 @@ void vge::Device::Submit(Command* command, uint32_t priority, SubmitInfo **info,
 	}
 }
 
+void vge::Device::NewGlslCompiler(GlslCompiler* &compiler) {
+	compiler = new GlslCompiler(this);
+}
 
 void vge::Device::Dispose()
 {

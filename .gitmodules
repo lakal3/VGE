@@ -1,3 +1,6 @@
 [submodule "cpp/third_party/glfw"]
 	path = cpp/third_party/glfw
 	url = https://github.com/glfw/glfw.git
+[submodule "cpp/third_party/glslang"]
+	path = cpp/third_party/glslang
+	url = https://github.com/KhronosGroup/glslang.git

@@ -22,9 +22,12 @@ func TestMain(m *testing.M) {
 
 func TestNewUIView(t *testing.T) {
 	ctx := vtestapp.TestContext{T: t}
-	vtestapp.Init(ctx, "drawtest")
-	vasset.RegisterNativeImageLoader(ctx, vtestapp.TestApp.App)
-	theme := testBuildTheme(ctx)
+	vtestapp.Init("drawtest")
+	vasset.RegisterNativeImageLoader(vtestapp.TestApp.App)
+	theme, err := testBuildTheme(ctx)
+	if err != nil {
+		t.Fatal("Build theme ", err)
+	}
 	mm := vtestapp.NewMainImage()
 	rwDummu := &vapp.RenderWindow{WindowSize: image.Pt(int(mm.Desc.Width), int(mm.Desc.Height))}
 	mv := NewUIView(theme, image.Rect(100, 100, 500, 700), rwDummu)
@@ -122,63 +125,86 @@ func (t testTheme) GetStyle(ctrl Control, class string) Style {
 	return st
 }
 
-func testBuildTheme(ctx vtestapp.TestContext) testTheme {
-	tt := testTheme{palette: testBuildPalette(ctx)}
-	return tt
+func testBuildTheme(ctx vtestapp.TestContext) (testTheme, error) {
+	p, err := testBuildPalette(ctx)
+	tt := testTheme{palette: p}
+	return tt, err
 }
 
-func testBuildPalette(ctx vtestapp.TestContext) *vglyph.Palette {
+func testBuildPalette(ctx vtestapp.TestContext) (*vglyph.Palette, error) {
 	tl := vtestapp.TestLoader{Path: "glyphs/basicui"}
-	gb := vglyph.NewSetBuilder(ctx, vglyph.SETGrayScale)
-	testLoadImage(ctx, gb, "btn_border", tl, "btn.png", vglyph.RED, image.Rect(20, 20, 20, 20))
-	testLoadImage(ctx, gb, "btn_bg", tl, "btn.png", vglyph.GREEN, image.Rect(20, 20, 20, 20))
-	testLoadImage(ctx, gb, "vslider_border", tl, "vslider.png", vglyph.RED, image.Rect(0, 20, 0, 20))
-	testLoadImage(ctx, gb, "vslider_bg", tl, "vslider.png", vglyph.GREEN, image.Rect(0, 20, 0, 20))
-	testLoadImage(ctx, gb, "hslider_border", tl, "hslider.png", vglyph.RED, image.Rect(20, 0, 20, 0))
-	testLoadImage(ctx, gb, "hslider_bg", tl, "hslider.png", vglyph.GREEN, image.Rect(20, 0, 20, 0))
-	testLoadImage(ctx, gb, "panel_border", tl, "panel.png", vglyph.RED, image.Rect(20, 20, 20, 20))
-	testLoadImage(ctx, gb, "panel_bg", tl, "panel.png", vglyph.GREEN, image.Rect(20, 20, 20, 20))
+	gb := vglyph.NewSetBuilder(vglyph.SETGrayScale)
+	err := testLoadImage(gb, "btn_border", tl, "btn.png", vglyph.RED, image.Rect(20, 20, 20, 20))
+	if err != nil {
+		return nil, err
+	}
+	err = testLoadImage(gb, "btn_bg", tl, "btn.png", vglyph.GREEN, image.Rect(20, 20, 20, 20))
+	if err != nil {
+		return nil, err
+	}
+	err = testLoadImage(gb, "vslider_border", tl, "vslider.png", vglyph.RED, image.Rect(0, 20, 0, 20))
+	if err != nil {
+		return nil, err
+	}
+	err = testLoadImage(gb, "vslider_bg", tl, "vslider.png", vglyph.GREEN, image.Rect(0, 20, 0, 20))
+	if err != nil {
+		return nil, err
+	}
+	err = testLoadImage(gb, "hslider_border", tl, "hslider.png", vglyph.RED, image.Rect(20, 0, 20, 0))
+	if err != nil {
+		return nil, err
+	}
+	err = testLoadImage(gb, "hslider_bg", tl, "hslider.png", vglyph.GREEN, image.Rect(20, 0, 20, 0))
+	if err != nil {
+		return nil, err
+	}
+	err = testLoadImage(gb, "panel_border", tl, "panel.png", vglyph.RED, image.Rect(20, 20, 20, 20))
+	if err != nil {
+		return nil, err
+	}
+	err = testLoadImage(gb, "panel_bg", tl, "panel.png", vglyph.GREEN, image.Rect(20, 20, 20, 20))
+	if err != nil {
+		return nil, err
+	}
 	gb.AddComputedGray("white", image.Pt(64, 64), image.Rect(16, 16, 16, 16), func(x, y int) (float32, float32) {
 		return 1, 1
 	})
 	gs := gb.Build(vtestapp.TestApp.Dev)
-	th := vglyph.NewPalette(ctx, vtestapp.TestApp.Dev, 4, 128)
-	th.AddGlyphSet(ctx, gs)
-	fl, err := testLoadGoFont(ctx, "OpenSans_Regular.ttf")
+	th := vglyph.NewPalette(vtestapp.TestApp.Dev, 4, 128)
+	th.AddGlyphSet(gs)
+	fl, err := testLoadGoFont("OpenSans_Regular.ttf")
 	if err != nil {
-		ctx.SetError(err)
-		return nil
+		return nil, err
 	}
 	vb := &vglyph.VectorSetBuilder{}
 	for r := rune(33); r < 256; r++ {
 		vb.AddChar(fl, vglyph.NOMINALFontSize, r)
 	}
-	gs = vb.Build(ctx, vtestapp.TestApp.Dev)
-	th.AddGlyphSet(ctx, gs)
-	return th
+	gs = vb.Build(vtestapp.TestApp.Dev)
+	th.AddGlyphSet(gs)
+	return th, nil
 }
 
-func testLoadImage(ctx vk.APIContext, gb *vglyph.SetBuilder, name string, tl vtestapp.TestLoader, image string, color vglyph.ColorIndex,
-	edges image.Rectangle) {
+func testLoadImage(gb *vglyph.SetBuilder, name string, tl vtestapp.TestLoader, image string, color vglyph.ColorIndex,
+	edges image.Rectangle) error {
 	rd, err := tl.Open(image)
 	if err != nil {
-		ctx.SetError(err)
-		return
+		return err
 	}
 	defer rd.Close()
 	context, err := ioutil.ReadAll(rd)
 	if err != nil {
-		ctx.SetError(err)
-		return
+		return err
 	}
 	gb.AddEdgedGlyph(name, color, "png", context, edges)
+	return nil
 }
 
-func testLoadGoFont(ctx vtestapp.TestContext, fontFile string) (*sfnt.Font, error) {
+func testLoadGoFont(fontFile string) (*sfnt.Font, error) {
 	tl := vtestapp.TestLoader{Path: "fonts"}
 	rd, err := tl.Open(fontFile)
 	if err != nil {
-		ctx.T.Fatal("Error reading font file ", err)
+		return nil, err
 	}
 	defer rd.Close()
 	content, err := ioutil.ReadAll(rd)

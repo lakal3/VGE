@@ -13,10 +13,12 @@ import (
 )
 
 func TestVectorSetBuilder(t *testing.T) {
-	ctx := vtestapp.TestContext{T: t}
-	vtestapp.Init(ctx, "vglyphbuilder")
+	err := vtestapp.Init("vglyphbuilder")
+	if err != nil {
+		t.Fatal("Init app ", err)
+	}
 	vb := testVectorSet1()
-	gs := vb.Build(vtestapp.TestApp.Ctx, vtestapp.TestApp.Dev)
+	gs := vb.Build(vtestapp.TestApp.Dev)
 	vtestapp.SaveImage(gs.image, "vglyphbuilder", vk.IMAGELayoutShaderReadOnlyOptimal)
 	gs.Dispose()
 	vtestapp.Terminate()
@@ -48,19 +50,25 @@ func TestFontVBuild(t *testing.T) {
 	if err != nil {
 		t.Fatal("Load font failed ", err)
 	}
-	vtestapp.Init(ctx, "vectorfont")
+	err = vtestapp.Init("vectorfont")
+	if err != nil {
+		t.Fatal("Init app ", err)
+	}
 	gb := VectorSetBuilder{}
 	for r := rune(0xe000); r < 0xefff; r++ {
 		gb.AddChar(fl, NOMINALFontSize, r)
 	}
-	gs := gb.Build(ctx, vtestapp.TestApp.Dev)
+	gs := gb.Build(vtestapp.TestApp.Dev)
 	vtestapp.SaveImage(gs.image, "vfontbuilder", vk.IMAGELayoutShaderReadOnlyOptimal)
 	gs.Dispose()
 	vtestapp.Terminate()
 }
 func TestVectorPalette(t *testing.T) {
 	ctx := vtestapp.TestContext{T: t}
-	vtestapp.Init(ctx, "vdrawtest")
+	err := vtestapp.Init("vdrawtest")
+	if err != nil {
+		t.Fatal("Load font failed ", err)
+	}
 	theme := testBuildVPalette(ctx)
 	mm := vtestapp.NewMainImage()
 	vtestapp.AddChild(mm)
@@ -125,11 +133,11 @@ func TestVectorPalette(t *testing.T) {
 
 func testBuildVPalette(ctx vtestapp.TestContext) *Palette {
 	vb := testVectorSet1()
-	gs := vb.Build(ctx, vtestapp.TestApp.Dev)
+	gs := vb.Build(vtestapp.TestApp.Dev)
 	vtestapp.AddChild(gs)
-	th := NewPalette(ctx, vtestapp.TestApp.Dev, 4, 128)
+	th := NewPalette(vtestapp.TestApp.Dev, 4, 128)
 	vtestapp.AddChild(th)
-	th.AddGlyphSet(ctx, gs)
+	th.AddGlyphSet(gs)
 	fl, err := testLoadGoFont(ctx, "OpenSans_Regular.ttf")
 	if err != nil {
 		ctx.SetError(err)
@@ -139,8 +147,8 @@ func testBuildVPalette(ctx vtestapp.TestContext) *Palette {
 	for r := rune(33); r < 256; r++ {
 		vb.AddChar(fl, 32, r)
 	}
-	gs = vb.Build(ctx, vtestapp.TestApp.Dev)
-	th.AddGlyphSet(ctx, gs)
+	gs = vb.Build(vtestapp.TestApp.Dev)
+	th.AddGlyphSet(gs)
 	vtestapp.AddChild(gs)
 	return th
 }

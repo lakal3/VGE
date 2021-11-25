@@ -7,7 +7,6 @@ import (
 )
 
 var TestApp struct {
-	Ctx          TestContext
 	App          *vk.Application
 	Dev          *vk.Device
 	NoValidation bool
@@ -36,20 +35,20 @@ type TestOption interface {
 	InitOption()
 }
 
-func Init(ctx TestContext, name string, options ...TestOption) {
-	TestApp.Ctx = ctx
+func Init(name string, options ...TestOption) (err error) {
 	TestApp.options = options
-	TestApp.App = vk.NewApplication(ctx, name)
+	TestApp.App, err = vk.NewApplication(name)
 	if !TestApp.NoValidation {
-		TestApp.App.AddValidation(ctx)
+		TestApp.App.AddValidation()
 	}
 	TestApp.owner.AddChild(TestApp.App)
 	for _, opt := range TestApp.options {
 		opt.InitOption()
 	}
-	TestApp.App.Init(ctx)
-	TestApp.Dev = TestApp.App.NewDevice(ctx, TestApp.pdIndex)
+	TestApp.App.Init()
+	TestApp.Dev = TestApp.App.NewDevice(TestApp.pdIndex)
 	TestApp.owner.AddChild(TestApp.Dev)
+	return nil
 }
 
 func Terminate() {

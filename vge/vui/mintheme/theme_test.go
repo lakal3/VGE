@@ -17,10 +17,12 @@ func TestMain(m *testing.M) {
 }
 
 func TestNewTheme(t *testing.T) {
-	ctx := vtestapp.TestContext{T: t}
-	vtestapp.Init(ctx, "mintheme_test")
-	vasset.RegisterNativeImageLoader(ctx, vtestapp.TestApp.App)
-	theme := NewTheme(ctx, vtestapp.TestApp.Dev, 0, nil, nil, nil)
+	err := vtestapp.Init("mintheme_test")
+	if err != nil {
+		t.Fatal("Init app ", err)
+	}
+	vasset.RegisterNativeImageLoader(vtestapp.TestApp.App)
+	theme := NewTheme(vtestapp.TestApp.Dev, 0, nil, nil, nil)
 	mm := vtestapp.NewMainImage()
 	rwDummy := &vapp.RenderWindow{WindowSize: image.Pt(int(mm.Desc.Width), int(mm.Desc.Height))}
 	mv := vui.NewUIView(theme, image.Rect(100, 100, 500, 700), rwDummy)

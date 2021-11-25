@@ -17,12 +17,14 @@ func TestMain(m *testing.M) {
 
 func TestNewGlyphBuilder(t *testing.T) {
 	tl := vtestapp.TestLoader{Path: "glyphs/test"}
-	ctx := vtestapp.TestContext{T: t}
-	vtestapp.Init(ctx, "glyphbuilder")
+	err := vtestapp.Init("glyphbuilder")
+	if err != nil {
+		t.Fatal("Init app ", err)
+	}
 	// vasset.RegisterNativeImageLoader(ctx, vtestapp.TestApp.App)
 	pngloader.RegisterPngLoader()
 	gb := NewSetBuilder(SETGrayScale)
-	err := testLoadImage(gb, "btn_focus", tl, "button_focus.png", RED, image.Rect(40, 40, 50, 50))
+	err = testLoadImage(gb, "btn_focus", tl, "button_focus.png", RED, image.Rect(40, 40, 50, 50))
 	if err != nil {
 		t.Fatal("Load image ", err)
 	}

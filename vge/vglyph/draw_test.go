@@ -15,7 +15,10 @@ import (
 
 func TestDrawInfo_Draw(t *testing.T) {
 	ctx := vtestapp.TestContext{T: t}
-	vtestapp.Init(ctx, "drawtest")
+	err := vtestapp.Init("drawtest")
+	if err != nil {
+		t.Fatal("Init app", err)
+	}
 	// vasset.RegisterNativeImageLoader(ctx, vtestapp.TestApp.App)
 	pngloader.RegisterPngLoader()
 	theme, err := testBuildPalette(ctx)

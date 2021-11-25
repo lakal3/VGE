@@ -47,8 +47,8 @@ func NewMainImageDesc(desc vk.ImageDescription, usage vk.ImageUsageFlags) *MainI
 	m := &MainImage{}
 	m.pool = vk.NewMemoryPool(TestApp.Dev)
 	m.Desc = desc
-	m.Image = m.pool.ReserveImage(TestApp.Ctx, m.Desc, usage)
-	m.pool.Allocate(TestApp.Ctx)
+	m.Image = m.pool.ReserveImage(m.Desc, usage)
+	m.pool.Allocate()
 	m.Root.Init()
 	AddChild(m)
 	return m
@@ -66,28 +66,28 @@ func (m *MainImage) ForwardRender(depth bool, render func(cmd *vk.Command, dc *v
 	dc := &vmodel.DrawContext{}
 	df := vk.FORMATUndefined
 	var att []*vk.ImageView
-	att = append(att, m.Image.DefaultView(TestApp.Ctx))
+	att = append(att, m.Image.DefaultView())
 	if depth {
 		df = vk.FORMATD32Sfloat
 		pool := vk.NewMemoryPool(TestApp.Dev)
 		dDesc := m.Desc
 		dDesc.Format = df
-		di := pool.ReserveImage(TestApp.Ctx, dDesc, vk.IMAGEUsageDepthStencilAttachmentBit)
-		pool.Allocate(TestApp.Ctx)
+		di := pool.ReserveImage(dDesc, vk.IMAGEUsageDepthStencilAttachmentBit)
+		pool.Allocate()
 		defer pool.Dispose()
-		att = append(att, di.DefaultView(TestApp.Ctx))
+		att = append(att, di.DefaultView())
 	}
-	fp := vk.NewForwardRenderPass(TestApp.Ctx, TestApp.Dev, m.Desc.Format, vk.IMAGELayoutTransferSrcOptimal, df)
+	fp := vk.NewForwardRenderPass(TestApp.Dev, m.Desc.Format, vk.IMAGELayoutTransferSrcOptimal, df)
 	defer fp.Dispose()
 	dc.Pass = fp
-	rc := vk.NewRenderCache(TestApp.Ctx, TestApp.Dev)
+	rc := vk.NewRenderCache(TestApp.Dev)
 	defer rc.Dispose()
 	dc.Frame = &vscene.SimpleFrame{Cache: rc}
 
-	cmd := vk.NewCommand(TestApp.Ctx, TestApp.Dev, vk.QUEUEGraphicsBit, true)
+	cmd := vk.NewCommand(TestApp.Dev, vk.QUEUEGraphicsBit, true)
 	defer cmd.Dispose()
 	cmd.Begin()
-	fb := vk.NewFramebuffer(TestApp.Ctx, fp, att)
+	fb := vk.NewFramebuffer(fp, att)
 	defer fb.Dispose()
 	cmd.BeginRenderPass(fp, fb)
 	render(cmd, dc)
@@ -105,25 +105,25 @@ func (m *MainImage) RenderScene(time float64, depth bool) {
 }
 
 func (m *MainImage) RenderSceneAt(time float64, depth bool, camera vscene.Camera) {
-	rc := vk.NewRenderCache(TestApp.Ctx, TestApp.Dev)
+	rc := vk.NewRenderCache(TestApp.Dev)
 	defer rc.Dispose()
 	df := vk.FORMATUndefined
 	var att []*vk.ImageView
-	att = append(att, m.Image.DefaultView(TestApp.Ctx))
+	att = append(att, m.Image.DefaultView())
 	if depth {
 		df = vk.FORMATD32Sfloat
 		pool := vk.NewMemoryPool(TestApp.Dev)
 		dDesc := m.Desc
 		dDesc.Format = df
-		di := pool.ReserveImage(TestApp.Ctx, dDesc, vk.IMAGEUsageDepthStencilAttachmentBit)
-		pool.Allocate(TestApp.Ctx)
+		di := pool.ReserveImage(dDesc, vk.IMAGEUsageDepthStencilAttachmentBit)
+		pool.Allocate()
 		defer pool.Dispose()
-		att = append(att, di.DefaultView(TestApp.Ctx))
+		att = append(att, di.DefaultView())
 	}
-	fp := vk.NewForwardRenderPass(TestApp.Ctx, TestApp.Dev, m.Desc.Format, vk.IMAGELayoutTransferSrcOptimal, df)
+	fp := vk.NewForwardRenderPass(TestApp.Dev, m.Desc.Format, vk.IMAGELayoutTransferSrcOptimal, df)
 	defer fp.Dispose()
-	fb := vk.NewFramebuffer(TestApp.Ctx, fp, att)
-	cmd := vk.NewCommand(TestApp.Ctx, TestApp.Dev, vk.QUEUEGraphicsBit, true)
+	fb := vk.NewFramebuffer(fp, att)
+	cmd := vk.NewCommand(TestApp.Dev, vk.QUEUEGraphicsBit, true)
 
 	defer cmd.Dispose()
 	cmd.Begin()
@@ -151,23 +151,24 @@ func SaveImage(image *vk.Image, testName string, layout vk.ImageLayout) {
 }
 
 // SaveImageKind saves image to test dir using kind format. You must ensure that proper image decoder has been registered
-func SaveImageKind(image *vk.Image, kind string, testName string, layout vk.ImageLayout) {
-	cp := vmodel.NewCopier(TestApp.Ctx, TestApp.Dev)
+func SaveImageKind(image *vk.Image, kind string, testName string, layout vk.ImageLayout) error {
+	cp := vmodel.NewCopier(TestApp.Dev)
 	defer cp.Dispose()
 	ir := image.FullRange()
 	ir.Layout = layout
-	content := cp.CopyFromImage(image, ir, kind, vk.IMAGELayoutTransferSrcOptimal)
+	content, err := cp.CopyFromImage(image, ir, kind, vk.IMAGELayoutTransferSrcOptimal)
 	testDir := os.Getenv("VGE_TEST_DIR")
 	if len(testDir) == 0 {
-		TestApp.Ctx.T.Log("Unable to save test image, missing environment variable VGE_TEST_DIR")
-		return
+		TestApp.Dev.ReportError(errors.New("Unable to save test image, missing environment variable VGE_TEST_DIR"))
+		return nil
 	}
 	fPath := filepath.Join(testDir, testName+"."+kind)
-	err := ioutil.WriteFile(fPath, content, 0660)
+	err = ioutil.WriteFile(fPath, content, 0660)
 	if err != nil {
-		TestApp.Ctx.SetError(err)
+		return err
 	}
-	TestApp.Ctx.T.Log("Saved test image to ", fPath)
+	// TestApp.Ctx.T.Log("Saved test image to ", fPath)
+	return nil
 }
 
 type TestLoader struct {

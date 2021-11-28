@@ -75,6 +75,8 @@ namespace vge {
 		void GetNextFrame(Image*& image, SubmitInfo *&submitInfo, int32_t& viewIndex);
 		void SetPos(WindowPos *position);
 		void GetPos(WindowPos* position);
+		void GetClipboard(uint64_t& textLen, uint8_t* text, size_t text_len);
+		void SetClipboard(uint8_t* text, size_t text_len);
 	private:
 		Window(Desktop* desktop, const std::string title, WindowPos position) :_desktop(desktop), _title(title), _initialPosition(position) {
 

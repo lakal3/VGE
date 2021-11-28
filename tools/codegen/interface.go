@@ -11,8 +11,6 @@ type hApplication hDisposable
 
 type hInstance hDisposable
 
-type hPhysicalDevice hDisposable
-
 type hDevice hDisposable
 
 type hMemoryBlock hDisposable
@@ -419,6 +417,15 @@ type MainLib interface {
 	Window_SetPos(struct {
 		win hWindow
 		pos *vk.WindowPos
+	})
+	Window_SetClipboard(struct {
+		win  hWindow
+		text []byte
+	})
+	Window_GetClipboard(struct {
+		win     hWindow
+		textLen *uint64
+		text    []byte
 	})
 
 	Command_Compute(struct {

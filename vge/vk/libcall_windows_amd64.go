@@ -81,9 +81,11 @@ var libcall struct {
 	t_QueryPool_Get                     uintptr
 	t_RenderPass_NewFrameBuffer         uintptr
 	t_RenderPass_NewNullFrameBuffer     uintptr
+	t_Window_GetClipboard               uintptr
 	t_Window_GetNextFrame               uintptr
 	t_Window_GetPos                     uintptr
 	t_Window_PrepareSwapchain           uintptr
+	t_Window_SetClipboard               uintptr
 	t_Window_SetPos                     uintptr
 }
 
@@ -380,6 +382,10 @@ func loadLib() (err error) {
 	if err != nil {
 		return err
 	}
+	libcall.t_Window_GetClipboard, err = syscall.GetProcAddress(libcall.h_lib, "Window_GetClipboard")
+	if err != nil {
+		return err
+	}
 	libcall.t_Window_GetNextFrame, err = syscall.GetProcAddress(libcall.h_lib, "Window_GetNextFrame")
 	if err != nil {
 		return err
@@ -389,6 +395,10 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_Window_PrepareSwapchain, err = syscall.GetProcAddress(libcall.h_lib, "Window_PrepareSwapchain")
+	if err != nil {
+		return err
+	}
+	libcall.t_Window_SetClipboard, err = syscall.GetProcAddress(libcall.h_lib, "Window_SetClipboard")
 	if err != nil {
 		return err
 	}
@@ -1052,6 +1062,16 @@ func call_RenderPass_NewNullFrameBuffer(ctx apicontext, rp hRenderPass, width ui
 	handleError(ctx, rc)
 	*fb = _tmp_fb
 }
+func call_Window_GetClipboard(ctx apicontext, win hWindow, textLen *uint64, text []uint8) {
+	_tmp_textLen := *textLen
+	atEnd := ctx.begin("Window_GetClipboard")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall6(libcall.t_Window_GetClipboard, 4, uintptr(win), uintptr(unsafe.Pointer(&_tmp_textLen)), sliceToUintptr(text), uintptr(len(text)), 0, 0)
+	handleError(ctx, rc)
+	*textLen = _tmp_textLen
+}
 func call_Window_GetNextFrame(ctx apicontext, win hWindow, image *hImage, submitInfo *hSubmitInfo, viewIndex *int32) {
 	_tmp_image := *image
 	_tmp_submitInfo := *submitInfo
@@ -1087,6 +1107,14 @@ func call_Window_PrepareSwapchain(ctx apicontext, win hWindow, dev hDevice, imag
 	handleError(ctx, rc)
 	*imageDesc = _tmp_imageDesc
 	*imageCount = _tmp_imageCount
+}
+func call_Window_SetClipboard(ctx apicontext, win hWindow, text []uint8) {
+	atEnd := ctx.begin("Window_SetClipboard")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall(libcall.t_Window_SetClipboard, 3, uintptr(win), sliceToUintptr(text), uintptr(len(text)))
+	handleError(ctx, rc)
 }
 func call_Window_SetPos(ctx apicontext, win hWindow, pos *WindowPos) {
 	_tmp_pos := *pos

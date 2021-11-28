@@ -52,14 +52,25 @@ type GLFWKeyCode uint32
 
 const (
 	// Shirt, Ctrl (+1), Alt (+2), System (+3)
-	GLFWKeyLeftShift  GLFWKeyCode = 340
-	GLFWKeyRightShift GLFWKeyCode = 344
-	GLFWKeyTab        GLFWKeyCode = 258
-	GLFWKeyLeft       GLFWKeyCode = 263
-	GLFWKeyRight      GLFWKeyCode = 262
-	GLFWKeyBackspace  GLFWKeyCode = 259
-	GLFWKeyDelete     GLFWKeyCode = 261
-	GLFWKeyF1         GLFWKeyCode = 290
+	GLFWKeyLeftShift      GLFWKeyCode = 340
+	GLFWKeyRightShift     GLFWKeyCode = 344
+	GLFWKeyEscape         GLFWKeyCode = 256
+	GLFWKeyTab            GLFWKeyCode = 258
+	GLFWKeyLeft           GLFWKeyCode = 263
+	GLFWKeyRight          GLFWKeyCode = 262
+	GLFWKeyBackspace      GLFWKeyCode = 259
+	GLFWKeyDelete         GLFWKeyCode = 261
+	GLFWKeyHome           GLFWKeyCode = 268
+	GLFWKeyEnd            GLFWKeyCode = 269
+	GLFWKeyNumlock        GLFWKeyCode = 282
+	GLFWKeyF1             GLFWKeyCode = 290
+	GLFWKeyNumpad0        GLFWKeyCode = 320
+	GLWDKeyNumpadDecimal  GLFWKeyCode = 330
+	GLWDKeyNumpadDivide   GLFWKeyCode = 331
+	GLWDKeyNumpadMultiply GLFWKeyCode = 332
+	GLWDKeyNumpadSub      GLFWKeyCode = 333
+	GLWDKeyNumpadAdd      GLFWKeyCode = 334
+	GLWDKeyNumpadEnter    GLFWKeyCode = 335
 )
 
 type UIEvent struct {
@@ -98,12 +109,14 @@ type KeyUpEvent struct {
 	UIEvent
 	KeyCode  GLFWKeyCode
 	ScanCode uint32
+	NumLock  bool
 }
 
 type KeyDownEvent struct {
 	UIEvent
 	KeyCode  GLFWKeyCode
 	ScanCode uint32
+	NumLock  bool
 }
 
 type CharEvent struct {

@@ -161,6 +161,14 @@ func (rw *RenderWindow) SetPos(pos vk.WindowPos) {
 	rw.win.SetPos(pos)
 }
 
+func (rw *RenderWindow) SetClipboard(cpText string) {
+	rw.win.SetClipboard(cpText)
+}
+
+func (rw *RenderWindow) GetClipboard() string {
+	return rw.win.GetClipboard()
+}
+
 func (rw *RenderWindow) Dispose() {
 	if rw.state < 2 {
 		rw.state = 2
@@ -253,14 +261,14 @@ func (rw *RenderWindow) eventHandler(ev Event) (unregister bool) {
 			if m != 0 {
 				rw.CurrentMods &= ^m
 			}
-			Post(&KeyUpEvent{KeyCode: kc, ScanCode: uint32(raw.ev.Arg1), UIEvent: rw.uiEvent()})
+			Post(&KeyUpEvent{KeyCode: kc, ScanCode: uint32(raw.ev.Arg1), UIEvent: rw.uiEvent(), NumLock: rw.hasNumlock(raw.ev.Arg3)})
 		case evKeyDown:
 			kc := GLFWKeyCode(raw.ev.Arg2)
 			m := rw.parseModKey(kc)
 			if m != 0 {
 				rw.CurrentMods |= m
 			}
-			Post(&KeyDownEvent{KeyCode: kc, ScanCode: uint32(raw.ev.Arg1), UIEvent: rw.uiEvent()})
+			Post(&KeyDownEvent{KeyCode: kc, ScanCode: uint32(raw.ev.Arg1), UIEvent: rw.uiEvent(), NumLock: rw.hasNumlock(raw.ev.Arg3)})
 		case evChar:
 			Post(&CharEvent{Char: rune(raw.ev.Arg1), UIEvent: rw.uiEvent()})
 		case evMouseUp:
@@ -298,4 +306,8 @@ func (rw *RenderWindow) parseModKey(code GLFWKeyCode) Mods {
 
 func (rw *RenderWindow) uiEvent() UIEvent {
 	return UIEvent{Window: rw, CurrentMods: rw.CurrentMods, MousePos: rw.MousePos}
+}
+
+func (rw *RenderWindow) hasNumlock(arg3 int32) bool {
+	return (arg3 & 0x20) != 0
 }

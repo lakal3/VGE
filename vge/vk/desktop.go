@@ -109,6 +109,23 @@ func (w *Window) SetPos(pos WindowPos) {
 	call_Window_SetPos(w.desktop.app, w.hWin, &pos)
 }
 
+func (w *Window) GetClipboard() string {
+	var buf []byte
+	var cpLen uint64
+	call_Window_GetClipboard(w.desktop.app, w.hWin, &cpLen, buf)
+	if cpLen > 0 {
+		buf = make([]byte, cpLen)
+		call_Window_GetClipboard(w.desktop.app, w.hWin, &cpLen, buf)
+		return string(buf[:])
+	}
+	return ""
+}
+
+func (w *Window) SetClipboard(newContent string) {
+	var bytes = []byte(newContent)
+	call_Window_SetClipboard(w.desktop.app, w.hWin, bytes)
+}
+
 func (w *Window) GetNextFrame(dev *Device) (im *Image, imageIndex int32, info SubmitInfo) {
 	if len(w.images) == 0 {
 		w.prepareSwapchain(dev)

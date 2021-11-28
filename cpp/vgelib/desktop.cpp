@@ -243,6 +243,30 @@ void vge::Window::GetPos(WindowPos* position)
 	pollDone(done);
 }
 
+void vge::Window::GetClipboard(uint64_t& textLen, uint8_t* text, size_t text_len)
+{
+	const char * cPtr = glfwGetClipboardString(_win);
+	if (cPtr == nullptr) {
+		textLen = 0;
+		return;
+	}
+	textLen = strlen(cPtr);
+	auto l = textLen;
+	if (l > text_len) {
+		l = text_len;
+	}
+	if (l > 0) {
+		strncpy(reinterpret_cast<char *>(text), cPtr, l);
+	}	
+}
+
+void vge::Window::SetClipboard(uint8_t* text, size_t text_len)
+{
+	std::string str(reinterpret_cast<const char *>(text), text_len);
+	str.push_back(0);
+	glfwSetClipboardString(this->_win, str.c_str());
+}
+
 
 void vge::Window::init()
 {
@@ -422,7 +446,7 @@ void vge::Window::Dispose()
 void vge::Window::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	Window *win = reinterpret_cast<Window *>(glfwGetWindowUserPointer(window));
-	RawEvent ev = { action == GLFW_RELEASE ? EventType::KeyUp : EventType::KeyDown, scancode, key };
+	RawEvent ev = { action == GLFW_RELEASE ? EventType::KeyUp : EventType::KeyDown, scancode, key, mods };
 	ev.win = win;
 	win->_desktop->pushEvent(ev);
 }

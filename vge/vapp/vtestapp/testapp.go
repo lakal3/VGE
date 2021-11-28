@@ -15,24 +15,18 @@ var TestApp struct {
 	pdIndex      int32
 }
 
-type TestContext struct {
+type TestOption interface {
+	InitOption()
+}
+
+type UnitTest struct {
 	T *testing.T
 }
 
-func (t TestContext) SetError(err error) {
-	t.T.Fatal("API call failed: ", err)
-}
-
-func (t TestContext) IsValid() bool {
-	return true
-}
-
-func (t TestContext) Begin(callName string) (atEnd func()) {
-	return nil
-}
-
-type TestOption interface {
-	InitOption()
+func (u UnitTest) InitOption() {
+	TestApp.App.OnFatalError = func(fatalError error) {
+		u.T.Fatal(fatalError)
+	}
 }
 
 func Init(name string, options ...TestOption) (err error) {
@@ -47,6 +41,7 @@ func Init(name string, options ...TestOption) (err error) {
 	}
 	TestApp.App.Init()
 	TestApp.Dev = TestApp.App.NewDevice(TestApp.pdIndex)
+	TestApp.Dev.OnFatalError = TestApp.App.OnFatalError
 	TestApp.owner.AddChild(TestApp.Dev)
 	return nil
 }

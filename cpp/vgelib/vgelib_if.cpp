@@ -76,9 +76,11 @@ DLLEXPORT Exception * Pipeline_AddShader(Pipeline* pl, int32_t stage, uint8_t* c
 DLLEXPORT Exception * QueryPool_Get(QueryPool* qp, uint64_t* values, size_t values_len, float& timestampPeriod);
 DLLEXPORT Exception * RenderPass_NewFrameBuffer(RenderPass* rp, ImageView** attachments, size_t attachments_len, Framebuffer*& fb);
 DLLEXPORT Exception * RenderPass_NewNullFrameBuffer(RenderPass* rp, uint32_t width, uint32_t height, Framebuffer*& fb);
+DLLEXPORT Exception * Window_GetClipboard(Window* win, uint64_t& textLen, uint8_t* text, size_t text_len);
 DLLEXPORT Exception * Window_GetNextFrame(Window* win, Image*& image, SubmitInfo*& submitInfo, int32_t& viewIndex);
 DLLEXPORT Exception * Window_GetPos(Window* win, WindowPos* pos);
 DLLEXPORT Exception * Window_PrepareSwapchain(Window* win, Device* dev, ImageDescription* imageDesc, int32_t& imageCount);
+DLLEXPORT Exception * Window_SetClipboard(Window* win, uint8_t* text, size_t text_len);
 DLLEXPORT Exception * Window_SetPos(Window* win, WindowPos* pos);
 }
 
@@ -708,6 +710,15 @@ Exception * RenderPass_NewNullFrameBuffer(RenderPass* rp, uint32_t width, uint32
     return Exception::getValidationError();
 }
 
+Exception * Window_GetClipboard(Window* win, uint64_t& textLen, uint8_t* text, size_t text_len) {
+    try {
+        win->GetClipboard(textLen, text, text_len);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
 Exception * Window_GetNextFrame(Window* win, Image*& image, SubmitInfo*& submitInfo, int32_t& viewIndex) {
     try {
         win->GetNextFrame(image, submitInfo, viewIndex);
@@ -729,6 +740,15 @@ Exception * Window_GetPos(Window* win, WindowPos* pos) {
 Exception * Window_PrepareSwapchain(Window* win, Device* dev, ImageDescription* imageDesc, int32_t& imageCount) {
     try {
         win->PrepareSwapchain(dev, imageDesc, imageCount);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Window_SetClipboard(Window* win, uint8_t* text, size_t text_len) {
+    try {
+        win->SetClipboard(text, text_len);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }

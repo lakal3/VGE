@@ -1,6 +1,11 @@
 # Change history
 
-## Version 0.next
+## Version 0.next (dev branch)
+
+New features:
+- Integrated glsl -> SPIR-V compiler
+  - Allows dynamic shader compilation while application is running
+- Support for Push Constants in DrawList
 
 Breaking changes:
 - APIContext is now private to vk module. No public API takes APIContext parameter

@@ -41,7 +41,8 @@ namespace vge {
         uint32_t instances;
         uint32_t fromInstance;
         uint32_t indexed;
-        uint32_t _padding;
+        uint32_t pushlen;
+        size_t pushOffset;
     };
 
     struct AttachmentInfo {

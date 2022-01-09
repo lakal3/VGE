@@ -77,6 +77,7 @@ var libcall struct {
 	t_NewImageLoader                    uintptr
 	t_NewRenderPass                     uintptr
 	t_Pipeline_AddDescriptorLayout      uintptr
+	t_Pipeline_AddPushConstants         uintptr
 	t_Pipeline_AddShader                uintptr
 	t_QueryPool_Get                     uintptr
 	t_RenderPass_NewFrameBuffer         uintptr
@@ -366,6 +367,10 @@ func loadLib() (err error) {
 	if err != nil {
 		return err
 	}
+	libcall.t_Pipeline_AddPushConstants, err = syscall.GetProcAddress(libcall.h_lib, "Pipeline_AddPushConstants")
+	if err != nil {
+		return err
+	}
 	libcall.t_Pipeline_AddShader, err = syscall.GetProcAddress(libcall.h_lib, "Pipeline_AddShader")
 	if err != nil {
 		return err
@@ -533,12 +538,12 @@ func call_Command_CopyImageToBuffer(ctx apicontext, cmd hCommand, src hImage, ds
 	handleError(ctx, rc)
 	*imRange = _tmp_imRange
 }
-func call_Command_Draw(ctx apicontext, cmd hCommand, draws []DrawItem) {
+func call_Command_Draw(ctx apicontext, cmd hCommand, draws []DrawItem, pushConstants []uint8) {
 	atEnd := ctx.begin("Command_Draw")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall(libcall.t_Command_Draw, 3, uintptr(cmd), sliceToUintptr(draws), uintptr(len(draws)))
+	rc, _, _ := syscall.Syscall6(libcall.t_Command_Draw, 5, uintptr(cmd), sliceToUintptr(draws), uintptr(len(draws)), sliceToUintptr(pushConstants), uintptr(len(pushConstants)), 0)
 	handleError(ctx, rc)
 }
 func call_Command_EndRenderPass(ctx apicontext, cmd hCommand) {
@@ -1022,6 +1027,14 @@ func call_Pipeline_AddDescriptorLayout(ctx apicontext, pl hPipeline, dsLayout hD
 		defer atEnd()
 	}
 	rc, _, _ := syscall.Syscall(libcall.t_Pipeline_AddDescriptorLayout, 2, uintptr(pl), uintptr(dsLayout), 0)
+	handleError(ctx, rc)
+}
+func call_Pipeline_AddPushConstants(ctx apicontext, pl hPipeline, size uint32, stages ShaderStageFlags) {
+	atEnd := ctx.begin("Pipeline_AddPushConstants")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall(libcall.t_Pipeline_AddPushConstants, 3, uintptr(pl), uintptr(size), uintptr(stages))
 	handleError(ctx, rc)
 }
 func call_Pipeline_AddShader(ctx apicontext, pl hPipeline, stage ShaderStageFlags, code []uint8) {

@@ -9,6 +9,13 @@ namespace vge {
 		const vk::Pipeline get_handle() const {
 			return _pipeline;
 		}
+		vk::ShaderStageFlags get_pushConstantStages() const {
+			return _pushConstantStages;
+		}
+		void AddPushConstants(uint32_t len, vk::ShaderStageFlags stages) {
+			_lenPushConstants = len;
+			_pushConstantStages = stages;
+		}
 		virtual const vk::PipelineBindPoint get_bindpoint() const = 0;
 		vk::PipelineLayout get_layout() const {
 			return _pipelineLayout;
@@ -25,6 +32,8 @@ namespace vge {
 		vk::Pipeline _pipeline;
 		vk::PipelineLayout _pipelineLayout;
 		int _blendMode = 0;
+		uint32_t _lenPushConstants = 0;
+		vk::ShaderStageFlags _pushConstantStages;
 		const Device* const _dev;
 	};
 

@@ -145,6 +145,14 @@ vk::PipelineLayout vge::Pipeline::createPipelineLayout()
 	if (dsLayouts.size() > 0) {
 		plci.pSetLayouts = dsLayouts.data();
 	}
+	vk::PushConstantRange  pcr = {};
+	if (_lenPushConstants > 0) {
+		pcr.offset = 0;
+		pcr.size = _lenPushConstants;
+		pcr.stageFlags = _pushConstantStages;
+		plci.pPushConstantRanges = &pcr;
+		plci.pushConstantRangeCount = 1;
+	}
 	_pipelineLayout = _dev->get_device().createPipelineLayout(plci, allocator, _dev->get_dispatch());
 	return _pipelineLayout;
 }

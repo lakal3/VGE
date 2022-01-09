@@ -66,6 +66,14 @@ func (gp *GraphicsPipeline) AddDepth(write bool, check bool) {
 	call_GraphicsPipeline_AddDepth(gp.dev, gp.hPl, write, check)
 }
 
+func (gp *GraphicsPipeline) AddPushConstants(stages ShaderStageFlags, size uint32) {
+	if size > 256 {
+		gp.dev.setError(errors.New("Max size of push constants is 256"))
+		return
+	}
+	call_Pipeline_AddPushConstants(gp.dev, gp.handle(), size, stages)
+}
+
 func (gp *GraphicsPipeline) SetTopology(topology PrimitiveTopology) {
 	call_GraphicsPipeline_SetTopology(gp.dev, gp.hPl, topology)
 }

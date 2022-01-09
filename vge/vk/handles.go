@@ -90,7 +90,8 @@ type DrawItem struct {
 	instances    uint32
 	fromInstance uint32
 	indexed      uint32
-	_padding     uint32
+	pushlen      uint32
+	pushoffset   uint64
 }
 
 type AttachmentInfo struct {

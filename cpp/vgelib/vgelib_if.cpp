@@ -19,7 +19,7 @@ DLLEXPORT Exception * Command_Compute(Command* hCmd, ComputePipeline* hPl, uint3
 DLLEXPORT Exception * Command_CopyBuffer(Command* cmd, Buffer* src, Buffer* dst);
 DLLEXPORT Exception * Command_CopyBufferToImage(Command* cmd, Buffer* src, Image* dst, ImageRange* imRange, uint64_t offset);
 DLLEXPORT Exception * Command_CopyImageToBuffer(Command* cmd, Image* src, Buffer* dst, ImageRange* imRange, uint64_t offset);
-DLLEXPORT Exception * Command_Draw(Command* cmd, DrawItem* draws, size_t draws_len);
+DLLEXPORT Exception * Command_Draw(Command* cmd, DrawItem* draws, size_t draws_len, uint8_t* pushConstants, size_t pushConstants_len);
 DLLEXPORT Exception * Command_EndRenderPass(Command* cmd);
 DLLEXPORT Exception * Command_SetLayout(Command* cmd, Image* image, ImageRange* imRange, int32_t newLayout);
 DLLEXPORT Exception * Command_Wait(Command* cmd);
@@ -72,6 +72,7 @@ DLLEXPORT Exception * NewDesktop(Application* app, int32_t imageUsage, Desktop*&
 DLLEXPORT Exception * NewImageLoader(ImageLoader*& loader);
 DLLEXPORT Exception * NewRenderPass(Device* dev, RenderPass*& rp, bool depthAttachment, AttachmentInfo* attachments, size_t attachments_len);
 DLLEXPORT Exception * Pipeline_AddDescriptorLayout(Pipeline* pl, DescriptorLayout* dsLayout);
+DLLEXPORT Exception * Pipeline_AddPushConstants(Pipeline* pl, uint32_t size, int32_t stages);
 DLLEXPORT Exception * Pipeline_AddShader(Pipeline* pl, int32_t stage, uint8_t* code, size_t code_len);
 DLLEXPORT Exception * QueryPool_Get(QueryPool* qp, uint64_t* values, size_t values_len, float& timestampPeriod);
 DLLEXPORT Exception * RenderPass_NewFrameBuffer(RenderPass* rp, ImageView** attachments, size_t attachments_len, Framebuffer*& fb);
@@ -212,9 +213,9 @@ Exception * Command_CopyImageToBuffer(Command* cmd, Image* src, Buffer* dst, Ima
     return Exception::getValidationError();
 }
 
-Exception * Command_Draw(Command* cmd, DrawItem* draws, size_t draws_len) {
+Exception * Command_Draw(Command* cmd, DrawItem* draws, size_t draws_len, uint8_t* pushConstants, size_t pushConstants_len) {
     try {
-        cmd->Draw(draws, draws_len);
+        cmd->Draw(draws, draws_len, pushConstants, pushConstants_len);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }
@@ -668,6 +669,15 @@ Exception * NewRenderPass(Device* dev, RenderPass*& rp, bool depthAttachment, At
 Exception * Pipeline_AddDescriptorLayout(Pipeline* pl, DescriptorLayout* dsLayout) {
     try {
         pl->AddDescriptorLayout(dsLayout);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Pipeline_AddPushConstants(Pipeline* pl, uint32_t size, int32_t stages) {
+    try {
+        pl->AddPushConstants(size, vk::ShaderStageFlags(stages));
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }

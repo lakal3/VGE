@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"unsafe"
 
 	"github.com/go-gl/mathgl/mgl32"
 )
@@ -57,10 +58,6 @@ type testPipeline struct {
 	dp1       *DescriptorPool
 	ds1       *DescriptorSet
 	iColor    *Image
-	ubWorld   *Buffer
-	l2        *DescriptorLayout
-	dp2       *DescriptorPool
-	ds2       *DescriptorSet
 	s         *Sampler
 	testImage *Image
 }
@@ -110,26 +107,19 @@ func testRender(t *testing.T, d *Device, ld ImageLoader) error {
 	ibGray := mp.ReserveBuffer(mi.ImageSize(), true, BUFFERUsageTransferDstBit)
 	vb := mp.ReserveBuffer(3*2*4, true, BUFFERUsageVertexBufferBit)
 	ubColor := mp.ReserveBuffer(4*4, true, BUFFERUsageUniformBufferBit)
-	ubWorld := mp.ReserveBuffer(MinUniformBufferOffsetAlignment*triangleCount, true, BUFFERUsageUniformBufferBit)
 	mp.Allocate()
 	copy(vb.Bytes(), Float32ToBytes(edges))
 	copy(ubColor.Bytes(), Float32ToBytes(color))
-	worldBuf := ubWorld.Bytes()
 	err = ld.LoadImage("png", testPattern, bImage)
 	if err != nil {
 		return err
-	}
-
-	for idx := 0; idx < triangleCount; idx++ {
-		m := mgl32.HomogRotate3DZ(float32(idx) * math.Pi * 2 / triangleCount)
-		copy(worldBuf[idx*256:], Float32ToBytes(m[:]))
 	}
 
 	mainView := mainImage.DefaultView()
 	grayView := grayImage.DefaultView()
 	fb := NewFramebuffer(fp, []*ImageView{mainView, grayView})
 	defer fb.Dispose()
-	tp := &testPipeline{rp: fp, testImage: testImage, ubWorld: ubWorld}
+	tp := &testPipeline{rp: fp, testImage: testImage}
 	tp.copyImage(d, bImage, testImage)
 	err = tp.build(d)
 	if err != nil {
@@ -150,8 +140,10 @@ func testRender(t *testing.T, d *Device, ld ImageLoader) error {
 	cmd.BeginRenderPass(fp, fb)
 	drawList := &DrawList{}
 	for idx := uint32(0); idx < triangleCount; idx++ {
-		drawList.Draw(tp.pl, 0, 3).AddInput(0, vb).AddDescriptor(0, tp.ds1).
-			AddDynamicDescriptor(1, tp.ds2, MinUniformBufferOffsetAlignment*idx)
+		szMat := uint32(unsafe.Sizeof(mgl32.Mat4{}))
+		ptr, offset := drawList.AllocPushConstants(szMat)
+		*((*mgl32.Mat4)(ptr)) = mgl32.HomogRotate3DZ(float32(idx) * math.Pi * 2 / triangleCount)
+		drawList.Draw(tp.pl, 0, 3).AddInput(0, vb).AddDescriptor(0, tp.ds1).AddPushConstants(szMat, offset)
 	}
 	cmd.Draw(drawList)
 	cmd.EndRenderPass()
@@ -225,7 +217,7 @@ const testsh_vert = `
 layout (location = 0) in vec2 i_position;
 layout (location = 0) out vec2 o_uv;
 
-layout(set = 1, binding = 0) uniform WorldUBF {
+layout(push_constant) uniform WorldUBF {
     mat4 world;
 } World;
 
@@ -238,25 +230,18 @@ void main() {
 func (tp *testPipeline) build(dev *Device) error {
 	tp.l1 = dev.NewDynamicDescriptorLayout(DESCRIPTORTypeCombinedImageSampler, SHADERStageFragmentBit,
 		8, DESCRIPTORBindingPartiallyBoundBitExt|DESCRIPTORBindingUpdateUnusedWhilePendingBitExt)
-	tp.l2 = dev.NewDescriptorLayout(DESCRIPTORTypeUniformBufferDynamic, SHADERStageVertexBit, 1)
+	// tp.l2 = dev.NewDescriptorLayout(DESCRIPTORTypeUniformBufferDynamic, SHADERStageVertexBit, 1)
 	tp.dp1 = NewDescriptorPool(tp.l1, 1)
 	dev.Get(NewKey(), func() interface{} {
 		return tp.dp1
 	})
-	tp.dp2 = NewDescriptorPool(tp.l2, 1)
-	dev.Get(NewKey(), func() interface{} {
-		return tp.dp2
-	})
 	tp.ds1 = tp.dp1.Alloc()
-	tp.ds2 = tp.dp2.Alloc()
 	tp.s = dev.NewSampler(SAMPLERAddressModeRepeat)
 	tp.ds1.WriteImage(0, 1, tp.testImage.DefaultView(), tp.s)
-	tp.ds2.WriteBuffer(0, 0, tp.ubWorld)
 	tp.pl = NewGraphicsPipeline(dev)
 	tp.pl.AddLayout(tp.l1)
-	tp.pl.AddLayout(tp.l2)
 	tp.pl.AddVextexInput(VERTEXInputRateVertex, FORMATR32g32Sfloat)
-
+	tp.pl.AddPushConstants(SHADERStageVertexBit, uint32(unsafe.Sizeof(mgl32.Mat4{})))
 	comp := NewCompiler(dev)
 	defer comp.Dispose()
 	spir_frag, _, err := comp.Compile(SHADERStageFragmentBit, testsh_frag)

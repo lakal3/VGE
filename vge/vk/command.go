@@ -1,6 +1,9 @@
 package vk
 
-import "runtime"
+import (
+	"runtime"
+	"unsafe"
+)
 
 type Command struct {
 	dev       *Device
@@ -9,7 +12,8 @@ type Command struct {
 }
 
 type DrawList struct {
-	list []DrawItem
+	list          []DrawItem
+	pushConstants []byte
 }
 
 type SubmitInfo struct {
@@ -124,7 +128,7 @@ func (c *Command) Draw(dl *DrawList) {
 		return
 	}
 	dl.optimize()
-	call_Command_Draw(c.dev, c.hCmd, dl.list)
+	call_Command_Draw(c.dev, c.hCmd, dl.list, dl.pushConstants)
 }
 
 func (c *Command) SetLayout(img *Image, imRange *ImageRange, newLayout ImageLayout) {
@@ -184,6 +188,20 @@ func NewTimerPool(dev *Device, size uint32) *TimerPool {
 	return t
 }
 
+func (dr *DrawList) AllocPushConstants(size uint32) (ptr unsafe.Pointer, offset uint64) {
+	if len(dr.pushConstants)+int(size) > cap(dr.pushConstants) {
+		ns := len(dr.pushConstants) * 2
+		if ns < 65536 {
+			ns = 65536
+		}
+		old := dr.pushConstants
+		dr.pushConstants = make([]byte, len(dr.pushConstants), ns)
+		copy(dr.pushConstants, old)
+	}
+	offset = uint64(len(dr.pushConstants))
+	dr.pushConstants = dr.pushConstants[:offset+uint64(size)]
+	return unsafe.Pointer(&dr.pushConstants[offset]), offset
+}
 func (dr *DrawList) Draw(pl Pipeline, from, count uint32) *DrawItem {
 	di := DrawItem{pipeline: pl.handle(), from: from, count: count, instances: 1}
 	dr.list = append(dr.list, di)
@@ -222,6 +240,9 @@ func (dr *DrawList) optimize() {
 					anyDif = true
 				}
 
+			}
+			if di.pushlen != prev.pushlen || di.pushoffset != prev.pushoffset {
+				anyDif = true
 			}
 			if di.pipeline == prev.pipeline {
 				di.pipeline = 0
@@ -272,4 +293,8 @@ func (di *DrawItem) AddDescriptor(idx int, set *DescriptorSet) *DrawItem {
 func (di *DrawItem) AddDynamicDescriptor(idx int, set *DescriptorSet, offset uint32) *DrawItem {
 	di.descriptors[idx] = descriptorInfo{hSet: set.hSet, hasOffset: 1, offset: offset}
 	return di
+}
+
+func (di *DrawItem) AddPushConstants(size uint32, offset uint64) {
+	di.pushlen, di.pushoffset = size, offset
 }

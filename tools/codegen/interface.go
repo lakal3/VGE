@@ -230,8 +230,9 @@ type MainLib interface {
 		alpha   float32
 	})
 	Command_Draw(struct {
-		cmd   hCommand
-		draws []vk.DrawItem
+		cmd           hCommand
+		draws         []vk.DrawItem
+		pushConstants []byte
 	})
 	Command_WriteTimer(struct {
 		cmd        hCommand
@@ -343,6 +344,12 @@ type MainLib interface {
 		pl       hPipeline
 		dsLayout hDescriptorLayout
 	})
+	Pipeline_AddPushConstants(struct {
+		pl     hPipeline
+		size   uint32
+		stages vk.ShaderStageFlags
+	})
+
 	GraphicsPipeline_Create(struct {
 		pipeline   hGraphicsPipeline
 		renderPass hRenderPass

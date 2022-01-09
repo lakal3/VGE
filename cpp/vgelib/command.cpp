@@ -196,11 +196,11 @@ void vge::Command::ClearImage(Image* dst, ImageRange* imRange, vk::ImageLayout l
 	_cmd.clearColorImage(dst->get_handle(), layout, &ccv, 1, &ssr, _dev->get_dispatch());
 }
 
-void vge::Command::Draw(DrawItem* draws, size_t draws_len)
+void vge::Command::Draw(DrawItem* draws, size_t draws_len, uint8_t *pushConstants, size_t pushConstants_len)
 {
 	Pipeline* prevpipeline = nullptr;
 	for (size_t idx = 0; idx < draws_len; idx++) {
-		drawOne(draws[idx], prevpipeline);
+		drawOne(draws[idx], prevpipeline, pushConstants);
 	}
 }
 
@@ -247,7 +247,7 @@ void vge::Command::copyView(Buffer* buffer, Image* image, ImageRange* range, siz
 	}
 }
 
-void vge::Command::drawOne(DrawItem &draw, Pipeline *&pipeline)
+void vge::Command::drawOne(DrawItem &draw, Pipeline *&pipeline, uint8_t* pushConstants)
 {
 	if (draw.instances == 0) {
 		return;
@@ -286,6 +286,9 @@ void vge::Command::drawOne(DrawItem &draw, Pipeline *&pipeline)
 		}
 	}
 
+	if (draw.pushlen > 0) {
+		_cmd.pushConstants(pipeline->get_layout(), pipeline->get_pushConstantStages(), 0, draw.pushlen, pushConstants + draw.pushOffset, _dev->get_dispatch());
+	}
 	if (draw.indexed) {
 		_cmd.drawIndexed(draw.count, draw.instances, draw.from, 0, draw.fromInstance, _dev->get_dispatch());
 	} else {

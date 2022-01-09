@@ -29,7 +29,7 @@ namespace vge {
 		void CopyBufferToImage(Buffer* src, Image* dst, vge::ImageRange* range, size_t offset);
 		void CopyImageToBuffer(Image* src, Buffer* dst, vge::ImageRange* range, size_t offset);
 		void ClearImage(Image* dst, ImageRange* imRange, vk::ImageLayout layout, float color, float alpha);
-		void Draw(DrawItem* draws, size_t draws_len);
+		void Draw(DrawItem* draws, size_t draws_len, uint8_t* pushConstants, size_t pushConstants_len);
 		void Compute(ComputePipeline* pl, uint32_t x, uint32_t y, uint32_t z, DescriptorSet** descriptors, size_t descriptors_len);
 		void Wait();
 		void WriteTimer(QueryPool* qp, vk::PipelineStageFlags stages, uint32_t timerIndex);
@@ -38,7 +38,7 @@ namespace vge {
 
 		}
 		void copyView(Buffer* buffer, Image* image, ImageRange* range, size_t offset, bool copyToImage);
-		void drawOne(DrawItem &draw, Pipeline*& pipeline);
+		void drawOne(DrawItem &draw, Pipeline*& pipeline, uint8_t* pushConstants);
 		void init();
 		Device* _dev;
 		WaitForCmd* _waitSem = nullptr;

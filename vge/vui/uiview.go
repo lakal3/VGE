@@ -126,10 +126,10 @@ func (w *UIView) handleEvent(ev vapp.Event) (unregister bool) {
 
 	mme, ok := ev.(*vapp.MouseMoveEvent)
 	if ok {
-		if mme.Window != w.win || !mme.MousePos.In(w.Area) {
+		if !mme.IsSource(w.win) || !mme.MousePos.In(w.Area) {
 			return false
 		}
-		if w.win.CurrentMods < vapp.MODMouseButton1 {
+		if mme.CurrentMods < vapp.MODMouseButton1 {
 			// No buttons pressed
 			he := MouseHoverEvent{At: mme.MousePos}
 			w.MainCtrl.Event(w, &he)
@@ -148,7 +148,7 @@ func (w *UIView) handleEvent(ev vapp.Event) (unregister bool) {
 	}
 	mde, ok := ev.(*vapp.MouseDownEvent)
 	if ok {
-		if mde.Window != w.win {
+		if !mde.IsSource(w.win) {
 			return false
 		}
 		if !mde.MousePos.In(w.Area) {
@@ -171,7 +171,7 @@ func (w *UIView) handleEvent(ev vapp.Event) (unregister bool) {
 	}
 	mue, ok := ev.(*vapp.MouseUpEvent)
 	if ok {
-		if mue.Window != w.win || !mue.MousePos.In(w.Area) {
+		if !mue.IsSource(w.win) || !mue.MousePos.In(w.Area) {
 			return false
 		}
 		if mue.Button == 0 {

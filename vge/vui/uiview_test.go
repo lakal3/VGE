@@ -21,10 +21,12 @@ func TestMain(m *testing.M) {
 }
 
 func TestNewUIView(t *testing.T) {
-	ctx := vtestapp.TestContext{T: t}
-	vtestapp.Init("drawtest")
+	err := vtestapp.Init("drawtest", vtestapp.UnitTest{T: t})
+	if err != nil {
+		t.Fatal("Init app ", err)
+	}
 	vasset.RegisterNativeImageLoader(vtestapp.TestApp.App)
-	theme, err := testBuildTheme(ctx)
+	theme, err := testBuildTheme()
 	if err != nil {
 		t.Fatal("Build theme ", err)
 	}
@@ -125,13 +127,13 @@ func (t testTheme) GetStyle(ctrl Control, class string) Style {
 	return st
 }
 
-func testBuildTheme(ctx vtestapp.TestContext) (testTheme, error) {
-	p, err := testBuildPalette(ctx)
+func testBuildTheme() (testTheme, error) {
+	p, err := testBuildPalette()
 	tt := testTheme{palette: p}
 	return tt, err
 }
 
-func testBuildPalette(ctx vtestapp.TestContext) (*vglyph.Palette, error) {
+func testBuildPalette() (*vglyph.Palette, error) {
 	tl := vtestapp.TestLoader{Path: "glyphs/basicui"}
 	gb := vglyph.NewSetBuilder(vglyph.SETGrayScale)
 	err := testLoadImage(gb, "btn_border", tl, "btn.png", vglyph.RED, image.Rect(20, 20, 20, 20))

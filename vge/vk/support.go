@@ -3,7 +3,6 @@ package vk
 import (
 	"errors"
 	"reflect"
-	"sync"
 	"unsafe"
 )
 
@@ -78,7 +77,7 @@ type Disposable interface {
 // Typically owner instance is private and owner struct will offer similar methods (Get and sometimes Set, AddChild) to access private owner collection
 type Owner struct {
 	children []Disposable
-	mx       *sync.Mutex
+	mx       *SpinLock
 	keyMap   map[Key]interface{}
 }
 
@@ -148,7 +147,7 @@ func (o *Owner) Get(key Key, cons Constructor) interface{} {
 func NewOwner(multithreaded bool) Owner {
 	o := Owner{}
 	if multithreaded {
-		o.mx = &sync.Mutex{}
+		o.mx = &SpinLock{}
 	}
 	return o
 }

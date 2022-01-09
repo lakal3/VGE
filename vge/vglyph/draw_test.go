@@ -14,14 +14,13 @@ import (
 )
 
 func TestDrawInfo_Draw(t *testing.T) {
-	ctx := vtestapp.TestContext{T: t}
-	err := vtestapp.Init("drawtest")
+	err := vtestapp.Init("drawtest", vtestapp.UnitTest{T: t})
 	if err != nil {
 		t.Fatal("Init app", err)
 	}
 	// vasset.RegisterNativeImageLoader(ctx, vtestapp.TestApp.App)
 	pngloader.RegisterPngLoader()
-	theme, err := testBuildPalette(ctx)
+	theme, err := testBuildPalette()
 	if err != nil {
 		t.Fatal("Build palette ", err)
 	}
@@ -73,7 +72,7 @@ func TestDrawInfo_Draw(t *testing.T) {
 	vtestapp.Terminate()
 }
 
-func testBuildPalette(ctx vtestapp.TestContext) (*Palette, error) {
+func testBuildPalette() (*Palette, error) {
 	gb := NewSetBuilder(SETGrayScale)
 	tl := vtestapp.TestLoader{Path: "glyphs/test"}
 	err := testLoadImage(gb, "btn_focus", tl, "button_focus.png", RED_GREENA, image.Rect(40, 40, 50, 50))

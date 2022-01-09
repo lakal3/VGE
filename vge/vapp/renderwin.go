@@ -65,15 +65,14 @@ func NewRenderWindowAt(title string, wp vk.WindowPos, renderer vscene.Renderer) 
 }
 
 type RenderWindow struct {
-	Scene       vscene.Scene
-	Camera      vscene.Camera
-	CurrentMods Mods
-	Env         *vscene.Node
-	Model       *vscene.Node
-	Ui          *vscene.Node
-
-	MousePos   image.Point
+	Scene      vscene.Scene
+	Camera     vscene.Camera
+	Env        *vscene.Node
+	Model      *vscene.Node
+	Ui         *vscene.Node
 	WindowSize image.Point
+
+	eventState UIState
 	// OnClose is called when user request closing windows. Default action disposes window
 	OnClose func()
 
@@ -87,15 +86,6 @@ type RenderWindow struct {
 	paused     bool
 	state      int
 	setup      bool
-}
-
-type rawWinEvent struct {
-	win *vk.Window
-	ev  vk.RawEvent
-}
-
-func (r rawWinEvent) Handled() bool {
-	return r.win == nil
 }
 
 func (d Desktop) InitApp() {
@@ -133,7 +123,7 @@ func (d *Desktop) pollDesktopEvents(wg *sync.WaitGroup, shutdown *bool) {
 	for !*shutdown {
 		ev, win := appStatic.desktop.PullEvent()
 		if ev.EventType != 0 {
-			Post(&rawWinEvent{win: win, ev: ev})
+			Post(&RawWinEvent{Win: win, Ev: ev})
 		} else {
 			<-time.After(1 * time.Millisecond)
 		}
@@ -244,46 +234,20 @@ func (rw *RenderWindow) eventHandler(ev Event) (unregister bool) {
 	if rw.win == nil {
 		return true // Done
 	}
-	raw, ok := ev.(*rawWinEvent)
-	if ok && rw.win == raw.win {
-		switch raw.ev.EventType {
+	raw, ok := ev.(*RawWinEvent)
+	if ok && rw.win == raw.Win {
+		switch raw.Ev.EventType {
 		case evResizeWindow:
-			rw.WindowSize = image.Point{X: int(raw.ev.Arg1), Y: int(raw.ev.Arg2)}
+			rw.WindowSize = image.Point{X: int(raw.Ev.Arg1), Y: int(raw.Ev.Arg2)}
 		case evCloseWindow:
 			if rw.OnClose != nil {
 				rw.OnClose()
 			} else {
 				go rw.Dispose()
 			}
-		case evKeyUp:
-			kc := GLFWKeyCode(raw.ev.Arg2)
-			m := rw.parseModKey(kc)
-			if m != 0 {
-				rw.CurrentMods &= ^m
-			}
-			Post(&KeyUpEvent{KeyCode: kc, ScanCode: uint32(raw.ev.Arg1), UIEvent: rw.uiEvent(), NumLock: rw.hasNumlock(raw.ev.Arg3)})
-		case evKeyDown:
-			kc := GLFWKeyCode(raw.ev.Arg2)
-			m := rw.parseModKey(kc)
-			if m != 0 {
-				rw.CurrentMods |= m
-			}
-			Post(&KeyDownEvent{KeyCode: kc, ScanCode: uint32(raw.ev.Arg1), UIEvent: rw.uiEvent(), NumLock: rw.hasNumlock(raw.ev.Arg3)})
-		case evChar:
-			Post(&CharEvent{Char: rune(raw.ev.Arg1), UIEvent: rw.uiEvent()})
-		case evMouseUp:
-			m := Mods(MODMouseButton1) << uint32(raw.ev.Arg1)
-			rw.CurrentMods &= ^m
-			Post(&MouseUpEvent{Button: int(raw.ev.Arg1), UIEvent: rw.uiEvent()})
-		case evMouseDown:
-			m := Mods(MODMouseButton1) << uint32(raw.ev.Arg1)
-			rw.CurrentMods |= m
-			Post(&MouseDownEvent{Button: int(raw.ev.Arg1), UIEvent: rw.uiEvent()})
-		case evMouseMove:
-			rw.MousePos = image.Point{X: int(raw.ev.Arg1), Y: int(raw.ev.Arg2)}
-			Post(&MouseMoveEvent{UIEvent: rw.uiEvent()})
-		case evMouseScroll:
-			Post(&ScrollEvent{Range: image.Point{X: int(raw.ev.Arg1), Y: int(raw.ev.Arg2)}, UIEvent: rw.uiEvent()})
+		default:
+			rw.eventState.MakeUIEvent(raw, rw)
+
 		}
 	}
 	_, ok = ev.(ShutdownEvent)
@@ -292,22 +256,4 @@ func (rw *RenderWindow) eventHandler(ev Event) (unregister bool) {
 		return true
 	}
 	return false
-}
-
-func (rw *RenderWindow) parseModKey(code GLFWKeyCode) Mods {
-	if code >= GLFWKeyLeftShift && code < GLFWKeyLeftShift+4 {
-		return Mods(1 << (1 + code - GLFWKeyLeftShift))
-	}
-	if code >= GLFWKeyRightShift && code < GLFWKeyLeftShift+4 {
-		return Mods(1 << (2 + code - GLFWKeyLeftShift))
-	}
-	return 0
-}
-
-func (rw *RenderWindow) uiEvent() UIEvent {
-	return UIEvent{Window: rw, CurrentMods: rw.CurrentMods, MousePos: rw.MousePos}
-}
-
-func (rw *RenderWindow) hasNumlock(arg3 int32) bool {
-	return (arg3 & 0x20) != 0
 }

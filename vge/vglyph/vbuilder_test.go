@@ -13,7 +13,7 @@ import (
 )
 
 func TestVectorSetBuilder(t *testing.T) {
-	err := vtestapp.Init("vglyphbuilder")
+	err := vtestapp.Init("vglyphbuilder", vtestapp.UnitTest{T: t})
 	if err != nil {
 		t.Fatal("Init app ", err)
 	}
@@ -45,12 +45,11 @@ func testVectorSet1() *VectorSetBuilder {
 }
 
 func TestFontVBuild(t *testing.T) {
-	ctx := vtestapp.TestContext{T: t}
-	fl, err := testLoadGoFont(ctx, "MaterialIcons_Regular.ttf")
+	fl, err := testLoadGoFont("MaterialIcons_Regular.ttf")
 	if err != nil {
 		t.Fatal("Load font failed ", err)
 	}
-	err = vtestapp.Init("vectorfont")
+	err = vtestapp.Init("vectorfont", vtestapp.UnitTest{T: t})
 	if err != nil {
 		t.Fatal("Init app ", err)
 	}
@@ -64,12 +63,14 @@ func TestFontVBuild(t *testing.T) {
 	vtestapp.Terminate()
 }
 func TestVectorPalette(t *testing.T) {
-	ctx := vtestapp.TestContext{T: t}
 	err := vtestapp.Init("vdrawtest")
 	if err != nil {
 		t.Fatal("Load font failed ", err)
 	}
-	theme := testBuildVPalette(ctx)
+	theme, err := testBuildVPalette()
+	if err != nil {
+		t.Fatal("Build V palette", err)
+	}
 	mm := vtestapp.NewMainImage()
 	vtestapp.AddChild(mm)
 	mm.ForwardRender(false, func(cmd *vk.Command, dc *vmodel.DrawContext) {
@@ -131,17 +132,16 @@ func TestVectorPalette(t *testing.T) {
 	vtestapp.Terminate()
 }
 
-func testBuildVPalette(ctx vtestapp.TestContext) *Palette {
+func testBuildVPalette() (*Palette, error) {
 	vb := testVectorSet1()
 	gs := vb.Build(vtestapp.TestApp.Dev)
 	vtestapp.AddChild(gs)
 	th := NewPalette(vtestapp.TestApp.Dev, 4, 128)
 	vtestapp.AddChild(th)
 	th.AddGlyphSet(gs)
-	fl, err := testLoadGoFont(ctx, "OpenSans_Regular.ttf")
+	fl, err := testLoadGoFont("OpenSans_Regular.ttf")
 	if err != nil {
-		ctx.SetError(err)
-		return nil
+		return nil, err
 	}
 	vb = &VectorSetBuilder{}
 	for r := rune(33); r < 256; r++ {
@@ -150,14 +150,14 @@ func testBuildVPalette(ctx vtestapp.TestContext) *Palette {
 	gs = vb.Build(vtestapp.TestApp.Dev)
 	th.AddGlyphSet(gs)
 	vtestapp.AddChild(gs)
-	return th
+	return th, nil
 }
 
-func testLoadGoFont(ctx vtestapp.TestContext, fontFile string) (*sfnt.Font, error) {
+func testLoadGoFont(fontFile string) (*sfnt.Font, error) {
 	tl := vtestapp.TestLoader{Path: "fonts"}
 	rd, err := tl.Open(fontFile)
 	if err != nil {
-		ctx.T.Fatal("Error reading font file ", err)
+		return nil, err
 	}
 	defer rd.Close()
 	content, err := ioutil.ReadAll(rd)

@@ -3,6 +3,7 @@ package vmodel
 import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vk"
+	"unsafe"
 )
 
 type Property uint32
@@ -109,6 +110,13 @@ func (dc *DrawContext) Draw(pl vk.Pipeline, from uint32, count uint32) *vk.DrawI
 		dc.List = new(vk.DrawList)
 	}
 	return dc.List.Draw(pl, from, count)
+}
+
+func (dc *DrawContext) AllocPushConstants(size uint32) (ptr unsafe.Pointer, offset uint64) {
+	if dc.List == nil {
+		dc.List = new(vk.DrawList)
+	}
+	return dc.List.AllocPushConstants(size)
 }
 
 type ShaderExtra interface {

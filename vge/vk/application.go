@@ -280,3 +280,8 @@ func (d *Device) ReportError(err error) {
 		_, _ = fmt.Fprintln(os.Stderr, "VGE error: ", err)
 	}
 }
+
+// FatalError report fatal usage error that cannot be recovered. Default action will panic. Override OnFatalError to change this.
+func (d *Device) FatalError(err error) {
+	d.setError(err)
+}

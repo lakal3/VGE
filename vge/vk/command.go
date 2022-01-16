@@ -232,11 +232,11 @@ func (dr *DrawList) optimize() {
 				if di.descriptors[idx].hSet != 0 {
 					anyDif = true
 				}
-				if di.inputs[idx] != 0 && di.inputs[idx] == prev.inputs[idx] {
-					di.inputs[idx] = 0
+				if di.inputs[idx].buffer != 0 && di.inputs[idx] == prev.inputs[idx] {
+					di.inputs[idx].buffer = 0
 					anyChange = true
 				}
-				if di.inputs[idx] != 0 {
+				if di.inputs[idx].buffer != 0 {
 					anyDif = true
 				}
 
@@ -278,9 +278,10 @@ func (di *DrawItem) AddDescriptors(descriptors ...*DescriptorSet) *DrawItem {
 	return di
 }
 
-func (di *DrawItem) AddInput(idx int, input *Buffer) *DrawItem {
+func (di *DrawItem) AddInput(idx int, input DSSlice) *DrawItem {
 	if input != nil {
-		di.inputs[idx] = input.hBuf
+		buf, off, _ := input.slice()
+		di.inputs[idx] = bufferInfo{buffer: buf, offset: off}
 	}
 	return di
 }

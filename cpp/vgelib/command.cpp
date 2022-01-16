@@ -258,12 +258,12 @@ void vge::Command::drawOne(DrawItem &draw, Pipeline *&pipeline, uint8_t* pushCon
 	}
 	
 	for (int idx = 0; idx < 8; idx++) {
-		size_t offset = 0;
-		if (draw.inputs[idx] != nullptr) {
-			auto buf = draw.inputs[idx]->get_buffer();
+		size_t offset = draw.inputs[idx].offset;
+		if (draw.inputs[idx].buffer != nullptr) {
+			auto buf = vk::Buffer(draw.inputs[idx].buffer);
 			if (draw.indexed) {
 				if (idx == 0) {
-					_cmd.bindIndexBuffer(buf, 0, vk::IndexType::eUint32, _dev->get_dispatch());
+					_cmd.bindIndexBuffer(buf, offset, vk::IndexType::eUint32, _dev->get_dispatch());
 				} else {
 					_cmd.bindVertexBuffers(idx - 1, 1, &buf, &offset, _dev->get_dispatch());
 				}

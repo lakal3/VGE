@@ -237,20 +237,22 @@ void vge::ValidationOption::detach(Instance* inst) {
 	}
 }
 
-void vge::Device::NewBuffer(uint64_t size, bool hostMemory, vk::BufferUsageFlags usage, Buffer*& ret)
+void vge::Device::NewBuffer(uint64_t size, bool hostMemory, vk::BufferUsageFlags usage, Buffer*& ret, void*& rawBuffer)
 {
 	auto b = new Buffer(this, hostMemory, usage, size);
 	b->init();
+	rawBuffer = b->get_buffer();
 	ret = b;
 	static_assert(sizeof(usage) == 4);
 }
 
 
 
-void vge::Device::NewImage(vk::ImageUsageFlags usage, const ImageDescription *imageDescription, Image*& ret)
+void vge::Device::NewImage(vk::ImageUsageFlags usage, const ImageDescription *imageDescription, Image*& ret, void*& rawImage)
 {
 	auto img = new Image(this, usage, *imageDescription);
 	img->init();
+	rawImage = img->get_handle();
 	ret = img;
 }
 

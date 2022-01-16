@@ -83,9 +83,14 @@ type descriptorInfo struct {
 	offset    uint32
 }
 
+type bufferInfo struct {
+	buffer uintptr
+	offset uint64
+}
+
 type DrawItem struct {
 	pipeline     hPipeline
-	inputs       [8]hBuffer
+	inputs       [8]bufferInfo
 	descriptors  [8]descriptorInfo
 	from         uint32
 	count        uint32

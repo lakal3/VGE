@@ -49,13 +49,13 @@ DLLEXPORT Exception * Desktop_GetKeyName(Desktop* desktop, uint32_t keyCode, uin
 DLLEXPORT Exception * Desktop_GetMonitor(Desktop* desktop, uint32_t monitor, WindowPos* info);
 DLLEXPORT Exception * Desktop_PullEvent(Desktop* desktop, RawEvent* ev);
 DLLEXPORT Exception * Device_NewAllocator(Device* dev, Allocator*& allocator);
-DLLEXPORT Exception * Device_NewBuffer(Device* dev, uint64_t size, bool hostMemory, int32_t usage, Buffer*& buffer);
+DLLEXPORT Exception * Device_NewBuffer(Device* dev, uint64_t size, bool hostMemory, int32_t usage, Buffer*& buffer, void *& rawBuffer);
 DLLEXPORT Exception * Device_NewCommand(Device* dev, int32_t queueType, bool once, Command*& command);
 DLLEXPORT Exception * Device_NewComputePipeline(Device* dev, ComputePipeline*& cp);
 DLLEXPORT Exception * Device_NewDescriptorLayout(Device* dev, int32_t descriptorType, int32_t stages, uint32_t element, int32_t flags, DescriptorLayout* prevLayout, DescriptorLayout*& dsLayout);
 DLLEXPORT Exception * Device_NewGlslCompiler(Device* dev, GlslCompiler*& comp);
 DLLEXPORT Exception * Device_NewGraphicsPipeline(Device* dev, GraphicsPipeline*& gp);
-DLLEXPORT Exception * Device_NewImage(Device* dev, int32_t usage, ImageDescription* desc, Image*& image);
+DLLEXPORT Exception * Device_NewImage(Device* dev, int32_t usage, ImageDescription* desc, Image*& image, void *& rawImage);
 DLLEXPORT Exception * Device_NewMemoryBlock(Device* dev, MemoryBlock*& memBlock);
 DLLEXPORT Exception * Device_NewSampler(Device* dev, int32_t repeatMode, Sampler*& sampler);
 DLLEXPORT Exception * Device_NewTimestampQuery(Device* dev, uint32_t size, QueryPool*& qp);
@@ -492,9 +492,9 @@ Exception * Device_NewAllocator(Device* dev, Allocator*& allocator) {
     return Exception::getValidationError();
 }
 
-Exception * Device_NewBuffer(Device* dev, uint64_t size, bool hostMemory, int32_t usage, Buffer*& buffer) {
+Exception * Device_NewBuffer(Device* dev, uint64_t size, bool hostMemory, int32_t usage, Buffer*& buffer, void *& rawBuffer) {
     try {
-        dev->NewBuffer(size, hostMemory, vk::BufferUsageFlags(usage), buffer);
+        dev->NewBuffer(size, hostMemory, vk::BufferUsageFlags(usage), buffer, rawBuffer);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }
@@ -546,9 +546,9 @@ Exception * Device_NewGraphicsPipeline(Device* dev, GraphicsPipeline*& gp) {
     return Exception::getValidationError();
 }
 
-Exception * Device_NewImage(Device* dev, int32_t usage, ImageDescription* desc, Image*& image) {
+Exception * Device_NewImage(Device* dev, int32_t usage, ImageDescription* desc, Image*& image, void *& rawImage) {
     try {
-        dev->NewImage(vk::ImageUsageFlags(usage), desc, image);
+        dev->NewImage(vk::ImageUsageFlags(usage), desc, image, rawImage);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }

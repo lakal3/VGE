@@ -125,12 +125,14 @@ type MainLib interface {
 		hostMemory bool
 		usage      vk.BufferUsageFlags
 		buffer     *hBuffer
+		rawBuffer  *uintptr
 	})
 	Device_NewImage(struct {
-		dev   hDevice
-		usage vk.ImageUsageFlags
-		desc  *vk.ImageDescription
-		image *hImage
+		dev      hDevice
+		usage    vk.ImageUsageFlags
+		desc     *vk.ImageDescription
+		image    *hImage
+		rawImage *uintptr
 	})
 	Device_NewCommand(struct {
 		dev       hDevice

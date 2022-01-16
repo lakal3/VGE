@@ -128,8 +128,8 @@ namespace vge {
 		friend class Instance;
 	public:
 		
-		void NewBuffer(uint64_t size, bool hostMemory, vk::BufferUsageFlags usage, Buffer*& buffer);
-		void NewImage(vk::ImageUsageFlags usage, const ImageDescription *imageDescription, Image*& image);
+		void NewBuffer(uint64_t size, bool hostMemory, vk::BufferUsageFlags usage, Buffer*& buffer, void*& rawBuffer);
+		void NewImage(vk::ImageUsageFlags usage, const ImageDescription *imageDescription, Image*& image, void*& rawImage);
 		void NewCommand(vk::QueueFlags queueType, bool once, Command*& command);
 		void NewMemoryBlock(MemoryBlock*& memBlock);
 		void NewDescriptorLayout(vk::DescriptorType descType, vk::ShaderStageFlags stages, uint32_t size, vk::DescriptorBindingFlagsEXT flags, 

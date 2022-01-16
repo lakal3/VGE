@@ -893,15 +893,17 @@ func call_Device_NewAllocator(ctx apicontext, dev hDevice, allocator *hAllocator
 	handleError(ctx, rc)
 	*allocator = _tmp_allocator
 }
-func call_Device_NewBuffer(ctx apicontext, dev hDevice, size uint64, hostMemory bool, usage BufferUsageFlags, buffer *hBuffer) {
+func call_Device_NewBuffer(ctx apicontext, dev hDevice, size uint64, hostMemory bool, usage BufferUsageFlags, buffer *hBuffer, rawBuffer *uintptr) {
 	_tmp_buffer := *buffer
+	_tmp_rawBuffer := *rawBuffer
 	atEnd := ctx.begin("Device_NewBuffer")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_Device_NewBuffer, 5, uintptr(dev), uintptr(size), boolToUintptr(hostMemory), uintptr(usage), uintptr(unsafe.Pointer(&_tmp_buffer)), 0)
+	rc, _, _ := syscall.Syscall6(libcall.t_Device_NewBuffer, 6, uintptr(dev), uintptr(size), boolToUintptr(hostMemory), uintptr(usage), uintptr(unsafe.Pointer(&_tmp_buffer)), uintptr(unsafe.Pointer(&_tmp_rawBuffer)))
 	handleError(ctx, rc)
 	*buffer = _tmp_buffer
+	*rawBuffer = _tmp_rawBuffer
 }
 func call_Device_NewCommand(ctx apicontext, dev hDevice, queueType QueueFlags, once bool, command *hCommand) {
 	_tmp_command := *command
@@ -953,17 +955,19 @@ func call_Device_NewGraphicsPipeline(ctx apicontext, dev hDevice, gp *hGraphicsP
 	handleError(ctx, rc)
 	*gp = _tmp_gp
 }
-func call_Device_NewImage(ctx apicontext, dev hDevice, usage ImageUsageFlags, desc *ImageDescription, image *hImage) {
+func call_Device_NewImage(ctx apicontext, dev hDevice, usage ImageUsageFlags, desc *ImageDescription, image *hImage, rawImage *uintptr) {
 	_tmp_desc := *desc
 	_tmp_image := *image
+	_tmp_rawImage := *rawImage
 	atEnd := ctx.begin("Device_NewImage")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_Device_NewImage, 4, uintptr(dev), uintptr(usage), uintptr(unsafe.Pointer(&_tmp_desc)), uintptr(unsafe.Pointer(&_tmp_image)), 0, 0)
+	rc, _, _ := syscall.Syscall6(libcall.t_Device_NewImage, 5, uintptr(dev), uintptr(usage), uintptr(unsafe.Pointer(&_tmp_desc)), uintptr(unsafe.Pointer(&_tmp_image)), uintptr(unsafe.Pointer(&_tmp_rawImage)), 0)
 	handleError(ctx, rc)
 	*desc = _tmp_desc
 	*image = _tmp_image
+	*rawImage = _tmp_rawImage
 }
 func call_Device_NewMemoryBlock(ctx apicontext, dev hDevice, memBlock *hMemoryBlock) {
 	_tmp_memBlock := *memBlock

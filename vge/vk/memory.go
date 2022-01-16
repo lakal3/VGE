@@ -35,14 +35,23 @@ func NewMemoryPool(dev *Device) *MemoryPool {
 }
 
 type Buffer struct {
-	Host      bool
-	Usage     BufferUsageFlags
-	Size      uint64
+	Host  bool
+	Usage BufferUsageFlags
+	Size  uint64
+
 	allocated bool
 	pool      *MemoryPool
 	hBuf      hBuffer
+	rawBuf    uintptr
 	dev       *Device
 	buf       []byte
+}
+
+func (b *Buffer) slice() (hBuffer uintptr, from uint64, size uint64) {
+	if !b.isValid() {
+		return 0, 0, 0
+	}
+	return b.rawBuf, 0, b.Size
 }
 
 type Slice struct {
@@ -59,6 +68,7 @@ type Image struct {
 	allocated   bool
 	pool        *MemoryPool
 	hImage      hImage
+	rawImage    uintptr
 	dev         *Device
 	defView     *ImageView
 	swapbuffer  bool
@@ -283,14 +293,14 @@ func (bv *BufferView) isValid() bool {
 
 func (mp *MemoryPool) ReserveBuffer(size uint64, hostmem bool, usage BufferUsageFlags) *Buffer {
 	b := &Buffer{dev: mp.dev, pool: mp, Host: hostmem, Size: size, Usage: usage}
-	call_Device_NewBuffer(mp.dev, mp.dev.hDev, size, hostmem, usage, &b.hBuf)
+	call_Device_NewBuffer(mp.dev, mp.dev.hDev, size, hostmem, usage, &b.hBuf, &b.rawBuf)
 	mp.reserved = append(mp.reserved, b)
 	return b
 }
 
 func (mp *MemoryPool) ReserveImage(desc ImageDescription, usage ImageUsageFlags) *Image {
 	img := &Image{dev: mp.dev, pool: mp, Description: desc, Usage: usage}
-	call_Device_NewImage(mp.dev, mp.dev.hDev, usage, &img.Description, &img.hImage)
+	call_Device_NewImage(mp.dev, mp.dev.hDev, usage, &img.Description, &img.hImage, &img.rawImage)
 	mp.reserved = append(mp.reserved, img)
 	return img
 }

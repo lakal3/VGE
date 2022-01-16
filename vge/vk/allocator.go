@@ -156,6 +156,10 @@ func (a *AMemory) isValid() bool {
 	return a.al.isValid()
 }
 
+func (a *AMemory) Size() uint64 {
+	return a.size
+}
+
 func (ab *ABuffer) Dispose() {
 	if ab.hBuf != 0 {
 		if ab.al.isValid() {
@@ -215,8 +219,13 @@ func (ab *ABuffer) Slice(from uint64, size uint64) *ASlice {
 	}
 	return &ASlice{dev: ab.dev, buf: ab, from: from, size: size}
 }
+
 func (ab *ABuffer) MemoryType() uint32 {
 	return ab.memType
+}
+
+func (ab *ABuffer) bytes() []byte {
+	return ab.mem.Bytes()[ab.offset : ab.offset+ab.size]
 }
 
 func (ai *AImage) Bind(mem *AMemory, offset uint64) {
@@ -302,4 +311,18 @@ func (as *ASlice) slice() (hBuf uintptr, from, size uint64) {
 		return 0, 0, 0
 	}
 	return as.buf.hBuf, as.from, as.size
+}
+
+func (as *ASlice) Bytes() []byte {
+	if !as.isValid() {
+		return nil
+	}
+	return as.buf.bytes()[as.from : as.from+as.size]
+}
+
+func (as *ASlice) isValid() bool {
+	if as.buf == nil || !as.buf.isValid() {
+		return false
+	}
+	return true
 }

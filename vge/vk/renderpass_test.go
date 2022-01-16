@@ -208,8 +208,21 @@ void main() {
 }
 `
 
-// go:embed testsh/testsh.vert.spv
-// var testsh_vert []byte
+const testsh_frag_ubf = `
+#version 450
+
+layout(location = 0) out vec4 outColor;
+layout(location = 1) out vec4 outGray;
+layout(location = 0) in vec2 i_uv;
+
+layout(set = 0, binding = 1) uniform sampler2D tx_color[];
+
+void main() {
+    outColor = texture(tx_color[1], i_uv);
+    float c = (outColor.r + outColor.g + outColor.b) / 3;
+    outGray = vec4(c,c,c,1);
+}
+`
 
 const testsh_vert = `
 #version 450
@@ -218,6 +231,22 @@ layout (location = 0) in vec2 i_position;
 layout (location = 0) out vec2 o_uv;
 
 layout(push_constant) uniform WorldUBF {
+    mat4 world;
+} World;
+
+void main() {
+    o_uv = i_position;
+    gl_Position = World.world * vec4(i_position, 0.0, 1.0);
+}
+`
+
+const testsh_vert_ubf = `
+#version 450
+
+layout (location = 0) in vec2 i_position;
+layout (location = 0) out vec2 o_uv;
+
+layout(set = 0, binding = 0) uniform WorldUBF {
     mat4 world;
 } World;
 

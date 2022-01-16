@@ -32,9 +32,14 @@ namespace vge {
         uint32_t offset;
     };
 
+    struct BufferInfo {
+        VkBuffer buffer;
+        uint64_t offset;
+    };
+
     struct DrawItem {
         Pipeline* pipeline;
-        Buffer* inputs[8];
+        BufferInfo inputs[8];
         DescriptorInfo descriptors[8];
         uint32_t from;
         uint32_t count;

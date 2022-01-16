@@ -39,7 +39,7 @@ if(NOT CMAKE_DEBUG_POSTFIX)
 endif()
 
 set(VGELIB_SRC  "vgelib/app.cpp" "vgelib/vgelib.hpp" "vgelib/command.cpp" "vgelib/memory.cpp" "vgelib/descriptor.cpp" "vgelib/renderpass.cpp" "vgelib/pipeline.cpp" "vgelib/desktop.cpp" "vgelib/vgelib_if.cpp")
-set(VGELIB_SRCH "vgelib/app.hpp" "vgelib/command.hpp" "vgelib/memory.hpp" "vgelib/descriptor.hpp" "vgelib/renderpass.hpp" "vgelib/pipeline.hpp" "vgelib/image.hpp" "vgelib/font.hpp" "vgelib/desktop.hpp" "vgelib/vgelib_if.hpp")
+set(VGELIB_SRCH "vgelib/app.hpp" "vgelib/command.hpp" "vgelib/memory.hpp" "vgelib/descriptor.hpp" "vgelib/renderpass.hpp" "vgelib/pipeline.hpp" "vgelib/image.hpp" "vgelib/desktop.hpp" "vgelib/vgelib_if.hpp")
 
 if(NOT NO_GLSLCOMPILER) 
     set(VGELIB_SRC_GLSLCOMPILER "vgelib/glslcompiler.cpp" "vgelib/glslcompiler.hpp")

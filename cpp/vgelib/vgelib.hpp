@@ -37,6 +37,7 @@ namespace vge {
     class Window;
     class QueryPool;
     class GlslCompiler;
+    class Allocator;
     struct SubmitInfo;
 }
 

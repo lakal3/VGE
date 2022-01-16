@@ -6,6 +6,7 @@ New features:
 - Integrated glsl -> SPIR-V compiler
   - Allows dynamic shader compilation while application is running
 - Support for Push Constants in DrawList
+- SpinLock for very short locking needs
 
 Breaking changes:
 - APIContext is now private to vk module. No public API takes APIContext parameter
@@ -40,7 +41,7 @@ New features:
   directly supported by model format. (There will be an example about this later).
 
 - Decals has beed refactor and now supports standard shader both in forward and deferred rendering mode. 
-  Decal no longer require special decal builder. Instead they can use images from [model](vmodel.md). See robomaze/stain.go for an example of how to use decal painter.
+  Decal no longer require special decal builder. Instead they can use images from [model](docs/vmodel.md). See robomaze/stain.go for an example of how to use decal painter.
 
 - GO/C++ interface generator will now make temporary copies of pointer items. This prevents Go Pointer to pointer exceptions
 in CGO call in Linux (and you don't have to set GODEBUG=cgocheck=0)

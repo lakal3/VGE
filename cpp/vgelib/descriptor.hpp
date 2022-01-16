@@ -102,6 +102,8 @@ namespace vge {
 	public:
 		void WriteBuffer(uint32_t binding, uint32_t at, Buffer* content, uint64_t from, uint64_t size);
 		void WriteImage(uint32_t binding, uint32_t at, ImageView* content, Sampler *sampler);
+		void WriteDSImageView(uint32_t binding, uint32_t at, void* view, vk::ImageLayout layout, Sampler* sampler);
+		void WriteDSSlice(uint32_t binding, uint32_t at, void* buffer, uint64_t from, uint64_t size);
 		void WriteBufferView(uint32_t binding, uint32_t at, BufferView * content);
 		vk::DescriptorSet get_descriptorSet() {
 			return _ds;

@@ -328,6 +328,11 @@ void vge::Device::NewGlslCompiler(GlslCompiler* &compiler) {
 	compiler = new GlslCompiler(this);
 }
 
+void vge::Device::NewAllocator(Allocator*& allocator)
+{
+	allocator = new Allocator(this);
+}
+
 void vge::Device::Dispose()
 {
 	if (!!_dev) {

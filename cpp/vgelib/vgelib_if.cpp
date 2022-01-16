@@ -8,6 +8,17 @@ extern "C" {
 DLLEXPORT Exception * AddDynamicDescriptors(Application* app);
 DLLEXPORT Exception * AddValidation(Application* app);
 DLLEXPORT Exception * AddValidationException(int32_t msgId);
+DLLEXPORT Exception * Allocator_AllocBuffer(Allocator* allocator, int32_t usage, uint64_t size, void *& hBuffer, uint32_t& memType, uint32_t& alignment);
+DLLEXPORT Exception * Allocator_AllocDeviceBuffer(Allocator* allocator, int32_t usage, uint64_t size, void *& hBuffer, uint32_t& memType, uint32_t& alignment);
+DLLEXPORT Exception * Allocator_AllocImage(Allocator* allocator, int32_t usage, ImageDescription* im, void *& hImage, uint64_t& size, uint32_t& memType, uint32_t& alignment);
+DLLEXPORT Exception * Allocator_AllocMemory(Allocator* allocator, uint64_t size, uint32_t memType, bool hostMemory, void *& hMem, void *& memPtr);
+DLLEXPORT Exception * Allocator_AllocView(Allocator* allocator, void * hImage, ImageRange* rg, ImageDescription* im, bool cube, void *& hView);
+DLLEXPORT Exception * Allocator_BindBuffer(Allocator* allocator, void * hMem, void * hBuffer, uint64_t offset);
+DLLEXPORT Exception * Allocator_BindImage(Allocator* allocator, void * hMem, void * hBuffer, uint64_t offset);
+DLLEXPORT Exception * Allocator_FreeBuffer(Allocator* allocator, void * hBuffer);
+DLLEXPORT Exception * Allocator_FreeImage(Allocator* allocator, void * hImage);
+DLLEXPORT Exception * Allocator_FreeMemory(Allocator* allocator, void * hMem, bool hostMemory);
+DLLEXPORT Exception * Allocator_FreeView(Allocator* allocator, void * hView);
 DLLEXPORT Exception * Application_Init(Application* app, Instance*& inst);
 DLLEXPORT Exception * Buffer_CopyFrom(Buffer* buffer, uint64_t offset, void * ptr, uint64_t size);
 DLLEXPORT Exception * Buffer_GetPtr(Buffer* buffer, void *& ptr);
@@ -30,11 +41,14 @@ DLLEXPORT Exception * DescriptorLayout_NewPool(DescriptorLayout* layout, uint32_
 DLLEXPORT Exception * DescriptorPool_Alloc(DescriptorPool* pool, DescriptorSet*& ds);
 DLLEXPORT Exception * DescriptorSet_WriteBuffer(DescriptorSet* ds, uint32_t binding, uint32_t at, Buffer* buffer, uint64_t from, uint64_t size);
 DLLEXPORT Exception * DescriptorSet_WriteBufferView(DescriptorSet* ds, uint32_t binding, uint32_t at, BufferView* bufferView);
+DLLEXPORT Exception * DescriptorSet_WriteDSImageView(DescriptorSet* ds, uint32_t binding, uint32_t at, void * view, int32_t layout, Sampler* sampler);
+DLLEXPORT Exception * DescriptorSet_WriteDSSlice(DescriptorSet* ds, uint32_t binding, uint32_t at, void * buffer, uint64_t from, uint64_t size);
 DLLEXPORT Exception * DescriptorSet_WriteImage(DescriptorSet* ds, uint32_t binding, uint32_t at, ImageView* view, Sampler* sampler);
 DLLEXPORT Exception * Desktop_CreateWindow(Desktop* desktop, char * title, size_t title_len, WindowPos* pos, Window*& win);
 DLLEXPORT Exception * Desktop_GetKeyName(Desktop* desktop, uint32_t keyCode, uint8_t* name, size_t name_len, uint32_t& strLen);
 DLLEXPORT Exception * Desktop_GetMonitor(Desktop* desktop, uint32_t monitor, WindowPos* info);
 DLLEXPORT Exception * Desktop_PullEvent(Desktop* desktop, RawEvent* ev);
+DLLEXPORT Exception * Device_NewAllocator(Device* dev, Allocator*& allocator);
 DLLEXPORT Exception * Device_NewBuffer(Device* dev, uint64_t size, bool hostMemory, int32_t usage, Buffer*& buffer);
 DLLEXPORT Exception * Device_NewCommand(Device* dev, int32_t queueType, bool once, Command*& command);
 DLLEXPORT Exception * Device_NewComputePipeline(Device* dev, ComputePipeline*& cp);
@@ -108,6 +122,105 @@ Exception * AddValidation(Application* app) {
 Exception * AddValidationException(int32_t msgId) {
     try {
         Static::AddValidationException (msgId);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Allocator_AllocBuffer(Allocator* allocator, int32_t usage, uint64_t size, void *& hBuffer, uint32_t& memType, uint32_t& alignment) {
+    try {
+        allocator->AllocBuffer(vk::BufferUsageFlags(usage), size, hBuffer, memType, alignment);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Allocator_AllocDeviceBuffer(Allocator* allocator, int32_t usage, uint64_t size, void *& hBuffer, uint32_t& memType, uint32_t& alignment) {
+    try {
+        allocator->AllocDeviceBuffer(vk::BufferUsageFlags(usage), size, hBuffer, memType, alignment);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Allocator_AllocImage(Allocator* allocator, int32_t usage, ImageDescription* im, void *& hImage, uint64_t& size, uint32_t& memType, uint32_t& alignment) {
+    try {
+        allocator->AllocImage(vk::ImageUsageFlags(usage), im, hImage, size, memType, alignment);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Allocator_AllocMemory(Allocator* allocator, uint64_t size, uint32_t memType, bool hostMemory, void *& hMem, void *& memPtr) {
+    try {
+        allocator->AllocMemory(size, memType, hostMemory, hMem, memPtr);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Allocator_AllocView(Allocator* allocator, void * hImage, ImageRange* rg, ImageDescription* im, bool cube, void *& hView) {
+    try {
+        allocator->AllocView(hImage, rg, im, cube, hView);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Allocator_BindBuffer(Allocator* allocator, void * hMem, void * hBuffer, uint64_t offset) {
+    try {
+        allocator->BindBuffer(hMem, hBuffer, offset);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Allocator_BindImage(Allocator* allocator, void * hMem, void * hBuffer, uint64_t offset) {
+    try {
+        allocator->BindImage(hMem, hBuffer, offset);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Allocator_FreeBuffer(Allocator* allocator, void * hBuffer) {
+    try {
+        allocator->FreeBuffer(hBuffer);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Allocator_FreeImage(Allocator* allocator, void * hImage) {
+    try {
+        allocator->FreeImage(hImage);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Allocator_FreeMemory(Allocator* allocator, void * hMem, bool hostMemory) {
+    try {
+        allocator->FreeMemory(hMem, hostMemory);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Allocator_FreeView(Allocator* allocator, void * hView) {
+    try {
+        allocator->FreeView(hView);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }
@@ -307,6 +420,24 @@ Exception * DescriptorSet_WriteBufferView(DescriptorSet* ds, uint32_t binding, u
     return Exception::getValidationError();
 }
 
+Exception * DescriptorSet_WriteDSImageView(DescriptorSet* ds, uint32_t binding, uint32_t at, void * view, int32_t layout, Sampler* sampler) {
+    try {
+        ds->WriteDSImageView(binding, at, view, vk::ImageLayout(layout), sampler);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * DescriptorSet_WriteDSSlice(DescriptorSet* ds, uint32_t binding, uint32_t at, void * buffer, uint64_t from, uint64_t size) {
+    try {
+        ds->WriteDSSlice(binding, at, buffer, from, size);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
 Exception * DescriptorSet_WriteImage(DescriptorSet* ds, uint32_t binding, uint32_t at, ImageView* view, Sampler* sampler) {
     try {
         ds->WriteImage(binding, at, view, sampler);
@@ -346,6 +477,15 @@ Exception * Desktop_GetMonitor(Desktop* desktop, uint32_t monitor, WindowPos* in
 Exception * Desktop_PullEvent(Desktop* desktop, RawEvent* ev) {
     try {
         desktop->PullEvent(ev);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Device_NewAllocator(Device* dev, Allocator*& allocator) {
+    try {
+        dev->NewAllocator(allocator);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }

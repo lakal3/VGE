@@ -176,4 +176,29 @@ namespace vge {
 		uint32_t _memIndex;
 		bool _hostMem = false;
 	};
+
+
+	class Allocator : public Disposable {
+		friend class Device;
+	public:
+		virtual void Dispose() override;
+		void AllocBuffer(vk::BufferUsageFlags usage, uint64_t size, void*& hBuffer, uint32_t& memType, uint32_t& alignment);
+		void AllocDeviceBuffer(vk::BufferUsageFlags usage, uint64_t size, void*& hBuffer, uint32_t& memType, uint32_t& alignment);
+		void AllocMemory(uint64_t size, uint32_t memType, bool hostMemory, void*& hMem, void*& memHandle);
+		void AllocImage(vk::ImageUsageFlags usage, ImageDescription* im, void*& hImage, uint64_t& size, uint32_t& memType, uint32_t& alignment);
+		void AllocView(void* hImage, ImageRange* rg, ImageDescription* im,  bool cube, void*& hView);
+		void BindBuffer(void* hMem, void* hBuffer, uint64_t offset);
+		void BindImage(void* hMem, void* hBuffer, uint64_t offset);
+		void FreeBuffer(void* hBuffer);
+		void FreeImage(void* hImage);
+		void FreeView(void* hView);
+		void FreeMemory(void* hMem, bool hostMemory);
+	private:
+		Allocator(Device* dev) : _dev(dev) {
+
+		}
+		void allocBuffer(bool hostMemory, vk::BufferUsageFlags usage, uint64_t size, void*& hBuffer, uint32_t& memType, uint32_t& alignment);
+		uint32_t findMemIndex(vk::MemoryRequirements, bool hostMemory);
+		Device* _dev;
+	};
 }

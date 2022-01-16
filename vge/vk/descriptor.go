@@ -4,6 +4,15 @@ import (
 	"errors"
 )
 
+// DSSlice interface describes slice of memory buffer than can be written to descriptor set
+type DSSlice interface {
+	slice() (hBuffer uintptr, from uint64, size uint64)
+}
+
+type DSImageView interface {
+	imageView() (hView uintptr)
+}
+
 // DescriptorLayout describes layout of single descriptor.
 type DescriptorLayout struct {
 	owner   Owner
@@ -167,6 +176,20 @@ func (ds *DescriptorSet) WriteSlice(biding uint32, index uint32, sl *Slice) {
 	call_DescriptorSet_WriteBuffer(ds.pool.dev, ds.hSet, biding, index, sl.buffer.hBuf, sl.from, sl.size)
 }
 
+// WriteSlice writes part of buffer (slice) to descriptor.
+// Note that descriptor layout must support buffer in this binding and index
+func (ds *DescriptorSet) WriteDSSlice(biding uint32, index uint32, sl DSSlice) {
+	if !ds.isValid() {
+		return
+	}
+
+	hBuf, from, size := sl.slice()
+	if hBuf == 0 {
+		return
+	}
+	call_DescriptorSet_WriteDSSlice(ds.pool.dev, ds.hSet, biding, index, hBuf, from, size)
+}
+
 // WriteBufferView writes buffer view. Descriptors must be written before they can be bound to draw commands.
 // Note that descriptor layout must support buffer view in this binding and index
 func (ds *DescriptorSet) WriteBufferView(biding uint32, index uint32, view *BufferView) {
@@ -185,6 +208,21 @@ func (ds *DescriptorSet) WriteImage(biding uint32, index uint32, view *ImageView
 		hs = sampler.hSampler
 	}
 	call_DescriptorSet_WriteImage(ds.pool.dev, ds.hSet, biding, index, view.view, hs)
+}
+
+// WriteImage writes buffer view. Descriptors must be written before they can be bound to draw commands.
+// Note that descriptor layout must support image or sampled image in this binding and index
+// Samples may be nil if biding don't need sampler
+func (ds *DescriptorSet) WriteDSView(biding uint32, index uint32, view DSImageView, layout ImageLayout, sampler *Sampler) {
+	hs := hSampler(0)
+	if sampler != nil {
+		hs = sampler.hSampler
+	}
+	hView := view.imageView()
+	if hView == 0 {
+		return
+	}
+	call_DescriptorSet_WriteDSImageView(ds.pool.dev, ds.hSet, biding, index, hView, layout, hs)
 }
 
 // NewSampler creates new image samples with given address mode

@@ -169,6 +169,41 @@ void vge::DescriptorSet::WriteImage(uint32_t binding, uint32_t at, ImageView* vi
 	_dev->get_device().updateDescriptorSets(1, &wds, 0, nullptr, _dev->get_dispatch());
 }
 
+void vge::DescriptorSet::WriteDSImageView(uint32_t binding, uint32_t at, void* view, vk::ImageLayout layout, Sampler* sampler)
+{
+	vk::DescriptorImageInfo dii;
+	dii.imageView = static_cast<VkImageView>(view);
+	dii.imageLayout = layout;
+	if (sampler != nullptr) {
+		dii.sampler = sampler->get_sampler();
+	}
+	vk::WriteDescriptorSet wds;
+	wds.descriptorCount = 1;
+	wds.descriptorType = getType(static_cast<uint32_t>(binding), _dsLayout);
+	wds.pImageInfo = &dii;
+	wds.dstSet = _ds;
+	wds.dstBinding = binding;
+	wds.dstArrayElement = at;
+	_dev->get_device().updateDescriptorSets(1, &wds, 0, nullptr, _dev->get_dispatch());
+}
+
+void vge::DescriptorSet::WriteDSSlice(uint32_t binding, uint32_t at, void* buffer, uint64_t from, uint64_t size)
+{
+	vk::DescriptorBufferInfo dib;
+	dib.buffer = static_cast<VkBuffer>(buffer);
+	dib.range = size;
+	dib.offset = from;
+
+	vk::WriteDescriptorSet wds;
+	wds.descriptorCount = 1;
+	wds.descriptorType = getType(static_cast<uint32_t>(binding), _dsLayout);
+	wds.pBufferInfo = &dib;
+	wds.dstSet = _ds;
+	wds.dstBinding = binding;
+	wds.dstArrayElement = at;
+	_dev->get_device().updateDescriptorSets(1, &wds, 0, nullptr, _dev->get_dispatch());
+}
+
 void vge::DescriptorSet::WriteBufferView(uint32_t binding, uint32_t at, BufferView* content)
 {
 	auto view = content->get_view();

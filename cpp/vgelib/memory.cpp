@@ -265,3 +265,165 @@ void vge::BufferView::Dispose()
 	_dev->get_device().destroyBufferView(_view, allocator, _dev->get_dispatch());
 	delete this;
 }
+
+void vge::Allocator::Dispose()
+{
+}
+
+void vge::Allocator::AllocBuffer(vk::BufferUsageFlags usage, uint64_t size, void*& hBuffer, uint32_t& memType, uint32_t& alignment)
+{
+	allocBuffer(true, usage, size, hBuffer, memType, alignment);
+}
+
+void vge::Allocator::AllocDeviceBuffer(vk::BufferUsageFlags usage, uint64_t size, void*& hBuffer, uint32_t& memType, uint32_t& alignment)
+{
+	allocBuffer(false, usage, size, hBuffer, memType, alignment);
+}
+
+void vge::Allocator::AllocMemory(uint64_t size, uint32_t memType, bool hostMemory, void*& hMem, void*& memHandle)
+{
+	vk::MemoryAllocateInfo mai;
+	mai.allocationSize = size;
+	mai.memoryTypeIndex = memType;
+	auto mem = _dev->get_device().allocateMemory(mai, allocator, _dev->get_dispatch());
+	hMem = mem;
+	if (hostMemory) {
+		memHandle = _dev->get_device().mapMemory(mem, 0, size, vk::MemoryMapFlagBits(), _dev->get_dispatch());
+	}
+	else {
+		memHandle = nullptr;
+	}
+}
+
+
+void vge::Allocator::AllocImage(vk::ImageUsageFlags usage, ImageDescription* im, void*& hImage, uint64_t& size, uint32_t& memType, uint32_t& alignment)
+{
+	vk::ImageCreateInfo ici;
+	ici.arrayLayers = im->Layers;
+	ici.format = im->Format;
+	ici.samples = vk::SampleCountFlagBits::e1;
+	ici.imageType = vk::ImageType::e2D;
+	ici.extent.width = im->Width;
+	ici.extent.height = im->Height;
+	if (im->Depth > 1) {
+		ici.imageType = vk::ImageType::e3D;
+		ici.extent.depth = im->Depth;
+	}
+	else {
+		ici.extent.depth = 1;
+	}
+	ici.mipLevels = im->MipLevels;
+	ici.usage = usage;
+	ici.sharingMode = vk::SharingMode::eExclusive;
+	if (ici.arrayLayers == 6) {
+		ici.flags = vk::ImageCreateFlagBits::eCubeCompatible;
+	}
+	auto image = _dev->get_device().createImage(ici, allocator, _dev->get_dispatch());
+	auto mr = _dev->get_device().getImageMemoryRequirements(image, _dev->get_dispatch());
+	hImage = image;
+	size = mr.size;
+	alignment = static_cast<uint32_t>(mr.alignment);
+	memType = findMemIndex(mr, false);
+}
+
+void vge::Allocator::AllocView(void* hImage, ImageRange* rg, ImageDescription *description,bool cubeView, void*& hView)
+{
+	vk::ImageViewCreateInfo ivci;
+	ivci.image = static_cast<VkImage>(hImage);
+	ivci.format = description->Format;
+	ivci.viewType = vk::ImageViewType::e2D;
+	if (description->Depth > 2) {
+		ivci.viewType = vk::ImageViewType::e3D;
+	}
+	
+	ivci.components.a = vk::ComponentSwizzle::eA;
+	ivci.components.r = vk::ComponentSwizzle::eR;
+	ivci.components.g = vk::ComponentSwizzle::eG;
+	ivci.components.b = vk::ComponentSwizzle::eB;
+	ivci.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+	if (ivci.format == vk::Format::eD32Sfloat || ivci.format == vk::Format::eD32SfloatS8Uint || ivci.format == vk::Format::eD16Unorm ||
+		ivci.format == vk::Format::eD16UnormS8Uint || ivci.format == vk::Format::eD24UnormS8Uint) {
+		ivci.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+	}
+	ivci.subresourceRange.baseArrayLayer = rg->FirstLayer;
+	ivci.subresourceRange.baseMipLevel = rg->FirstMipLevel;
+	ivci.subresourceRange.layerCount = rg->LayerCount;
+	ivci.subresourceRange.levelCount = rg->LevelCount;
+	if (cubeView) {
+		if (ivci.viewType == vk::ImageViewType::e2D) {
+			ivci.viewType = vk::ImageViewType::eCube;
+		}
+	}
+	else {
+		if (rg->LayerCount > 1) {
+			if (ivci.viewType == vk::ImageViewType::e2D) {
+				ivci.viewType = vk::ImageViewType::e2DArray;
+			}
+		}
+	}
+	auto vh = _dev->get_device().createImageView(ivci, allocator, _dev->get_dispatch());
+}
+
+void vge::Allocator::BindBuffer(void* hMem, void* hBuffer, uint64_t offset)
+{
+	_dev->get_device().bindBufferMemory(static_cast<VkBuffer>(hBuffer),static_cast<VkDeviceMemory>(hMem), offset, _dev->get_dispatch());
+}
+
+void vge::Allocator::BindImage(void* hMem, void* hImage, uint64_t offset)
+{
+	_dev->get_device().bindImageMemory(static_cast<VkImage>(hImage), static_cast<VkDeviceMemory>(hMem), offset, _dev->get_dispatch());
+}
+
+void vge::Allocator::FreeBuffer(void* hBuffer)
+{
+	_dev->get_device().destroyBuffer(static_cast<VkBuffer>(hBuffer), allocator, _dev->get_dispatch());
+}
+
+void vge::Allocator::FreeMemory(void* hMem, bool hostMemory)
+{
+	if (hostMemory) {
+		_dev->get_device().unmapMemory(static_cast<VkDeviceMemory>(hMem), _dev->get_dispatch());
+	}
+	_dev->get_device().freeMemory(static_cast<VkDeviceMemory>(hMem), allocator, _dev->get_dispatch());
+}
+
+void vge::Allocator::FreeImage(void* hImage)
+{
+	_dev->get_device().destroyImage(static_cast<VkImage>(hImage), allocator, _dev->get_dispatch());
+}
+
+void vge::Allocator::FreeView(void* hView)
+{
+	_dev->get_device().destroyImageView(static_cast<VkImageView>(hView), allocator, _dev->get_dispatch());
+}
+
+
+void vge::Allocator::allocBuffer(bool hostMemory, vk::BufferUsageFlags usage, uint64_t size, void*& hBuffer, uint32_t& memType, uint32_t& alignment)
+{
+	vk::BufferCreateInfo bci;
+	bci.size = size;
+	bci.usage = usage;
+	auto buffer = _dev->get_device().createBuffer(bci, allocator, _dev->get_dispatch());
+	auto mr = _dev->get_device().getBufferMemoryRequirements(buffer, _dev->get_dispatch());
+	hBuffer = buffer;
+	memType = findMemIndex(mr, hostMemory);
+	alignment = static_cast<uint32_t>(mr.alignment);
+}
+
+uint32_t vge::Allocator::findMemIndex(vk::MemoryRequirements mr, bool hostMemory)
+{
+	vk::MemoryPropertyFlags hmFlags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
+	auto mps = _dev->get_memoryProps();
+	for (uint32_t memIndex = 0; memIndex < mps.memoryTypeCount; memIndex++) {
+		if ((mr.memoryTypeBits & (1 << memIndex)) == 0) {
+			continue;
+		}
+		if (!hostMemory && (mps.memoryTypes[memIndex].propertyFlags & vk::MemoryPropertyFlagBits::eDeviceLocal) == vk::MemoryPropertyFlagBits::eDeviceLocal) {
+			return memIndex;
+		}
+		if (hostMemory && (mps.memoryTypes[memIndex].propertyFlags & hmFlags) == hmFlags) {
+			return memIndex;
+		}
+	}
+	throw std::runtime_error("No suitable memory found!");
+}

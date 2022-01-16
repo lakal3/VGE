@@ -59,6 +59,8 @@ type hQueryPool uintptr
 
 type hGlslCompiler uintptr
 
+type hAllocator hDisposable
+
 type MainLib interface {
 	Exception_GetError(struct {
 		ex     hException
@@ -159,7 +161,10 @@ type MainLib interface {
 		dev  hDevice
 		comp *hGlslCompiler
 	})
-
+	Device_NewAllocator(struct {
+		dev       hDevice
+		allocator *hAllocator
+	})
 	MemoryBlock_Reserve(struct {
 		memBlock  hMemoryBlock
 		memObject hMemoryObject
@@ -266,6 +271,14 @@ type MainLib interface {
 		from    uint64
 		size    uint64
 	})
+	DescriptorSet_WriteDSSlice(struct {
+		ds      hDescriptorSet
+		binding uint32
+		at      uint32
+		buffer  uintptr
+		from    uint64
+		size    uint64
+	})
 	DescriptorSet_WriteBufferView(struct {
 		ds         hDescriptorSet
 		binding    uint32
@@ -277,6 +290,14 @@ type MainLib interface {
 		binding uint32
 		at      uint32
 		view    hImageView
+		sampler hSampler
+	})
+	DescriptorSet_WriteDSImageView(struct {
+		ds      hDescriptorSet
+		binding uint32
+		at      uint32
+		view    uintptr
+		layout  vk.ImageLayout
 		sampler hSampler
 	})
 
@@ -475,5 +496,86 @@ type MainLib interface {
 	GlslCompiler_Free(struct {
 		comp     hGlslCompiler
 		instance uintptr
+	})
+
+	Allocator_AllocBuffer(struct {
+		allocator hAllocator
+		usage     vk.BufferUsageFlags
+		size      uint64
+		hBuffer   *uintptr
+		memType   *uint32
+		alignment *uint32
+	})
+
+	Allocator_AllocDeviceBuffer(struct {
+		allocator hAllocator
+		usage     vk.BufferUsageFlags
+		size      uint64
+		hBuffer   *uintptr
+		memType   *uint32
+		alignment *uint32
+	})
+
+	Allocator_AllocMemory(struct {
+		allocator  hAllocator
+		size       uint64
+		memType    uint32
+		hostMemory bool
+		hMem       *uintptr
+		memPtr     *uintptr
+	})
+
+	Allocator_AllocImage(struct {
+		allocator hAllocator
+		usage     vk.ImageUsageFlags
+		im        *vk.ImageDescription
+		hImage    *uintptr
+		size      *uint64
+		memType   *uint32
+		alignment *uint32
+	})
+
+	Allocator_AllocView(struct {
+		allocator hAllocator
+		hImage    uintptr
+		rg        *vk.ImageRange
+		im        *vk.ImageDescription
+		cube      bool
+		hView     *uintptr
+	})
+
+	Allocator_FreeBuffer(struct {
+		allocator hAllocator
+		hBuffer   uintptr
+	})
+
+	Allocator_FreeMemory(struct {
+		allocator  hAllocator
+		hMem       uintptr
+		hostMemory bool
+	})
+
+	Allocator_FreeImage(struct {
+		allocator hAllocator
+		hImage    uintptr
+	})
+
+	Allocator_FreeView(struct {
+		allocator hAllocator
+		hView     uintptr
+	})
+
+	Allocator_BindBuffer(struct {
+		allocator hAllocator
+		hMem      uintptr
+		hBuffer   uintptr
+		offset    uint64
+	})
+
+	Allocator_BindImage(struct {
+		allocator hAllocator
+		hMem      uintptr
+		hBuffer   uintptr
+		offset    uint64
 	})
 }

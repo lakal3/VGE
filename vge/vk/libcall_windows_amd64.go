@@ -13,6 +13,17 @@ var libcall struct {
 	t_AddDynamicDescriptors             uintptr
 	t_AddValidation                     uintptr
 	t_AddValidationException            uintptr
+	t_Allocator_AllocBuffer             uintptr
+	t_Allocator_AllocDeviceBuffer       uintptr
+	t_Allocator_AllocImage              uintptr
+	t_Allocator_AllocMemory             uintptr
+	t_Allocator_AllocView               uintptr
+	t_Allocator_BindBuffer              uintptr
+	t_Allocator_BindImage               uintptr
+	t_Allocator_FreeBuffer              uintptr
+	t_Allocator_FreeImage               uintptr
+	t_Allocator_FreeMemory              uintptr
+	t_Allocator_FreeView                uintptr
 	t_Application_Init                  uintptr
 	t_Buffer_CopyFrom                   uintptr
 	t_Buffer_GetPtr                     uintptr
@@ -35,11 +46,14 @@ var libcall struct {
 	t_DescriptorPool_Alloc              uintptr
 	t_DescriptorSet_WriteBuffer         uintptr
 	t_DescriptorSet_WriteBufferView     uintptr
+	t_DescriptorSet_WriteDSImageView    uintptr
+	t_DescriptorSet_WriteDSSlice        uintptr
 	t_DescriptorSet_WriteImage          uintptr
 	t_Desktop_CreateWindow              uintptr
 	t_Desktop_GetKeyName                uintptr
 	t_Desktop_GetMonitor                uintptr
 	t_Desktop_PullEvent                 uintptr
+	t_Device_NewAllocator               uintptr
 	t_Device_NewBuffer                  uintptr
 	t_Device_NewCommand                 uintptr
 	t_Device_NewComputePipeline         uintptr
@@ -108,6 +122,50 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_AddValidationException, err = syscall.GetProcAddress(libcall.h_lib, "AddValidationException")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_AllocBuffer, err = syscall.GetProcAddress(libcall.h_lib, "Allocator_AllocBuffer")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_AllocDeviceBuffer, err = syscall.GetProcAddress(libcall.h_lib, "Allocator_AllocDeviceBuffer")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_AllocImage, err = syscall.GetProcAddress(libcall.h_lib, "Allocator_AllocImage")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_AllocMemory, err = syscall.GetProcAddress(libcall.h_lib, "Allocator_AllocMemory")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_AllocView, err = syscall.GetProcAddress(libcall.h_lib, "Allocator_AllocView")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_BindBuffer, err = syscall.GetProcAddress(libcall.h_lib, "Allocator_BindBuffer")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_BindImage, err = syscall.GetProcAddress(libcall.h_lib, "Allocator_BindImage")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_FreeBuffer, err = syscall.GetProcAddress(libcall.h_lib, "Allocator_FreeBuffer")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_FreeImage, err = syscall.GetProcAddress(libcall.h_lib, "Allocator_FreeImage")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_FreeMemory, err = syscall.GetProcAddress(libcall.h_lib, "Allocator_FreeMemory")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_FreeView, err = syscall.GetProcAddress(libcall.h_lib, "Allocator_FreeView")
 	if err != nil {
 		return err
 	}
@@ -199,6 +257,14 @@ func loadLib() (err error) {
 	if err != nil {
 		return err
 	}
+	libcall.t_DescriptorSet_WriteDSImageView, err = syscall.GetProcAddress(libcall.h_lib, "DescriptorSet_WriteDSImageView")
+	if err != nil {
+		return err
+	}
+	libcall.t_DescriptorSet_WriteDSSlice, err = syscall.GetProcAddress(libcall.h_lib, "DescriptorSet_WriteDSSlice")
+	if err != nil {
+		return err
+	}
 	libcall.t_DescriptorSet_WriteImage, err = syscall.GetProcAddress(libcall.h_lib, "DescriptorSet_WriteImage")
 	if err != nil {
 		return err
@@ -216,6 +282,10 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_Desktop_PullEvent, err = syscall.GetProcAddress(libcall.h_lib, "Desktop_PullEvent")
+	if err != nil {
+		return err
+	}
+	libcall.t_Device_NewAllocator, err = syscall.GetProcAddress(libcall.h_lib, "Device_NewAllocator")
 	if err != nil {
 		return err
 	}
@@ -438,6 +508,126 @@ func call_AddValidationException(ctx apicontext, msgId int32) {
 	rc, _, _ := syscall.Syscall(libcall.t_AddValidationException, 1, uintptr(msgId), 0, 0)
 	handleError(ctx, rc)
 }
+func call_Allocator_AllocBuffer(ctx apicontext, allocator hAllocator, usage BufferUsageFlags, size uint64, hBuffer *uintptr, memType *uint32, alignment *uint32) {
+	_tmp_hBuffer := *hBuffer
+	_tmp_memType := *memType
+	_tmp_alignment := *alignment
+	atEnd := ctx.begin("Allocator_AllocBuffer")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall6(libcall.t_Allocator_AllocBuffer, 6, uintptr(allocator), uintptr(usage), uintptr(size), uintptr(unsafe.Pointer(&_tmp_hBuffer)), uintptr(unsafe.Pointer(&_tmp_memType)), uintptr(unsafe.Pointer(&_tmp_alignment)))
+	handleError(ctx, rc)
+	*hBuffer = _tmp_hBuffer
+	*memType = _tmp_memType
+	*alignment = _tmp_alignment
+}
+func call_Allocator_AllocDeviceBuffer(ctx apicontext, allocator hAllocator, usage BufferUsageFlags, size uint64, hBuffer *uintptr, memType *uint32, alignment *uint32) {
+	_tmp_hBuffer := *hBuffer
+	_tmp_memType := *memType
+	_tmp_alignment := *alignment
+	atEnd := ctx.begin("Allocator_AllocDeviceBuffer")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall6(libcall.t_Allocator_AllocDeviceBuffer, 6, uintptr(allocator), uintptr(usage), uintptr(size), uintptr(unsafe.Pointer(&_tmp_hBuffer)), uintptr(unsafe.Pointer(&_tmp_memType)), uintptr(unsafe.Pointer(&_tmp_alignment)))
+	handleError(ctx, rc)
+	*hBuffer = _tmp_hBuffer
+	*memType = _tmp_memType
+	*alignment = _tmp_alignment
+}
+func call_Allocator_AllocImage(ctx apicontext, allocator hAllocator, usage ImageUsageFlags, im *ImageDescription, hImage *uintptr, size *uint64, memType *uint32, alignment *uint32) {
+	_tmp_im := *im
+	_tmp_hImage := *hImage
+	_tmp_size := *size
+	_tmp_memType := *memType
+	_tmp_alignment := *alignment
+	atEnd := ctx.begin("Allocator_AllocImage")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall9(libcall.t_Allocator_AllocImage, 7, uintptr(allocator), uintptr(usage), uintptr(unsafe.Pointer(&_tmp_im)), uintptr(unsafe.Pointer(&_tmp_hImage)), uintptr(unsafe.Pointer(&_tmp_size)), uintptr(unsafe.Pointer(&_tmp_memType)), uintptr(unsafe.Pointer(&_tmp_alignment)), 0, 0)
+	handleError(ctx, rc)
+	*im = _tmp_im
+	*hImage = _tmp_hImage
+	*size = _tmp_size
+	*memType = _tmp_memType
+	*alignment = _tmp_alignment
+}
+func call_Allocator_AllocMemory(ctx apicontext, allocator hAllocator, size uint64, memType uint32, hostMemory bool, hMem *uintptr, memPtr *uintptr) {
+	_tmp_hMem := *hMem
+	_tmp_memPtr := *memPtr
+	atEnd := ctx.begin("Allocator_AllocMemory")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall6(libcall.t_Allocator_AllocMemory, 6, uintptr(allocator), uintptr(size), uintptr(memType), boolToUintptr(hostMemory), uintptr(unsafe.Pointer(&_tmp_hMem)), uintptr(unsafe.Pointer(&_tmp_memPtr)))
+	handleError(ctx, rc)
+	*hMem = _tmp_hMem
+	*memPtr = _tmp_memPtr
+}
+func call_Allocator_AllocView(ctx apicontext, allocator hAllocator, hImage uintptr, rg *ImageRange, im *ImageDescription, cube bool, hView *uintptr) {
+	_tmp_rg := *rg
+	_tmp_im := *im
+	_tmp_hView := *hView
+	atEnd := ctx.begin("Allocator_AllocView")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall6(libcall.t_Allocator_AllocView, 6, uintptr(allocator), uintptr(hImage), uintptr(unsafe.Pointer(&_tmp_rg)), uintptr(unsafe.Pointer(&_tmp_im)), boolToUintptr(cube), uintptr(unsafe.Pointer(&_tmp_hView)))
+	handleError(ctx, rc)
+	*rg = _tmp_rg
+	*im = _tmp_im
+	*hView = _tmp_hView
+}
+func call_Allocator_BindBuffer(ctx apicontext, allocator hAllocator, hMem uintptr, hBuffer uintptr, offset uint64) {
+	atEnd := ctx.begin("Allocator_BindBuffer")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall6(libcall.t_Allocator_BindBuffer, 4, uintptr(allocator), uintptr(hMem), uintptr(hBuffer), uintptr(offset), 0, 0)
+	handleError(ctx, rc)
+}
+func call_Allocator_BindImage(ctx apicontext, allocator hAllocator, hMem uintptr, hBuffer uintptr, offset uint64) {
+	atEnd := ctx.begin("Allocator_BindImage")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall6(libcall.t_Allocator_BindImage, 4, uintptr(allocator), uintptr(hMem), uintptr(hBuffer), uintptr(offset), 0, 0)
+	handleError(ctx, rc)
+}
+func call_Allocator_FreeBuffer(ctx apicontext, allocator hAllocator, hBuffer uintptr) {
+	atEnd := ctx.begin("Allocator_FreeBuffer")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall(libcall.t_Allocator_FreeBuffer, 2, uintptr(allocator), uintptr(hBuffer), 0)
+	handleError(ctx, rc)
+}
+func call_Allocator_FreeImage(ctx apicontext, allocator hAllocator, hImage uintptr) {
+	atEnd := ctx.begin("Allocator_FreeImage")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall(libcall.t_Allocator_FreeImage, 2, uintptr(allocator), uintptr(hImage), 0)
+	handleError(ctx, rc)
+}
+func call_Allocator_FreeMemory(ctx apicontext, allocator hAllocator, hMem uintptr, hostMemory bool) {
+	atEnd := ctx.begin("Allocator_FreeMemory")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall(libcall.t_Allocator_FreeMemory, 3, uintptr(allocator), uintptr(hMem), boolToUintptr(hostMemory))
+	handleError(ctx, rc)
+}
+func call_Allocator_FreeView(ctx apicontext, allocator hAllocator, hView uintptr) {
+	atEnd := ctx.begin("Allocator_FreeView")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall(libcall.t_Allocator_FreeView, 2, uintptr(allocator), uintptr(hView), 0)
+	handleError(ctx, rc)
+}
 func call_Application_Init(ctx apicontext, app hApplication, inst *hInstance) {
 	_tmp_inst := *inst
 	atEnd := ctx.begin("Application_Init")
@@ -627,6 +817,22 @@ func call_DescriptorSet_WriteBufferView(ctx apicontext, ds hDescriptorSet, bindi
 	rc, _, _ := syscall.Syscall6(libcall.t_DescriptorSet_WriteBufferView, 4, uintptr(ds), uintptr(binding), uintptr(at), uintptr(bufferView), 0, 0)
 	handleError(ctx, rc)
 }
+func call_DescriptorSet_WriteDSImageView(ctx apicontext, ds hDescriptorSet, binding uint32, at uint32, view uintptr, layout ImageLayout, sampler hSampler) {
+	atEnd := ctx.begin("DescriptorSet_WriteDSImageView")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall6(libcall.t_DescriptorSet_WriteDSImageView, 6, uintptr(ds), uintptr(binding), uintptr(at), uintptr(view), uintptr(layout), uintptr(sampler))
+	handleError(ctx, rc)
+}
+func call_DescriptorSet_WriteDSSlice(ctx apicontext, ds hDescriptorSet, binding uint32, at uint32, buffer uintptr, from uint64, size uint64) {
+	atEnd := ctx.begin("DescriptorSet_WriteDSSlice")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall6(libcall.t_DescriptorSet_WriteDSSlice, 6, uintptr(ds), uintptr(binding), uintptr(at), uintptr(buffer), uintptr(from), uintptr(size))
+	handleError(ctx, rc)
+}
 func call_DescriptorSet_WriteImage(ctx apicontext, ds hDescriptorSet, binding uint32, at uint32, view hImageView, sampler hSampler) {
 	atEnd := ctx.begin("DescriptorSet_WriteImage")
 	if atEnd != nil {
@@ -676,6 +882,16 @@ func call_Desktop_PullEvent(ctx apicontext, desktop hDesktop, ev *RawEvent) {
 	rc, _, _ := syscall.Syscall(libcall.t_Desktop_PullEvent, 2, uintptr(desktop), uintptr(unsafe.Pointer(&_tmp_ev)), 0)
 	handleError(ctx, rc)
 	*ev = _tmp_ev
+}
+func call_Device_NewAllocator(ctx apicontext, dev hDevice, allocator *hAllocator) {
+	_tmp_allocator := *allocator
+	atEnd := ctx.begin("Device_NewAllocator")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall(libcall.t_Device_NewAllocator, 2, uintptr(dev), uintptr(unsafe.Pointer(&_tmp_allocator)), 0)
+	handleError(ctx, rc)
+	*allocator = _tmp_allocator
 }
 func call_Device_NewBuffer(ctx apicontext, dev hDevice, size uint64, hostMemory bool, usage BufferUsageFlags, buffer *hBuffer) {
 	_tmp_buffer := *buffer

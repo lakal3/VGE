@@ -58,6 +58,8 @@ type hQueryPool hDisposable
 
 type hGlslCompiler hDisposable
 
+type hAllocator hDisposable
+
 type ImageDescription struct {
 	Width     uint32
 	Height    uint32

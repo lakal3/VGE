@@ -13,6 +13,17 @@ var libcall struct {
 	t_AddDynamicDescriptors             uintptr
 	t_AddValidation                     uintptr
 	t_AddValidationException            uintptr
+	t_Allocator_AllocBuffer             uintptr
+	t_Allocator_AllocDeviceBuffer       uintptr
+	t_Allocator_AllocImage              uintptr
+	t_Allocator_AllocMemory             uintptr
+	t_Allocator_AllocView               uintptr
+	t_Allocator_BindBuffer              uintptr
+	t_Allocator_BindImage               uintptr
+	t_Allocator_FreeBuffer              uintptr
+	t_Allocator_FreeImage               uintptr
+	t_Allocator_FreeMemory              uintptr
+	t_Allocator_FreeView                uintptr
 	t_Application_Init                  uintptr
 	t_Buffer_CopyFrom                   uintptr
 	t_Buffer_GetPtr                     uintptr
@@ -27,6 +38,7 @@ var libcall struct {
 	t_Command_Draw                      uintptr
 	t_Command_EndRenderPass             uintptr
 	t_Command_SetLayout                 uintptr
+	t_Command_Transfer                  uintptr
 	t_Command_Wait                      uintptr
 	t_Command_WriteTimer                uintptr
 	t_ComputePipeline_Create            uintptr
@@ -35,11 +47,14 @@ var libcall struct {
 	t_DescriptorPool_Alloc              uintptr
 	t_DescriptorSet_WriteBuffer         uintptr
 	t_DescriptorSet_WriteBufferView     uintptr
+	t_DescriptorSet_WriteDSImageView    uintptr
+	t_DescriptorSet_WriteDSSlice        uintptr
 	t_DescriptorSet_WriteImage          uintptr
 	t_Desktop_CreateWindow              uintptr
 	t_Desktop_GetKeyName                uintptr
 	t_Desktop_GetMonitor                uintptr
 	t_Desktop_PullEvent                 uintptr
+	t_Device_NewAllocator               uintptr
 	t_Device_NewBuffer                  uintptr
 	t_Device_NewCommand                 uintptr
 	t_Device_NewComputePipeline         uintptr
@@ -81,6 +96,7 @@ var libcall struct {
 	t_Pipeline_AddShader                uintptr
 	t_QueryPool_Get                     uintptr
 	t_RenderPass_NewFrameBuffer         uintptr
+	t_RenderPass_NewFrameBuffer2        uintptr
 	t_RenderPass_NewNullFrameBuffer     uintptr
 	t_Window_GetClipboard               uintptr
 	t_Window_GetNextFrame               uintptr
@@ -108,6 +124,50 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_AddValidationException, err = dldyn.GetProcAddress(libcall.h_lib, "AddValidationException")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_AllocBuffer, err = dldyn.GetProcAddress(libcall.h_lib, "Allocator_AllocBuffer")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_AllocDeviceBuffer, err = dldyn.GetProcAddress(libcall.h_lib, "Allocator_AllocDeviceBuffer")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_AllocImage, err = dldyn.GetProcAddress(libcall.h_lib, "Allocator_AllocImage")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_AllocMemory, err = dldyn.GetProcAddress(libcall.h_lib, "Allocator_AllocMemory")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_AllocView, err = dldyn.GetProcAddress(libcall.h_lib, "Allocator_AllocView")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_BindBuffer, err = dldyn.GetProcAddress(libcall.h_lib, "Allocator_BindBuffer")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_BindImage, err = dldyn.GetProcAddress(libcall.h_lib, "Allocator_BindImage")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_FreeBuffer, err = dldyn.GetProcAddress(libcall.h_lib, "Allocator_FreeBuffer")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_FreeImage, err = dldyn.GetProcAddress(libcall.h_lib, "Allocator_FreeImage")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_FreeMemory, err = dldyn.GetProcAddress(libcall.h_lib, "Allocator_FreeMemory")
+	if err != nil {
+		return err
+	}
+	libcall.t_Allocator_FreeView, err = dldyn.GetProcAddress(libcall.h_lib, "Allocator_FreeView")
 	if err != nil {
 		return err
 	}
@@ -167,6 +227,10 @@ func loadLib() (err error) {
 	if err != nil {
 		return err
 	}
+	libcall.t_Command_Transfer, err = dldyn.GetProcAddress(libcall.h_lib, "Command_Transfer")
+	if err != nil {
+		return err
+	}
 	libcall.t_Command_Wait, err = dldyn.GetProcAddress(libcall.h_lib, "Command_Wait")
 	if err != nil {
 		return err
@@ -199,6 +263,14 @@ func loadLib() (err error) {
 	if err != nil {
 		return err
 	}
+	libcall.t_DescriptorSet_WriteDSImageView, err = dldyn.GetProcAddress(libcall.h_lib, "DescriptorSet_WriteDSImageView")
+	if err != nil {
+		return err
+	}
+	libcall.t_DescriptorSet_WriteDSSlice, err = dldyn.GetProcAddress(libcall.h_lib, "DescriptorSet_WriteDSSlice")
+	if err != nil {
+		return err
+	}
 	libcall.t_DescriptorSet_WriteImage, err = dldyn.GetProcAddress(libcall.h_lib, "DescriptorSet_WriteImage")
 	if err != nil {
 		return err
@@ -216,6 +288,10 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_Desktop_PullEvent, err = dldyn.GetProcAddress(libcall.h_lib, "Desktop_PullEvent")
+	if err != nil {
+		return err
+	}
+	libcall.t_Device_NewAllocator, err = dldyn.GetProcAddress(libcall.h_lib, "Device_NewAllocator")
 	if err != nil {
 		return err
 	}
@@ -383,6 +459,10 @@ func loadLib() (err error) {
 	if err != nil {
 		return err
 	}
+	libcall.t_RenderPass_NewFrameBuffer2, err = dldyn.GetProcAddress(libcall.h_lib, "RenderPass_NewFrameBuffer2")
+	if err != nil {
+		return err
+	}
 	libcall.t_RenderPass_NewNullFrameBuffer, err = dldyn.GetProcAddress(libcall.h_lib, "RenderPass_NewNullFrameBuffer")
 	if err != nil {
 		return err
@@ -436,6 +516,126 @@ func call_AddValidationException(ctx apicontext, msgId int32) {
 		defer atEnd()
 	}
 	rc := dldyn.Invoke(libcall.t_AddValidationException, 1, uintptr(msgId), 0, 0)
+	handleError(ctx, rc)
+}
+func call_Allocator_AllocBuffer(ctx apicontext, allocator hAllocator, usage BufferUsageFlags, size uint64, hBuffer *uintptr, memType *uint32, alignment *uint32) {
+	_tmp_hBuffer := *hBuffer
+	_tmp_memType := *memType
+	_tmp_alignment := *alignment
+	atEnd := ctx.begin("Allocator_AllocBuffer")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke6(libcall.t_Allocator_AllocBuffer, 6, uintptr(allocator), uintptr(usage), uintptr(size), uintptr(unsafe.Pointer(&_tmp_hBuffer)), uintptr(unsafe.Pointer(&_tmp_memType)), uintptr(unsafe.Pointer(&_tmp_alignment)))
+	handleError(ctx, rc)
+	*hBuffer = _tmp_hBuffer
+	*memType = _tmp_memType
+	*alignment = _tmp_alignment
+}
+func call_Allocator_AllocDeviceBuffer(ctx apicontext, allocator hAllocator, usage BufferUsageFlags, size uint64, hBuffer *uintptr, memType *uint32, alignment *uint32) {
+	_tmp_hBuffer := *hBuffer
+	_tmp_memType := *memType
+	_tmp_alignment := *alignment
+	atEnd := ctx.begin("Allocator_AllocDeviceBuffer")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke6(libcall.t_Allocator_AllocDeviceBuffer, 6, uintptr(allocator), uintptr(usage), uintptr(size), uintptr(unsafe.Pointer(&_tmp_hBuffer)), uintptr(unsafe.Pointer(&_tmp_memType)), uintptr(unsafe.Pointer(&_tmp_alignment)))
+	handleError(ctx, rc)
+	*hBuffer = _tmp_hBuffer
+	*memType = _tmp_memType
+	*alignment = _tmp_alignment
+}
+func call_Allocator_AllocImage(ctx apicontext, allocator hAllocator, usage ImageUsageFlags, im *ImageDescription, hImage *uintptr, size *uint64, memType *uint32, alignment *uint32) {
+	_tmp_im := *im
+	_tmp_hImage := *hImage
+	_tmp_size := *size
+	_tmp_memType := *memType
+	_tmp_alignment := *alignment
+	atEnd := ctx.begin("Allocator_AllocImage")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke9(libcall.t_Allocator_AllocImage, 7, uintptr(allocator), uintptr(usage), uintptr(unsafe.Pointer(&_tmp_im)), uintptr(unsafe.Pointer(&_tmp_hImage)), uintptr(unsafe.Pointer(&_tmp_size)), uintptr(unsafe.Pointer(&_tmp_memType)), uintptr(unsafe.Pointer(&_tmp_alignment)), 0, 0)
+	handleError(ctx, rc)
+	*im = _tmp_im
+	*hImage = _tmp_hImage
+	*size = _tmp_size
+	*memType = _tmp_memType
+	*alignment = _tmp_alignment
+}
+func call_Allocator_AllocMemory(ctx apicontext, allocator hAllocator, size uint64, memType uint32, hostMemory bool, hMem *uintptr, memPtr *uintptr) {
+	_tmp_hMem := *hMem
+	_tmp_memPtr := *memPtr
+	atEnd := ctx.begin("Allocator_AllocMemory")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke6(libcall.t_Allocator_AllocMemory, 6, uintptr(allocator), uintptr(size), uintptr(memType), boolToUintptr(hostMemory), uintptr(unsafe.Pointer(&_tmp_hMem)), uintptr(unsafe.Pointer(&_tmp_memPtr)))
+	handleError(ctx, rc)
+	*hMem = _tmp_hMem
+	*memPtr = _tmp_memPtr
+}
+func call_Allocator_AllocView(ctx apicontext, allocator hAllocator, hImage uintptr, rg *ImageRange, im *ImageDescription, cube bool, hView *uintptr) {
+	_tmp_rg := *rg
+	_tmp_im := *im
+	_tmp_hView := *hView
+	atEnd := ctx.begin("Allocator_AllocView")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke6(libcall.t_Allocator_AllocView, 6, uintptr(allocator), uintptr(hImage), uintptr(unsafe.Pointer(&_tmp_rg)), uintptr(unsafe.Pointer(&_tmp_im)), boolToUintptr(cube), uintptr(unsafe.Pointer(&_tmp_hView)))
+	handleError(ctx, rc)
+	*rg = _tmp_rg
+	*im = _tmp_im
+	*hView = _tmp_hView
+}
+func call_Allocator_BindBuffer(ctx apicontext, allocator hAllocator, hMem uintptr, hBuffer uintptr, offset uint64) {
+	atEnd := ctx.begin("Allocator_BindBuffer")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke6(libcall.t_Allocator_BindBuffer, 4, uintptr(allocator), uintptr(hMem), uintptr(hBuffer), uintptr(offset), 0, 0)
+	handleError(ctx, rc)
+}
+func call_Allocator_BindImage(ctx apicontext, allocator hAllocator, hMem uintptr, hBuffer uintptr, offset uint64) {
+	atEnd := ctx.begin("Allocator_BindImage")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke6(libcall.t_Allocator_BindImage, 4, uintptr(allocator), uintptr(hMem), uintptr(hBuffer), uintptr(offset), 0, 0)
+	handleError(ctx, rc)
+}
+func call_Allocator_FreeBuffer(ctx apicontext, allocator hAllocator, hBuffer uintptr) {
+	atEnd := ctx.begin("Allocator_FreeBuffer")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke(libcall.t_Allocator_FreeBuffer, 2, uintptr(allocator), uintptr(hBuffer), 0)
+	handleError(ctx, rc)
+}
+func call_Allocator_FreeImage(ctx apicontext, allocator hAllocator, hImage uintptr) {
+	atEnd := ctx.begin("Allocator_FreeImage")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke(libcall.t_Allocator_FreeImage, 2, uintptr(allocator), uintptr(hImage), 0)
+	handleError(ctx, rc)
+}
+func call_Allocator_FreeMemory(ctx apicontext, allocator hAllocator, hMem uintptr, hostMemory bool) {
+	atEnd := ctx.begin("Allocator_FreeMemory")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke(libcall.t_Allocator_FreeMemory, 3, uintptr(allocator), uintptr(hMem), boolToUintptr(hostMemory))
+	handleError(ctx, rc)
+}
+func call_Allocator_FreeView(ctx apicontext, allocator hAllocator, hView uintptr) {
+	atEnd := ctx.begin("Allocator_FreeView")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke(libcall.t_Allocator_FreeView, 2, uintptr(allocator), uintptr(hView), 0)
 	handleError(ctx, rc)
 }
 func call_Application_Init(ctx apicontext, app hApplication, inst *hInstance) {
@@ -564,6 +764,14 @@ func call_Command_SetLayout(ctx apicontext, cmd hCommand, image hImage, imRange 
 	handleError(ctx, rc)
 	*imRange = _tmp_imRange
 }
+func call_Command_Transfer(ctx apicontext, cmd hCommand, transfer []TransferItem) {
+	atEnd := ctx.begin("Command_Transfer")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke(libcall.t_Command_Transfer, 3, uintptr(cmd), sliceToUintptr(transfer), uintptr(len(transfer)))
+	handleError(ctx, rc)
+}
 func call_Command_Wait(ctx apicontext, cmd hCommand) {
 	atEnd := ctx.begin("Command_Wait")
 	if atEnd != nil {
@@ -627,6 +835,22 @@ func call_DescriptorSet_WriteBufferView(ctx apicontext, ds hDescriptorSet, bindi
 	rc := dldyn.Invoke6(libcall.t_DescriptorSet_WriteBufferView, 4, uintptr(ds), uintptr(binding), uintptr(at), uintptr(bufferView), 0, 0)
 	handleError(ctx, rc)
 }
+func call_DescriptorSet_WriteDSImageView(ctx apicontext, ds hDescriptorSet, binding uint32, at uint32, view uintptr, layout ImageLayout, sampler hSampler) {
+	atEnd := ctx.begin("DescriptorSet_WriteDSImageView")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke6(libcall.t_DescriptorSet_WriteDSImageView, 6, uintptr(ds), uintptr(binding), uintptr(at), uintptr(view), uintptr(layout), uintptr(sampler))
+	handleError(ctx, rc)
+}
+func call_DescriptorSet_WriteDSSlice(ctx apicontext, ds hDescriptorSet, binding uint32, at uint32, buffer uintptr, from uint64, size uint64) {
+	atEnd := ctx.begin("DescriptorSet_WriteDSSlice")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke6(libcall.t_DescriptorSet_WriteDSSlice, 6, uintptr(ds), uintptr(binding), uintptr(at), uintptr(buffer), uintptr(from), uintptr(size))
+	handleError(ctx, rc)
+}
 func call_DescriptorSet_WriteImage(ctx apicontext, ds hDescriptorSet, binding uint32, at uint32, view hImageView, sampler hSampler) {
 	atEnd := ctx.begin("DescriptorSet_WriteImage")
 	if atEnd != nil {
@@ -677,15 +901,27 @@ func call_Desktop_PullEvent(ctx apicontext, desktop hDesktop, ev *RawEvent) {
 	handleError(ctx, rc)
 	*ev = _tmp_ev
 }
-func call_Device_NewBuffer(ctx apicontext, dev hDevice, size uint64, hostMemory bool, usage BufferUsageFlags, buffer *hBuffer) {
+func call_Device_NewAllocator(ctx apicontext, dev hDevice, allocator *hAllocator) {
+	_tmp_allocator := *allocator
+	atEnd := ctx.begin("Device_NewAllocator")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke(libcall.t_Device_NewAllocator, 2, uintptr(dev), uintptr(unsafe.Pointer(&_tmp_allocator)), 0)
+	handleError(ctx, rc)
+	*allocator = _tmp_allocator
+}
+func call_Device_NewBuffer(ctx apicontext, dev hDevice, size uint64, hostMemory bool, usage BufferUsageFlags, buffer *hBuffer, rawBuffer *uintptr) {
 	_tmp_buffer := *buffer
+	_tmp_rawBuffer := *rawBuffer
 	atEnd := ctx.begin("Device_NewBuffer")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke6(libcall.t_Device_NewBuffer, 5, uintptr(dev), uintptr(size), boolToUintptr(hostMemory), uintptr(usage), uintptr(unsafe.Pointer(&_tmp_buffer)), 0)
+	rc := dldyn.Invoke6(libcall.t_Device_NewBuffer, 6, uintptr(dev), uintptr(size), boolToUintptr(hostMemory), uintptr(usage), uintptr(unsafe.Pointer(&_tmp_buffer)), uintptr(unsafe.Pointer(&_tmp_rawBuffer)))
 	handleError(ctx, rc)
 	*buffer = _tmp_buffer
+	*rawBuffer = _tmp_rawBuffer
 }
 func call_Device_NewCommand(ctx apicontext, dev hDevice, queueType QueueFlags, once bool, command *hCommand) {
 	_tmp_command := *command
@@ -737,17 +973,19 @@ func call_Device_NewGraphicsPipeline(ctx apicontext, dev hDevice, gp *hGraphicsP
 	handleError(ctx, rc)
 	*gp = _tmp_gp
 }
-func call_Device_NewImage(ctx apicontext, dev hDevice, usage ImageUsageFlags, desc *ImageDescription, image *hImage) {
+func call_Device_NewImage(ctx apicontext, dev hDevice, usage ImageUsageFlags, desc *ImageDescription, image *hImage, rawImage *uintptr) {
 	_tmp_desc := *desc
 	_tmp_image := *image
+	_tmp_rawImage := *rawImage
 	atEnd := ctx.begin("Device_NewImage")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke6(libcall.t_Device_NewImage, 4, uintptr(dev), uintptr(usage), uintptr(unsafe.Pointer(&_tmp_desc)), uintptr(unsafe.Pointer(&_tmp_image)), 0, 0)
+	rc := dldyn.Invoke6(libcall.t_Device_NewImage, 5, uintptr(dev), uintptr(usage), uintptr(unsafe.Pointer(&_tmp_desc)), uintptr(unsafe.Pointer(&_tmp_image)), uintptr(unsafe.Pointer(&_tmp_rawImage)), 0)
 	handleError(ctx, rc)
 	*desc = _tmp_desc
 	*image = _tmp_image
+	*rawImage = _tmp_rawImage
 }
 func call_Device_NewMemoryBlock(ctx apicontext, dev hDevice, memBlock *hMemoryBlock) {
 	_tmp_memBlock := *memBlock
@@ -931,17 +1169,19 @@ func call_ImageLoader_Supported(ctx apicontext, loader hImageLoader, kind []byte
 	*read = _tmp_read
 	*write = _tmp_write
 }
-func call_Image_NewView(ctx apicontext, image hImage, imRange *ImageRange, imageView *hImageView, cube bool) {
+func call_Image_NewView(ctx apicontext, image hImage, imRange *ImageRange, imageView *hImageView, rawView *uintptr, cube bool) {
 	_tmp_imRange := *imRange
 	_tmp_imageView := *imageView
+	_tmp_rawView := *rawView
 	atEnd := ctx.begin("Image_NewView")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc := dldyn.Invoke6(libcall.t_Image_NewView, 4, uintptr(image), uintptr(unsafe.Pointer(&_tmp_imRange)), uintptr(unsafe.Pointer(&_tmp_imageView)), boolToUintptr(cube), 0, 0)
+	rc := dldyn.Invoke6(libcall.t_Image_NewView, 5, uintptr(image), uintptr(unsafe.Pointer(&_tmp_imRange)), uintptr(unsafe.Pointer(&_tmp_imageView)), uintptr(unsafe.Pointer(&_tmp_rawView)), boolToUintptr(cube), 0)
 	handleError(ctx, rc)
 	*imRange = _tmp_imRange
 	*imageView = _tmp_imageView
+	*rawView = _tmp_rawView
 }
 func call_Instance_GetPhysicalDevice(ctx apicontext, instance hInstance, index int32, info *DeviceInfo) {
 	_tmp_info := *info
@@ -1062,6 +1302,16 @@ func call_RenderPass_NewFrameBuffer(ctx apicontext, rp hRenderPass, attachments 
 		defer atEnd()
 	}
 	rc := dldyn.Invoke6(libcall.t_RenderPass_NewFrameBuffer, 4, uintptr(rp), sliceToUintptr(attachments), uintptr(len(attachments)), uintptr(unsafe.Pointer(&_tmp_fb)), 0, 0)
+	handleError(ctx, rc)
+	*fb = _tmp_fb
+}
+func call_RenderPass_NewFrameBuffer2(ctx apicontext, rp hRenderPass, width uint32, height uint32, attachments []uintptr, fb *hFramebuffer) {
+	_tmp_fb := *fb
+	atEnd := ctx.begin("RenderPass_NewFrameBuffer2")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc := dldyn.Invoke6(libcall.t_RenderPass_NewFrameBuffer2, 6, uintptr(rp), uintptr(width), uintptr(height), sliceToUintptr(attachments), uintptr(len(attachments)), uintptr(unsafe.Pointer(&_tmp_fb)))
 	handleError(ctx, rc)
 	*fb = _tmp_fb
 }

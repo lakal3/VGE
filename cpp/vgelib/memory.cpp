@@ -85,7 +85,7 @@ void vge::Image::bind()
 	_dev->get_device().bindImageMemory(_image, _owner->get_mem(), _offset, _dev->get_dispatch());
 }
 
-void vge::Image::NewView(vge::ImageRange *range, ImageView*& view, bool cubeView)
+void vge::Image::NewView(vge::ImageRange *range, ImageView*& view, void*& rawView, bool cubeView)
 {
 	auto ivci = cvInfo(0, 0);
 	ivci.subresourceRange.layerCount = range->LayerCount;
@@ -103,6 +103,7 @@ void vge::Image::NewView(vge::ImageRange *range, ImageView*& view, bool cubeView
 	}
 	auto vh = _dev->get_device().createImageView(ivci, allocator, _dev->get_dispatch());
 	view = new ImageView(_dev, vh, this, *range);
+	rawView = view->get_view();
 }
 
 void vge::Image::init()
@@ -362,6 +363,7 @@ void vge::Allocator::AllocView(void* hImage, ImageRange* rg, ImageDescription *d
 		}
 	}
 	auto vh = _dev->get_device().createImageView(ivci, allocator, _dev->get_dispatch());
+	hView = vh;
 }
 
 void vge::Allocator::BindBuffer(void* hMem, void* hBuffer, uint64_t offset)

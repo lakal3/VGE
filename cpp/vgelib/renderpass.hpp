@@ -9,6 +9,7 @@ namespace vge {
 		RenderPass(const Device* dev, bool depthAttachment, AttachmentInfo* attachments, size_t attachmentCount);
 		void NewFrameBuffer(ImageView** attachments, size_t attachments_len, Framebuffer*& fb);
 		void NewNullFrameBuffer(uint32_t width,uint32_t height, Framebuffer*& fb);
+		void NewFrameBuffer2(uint32_t width, uint32_t height, void** attachments, size_t attachments_len, Framebuffer*& fb);
 		void init();
 		const vk::RenderPass get_handle() const {
 			return _renderPass;
@@ -74,9 +75,7 @@ namespace vge {
 			return _extent;
 		};
 
-		const std::vector<ImageView*> &get_attachments() const {
-			return _attachments;
-		};
+		
 	private:
 		virtual void Dispose() override;
 		Framebuffer(const Device *dev, vk::Framebuffer frameBuffer, const std::vector<ImageView*> attachments) : _dev(dev), _framebuffer(frameBuffer), _attachments(attachments) {

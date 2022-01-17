@@ -101,6 +101,22 @@ type DrawItem struct {
 	pushoffset   uint64
 }
 
+type TransferItem struct {
+	buffer     uintptr
+	offset     uint64
+	image      uintptr
+	layer      uint32
+	miplevel   uint32
+	width      uint32
+	height     uint32
+	depth      uint32
+	direction  uint32
+	fromLayout ImageLayout
+	toLayout   ImageLayout
+	aspect     ImageAspectFlags
+	_filler    uint32
+}
+
 type AttachmentInfo struct {
 	InitialLayout ImageLayout
 	FinalLayout   ImageLayout

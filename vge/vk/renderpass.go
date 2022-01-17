@@ -1,5 +1,7 @@
 package vk
 
+import "errors"
+
 type Framebuffer struct {
 	hFb hFramebuffer
 	rp  *GeneralRenderPass
@@ -117,5 +119,30 @@ func NewNullFramebuffer(rp *GeneralRenderPass, width, height uint32) *Framebuffe
 	}
 	fb := &Framebuffer{rp: rp}
 	call_RenderPass_NewNullFrameBuffer(rp.dev, rp.hRp, width, height, &fb.hFb)
+	return fb
+}
+
+// NewFramebuffer2 initialized new framebuffer with give
+// Instead you must give size for framebuffer that is normally fetch from first image
+func NewFramebuffer2(rp *GeneralRenderPass, attachments ...VImageView) *Framebuffer {
+	if !rp.isValid() {
+		return nil
+	}
+	if len(attachments) == 0 {
+		rp.dev.ReportError(errors.New("Usage NewNullFramebuffer if you want framebuffer without any attachments"))
+		return nil
+	}
+	fb := &Framebuffer{rp: rp}
+	desc := attachments[0].VImage().Describe()
+	att := make([]uintptr, len(attachments))
+	for idx, at := range attachments {
+		h := at.imageView()
+		if h == 0 {
+			return nil
+		}
+		att[idx] = h
+	}
+	// _ = desc
+	call_RenderPass_NewFrameBuffer2(rp.dev, rp.hRp, desc.Width, desc.Height, att, &fb.hFb)
 	return fb
 }

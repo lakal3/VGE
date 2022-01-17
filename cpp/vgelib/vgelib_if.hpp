@@ -50,6 +50,22 @@ namespace vge {
         size_t pushOffset;
     };
 
+    struct TransferItem {
+        void* buffer;
+        size_t offset;
+        void* image;
+        uint32_t layer;
+        uint32_t miplevel;
+        uint32_t width;
+        uint32_t height;
+        uint32_t depth;
+        uint32_t direction;
+        uint32_t initialLayout;
+        uint32_t finalLayout;
+        uint32_t aspect;
+        uint32_t _filler;
+    };
+
     struct AttachmentInfo {
         uint32_t initialLayout;
         uint32_t finalLayout;

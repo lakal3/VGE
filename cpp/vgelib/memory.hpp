@@ -74,7 +74,7 @@ namespace vge {
 		friend class Device;
 	public:
 		
-		void NewView(ImageRange *range, ImageView*& view, bool cube);
+		void NewView(ImageRange *range, ImageView*& view, void*& rawView, bool cube);
 
 		
 		const ImageDescription& get_desc() const {

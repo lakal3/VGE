@@ -74,9 +74,14 @@ type Image struct {
 	swapbuffer  bool
 }
 
+func (i *Image) image() (hImage uintptr) {
+	return i.rawImage
+}
+
 type ImageView struct {
-	image *Image
-	view  hImageView
+	image   *Image
+	view    hImageView
+	rawView uintptr
 }
 
 func (im ImageView) Handle() uintptr {
@@ -229,7 +234,7 @@ func NewImageView(image *Image, imRange *ImageRange) *ImageView {
 	}
 
 	iv := &ImageView{image: image}
-	call_Image_NewView(image.dev, image.hImage, imRange, &iv.view, false)
+	call_Image_NewView(image.dev, image.hImage, imRange, &iv.view, &iv.rawView, false)
 	return iv
 }
 
@@ -244,7 +249,7 @@ func NewCubeView(image *Image, imRange *ImageRange) *ImageView {
 		return nil
 	}
 	iv := &ImageView{image: image}
-	call_Image_NewView(image.dev, image.hImage, imRange, &iv.view, true)
+	call_Image_NewView(image.dev, image.hImage, imRange, &iv.view, &iv.rawView, true)
 	return iv
 }
 

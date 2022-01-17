@@ -33,12 +33,14 @@ namespace vge {
 		void Compute(ComputePipeline* pl, uint32_t x, uint32_t y, uint32_t z, DescriptorSet** descriptors, size_t descriptors_len);
 		void Wait();
 		void WriteTimer(QueryPool* qp, vk::PipelineStageFlags stages, uint32_t timerIndex);
+		void Transfer(TransferItem* transfer, size_t transfer_len);
 	private:
 		Command(Device* dev, uint32_t family, bool once) : _dev(dev), _family(family), _once(once) {
 
 		}
 		void copyView(Buffer* buffer, Image* image, ImageRange* range, size_t offset, bool copyToImage);
 		void drawOne(DrawItem &draw, Pipeline*& pipeline, uint8_t* pushConstants);
+		void quessBarrier(vk::PipelineStageFlags& src, vk::PipelineStageFlags& dst, vk::ImageMemoryBarrier& imb);
 		void init();
 		Device* _dev;
 		WaitForCmd* _waitSem = nullptr;

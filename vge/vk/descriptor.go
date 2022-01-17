@@ -4,12 +4,19 @@ import (
 	"errors"
 )
 
-// DSSlice interface describes slice of memory buffer than can be written to descriptor set
-type DSSlice interface {
+// VSlice interface describes slice of memory buffer than can be written to descriptor set
+type VSlice interface {
+	Bytes() []byte
 	slice() (hBuffer uintptr, from uint64, size uint64)
 }
 
-type DSImageView interface {
+type VImage interface {
+	Describe() ImageDescription
+	image() (hImage uintptr)
+}
+
+type VImageView interface {
+	VImage() VImage
 	imageView() (hView uintptr)
 }
 
@@ -178,7 +185,7 @@ func (ds *DescriptorSet) WriteSlice(biding uint32, index uint32, sl *Slice) {
 
 // WriteSlice writes part of buffer (slice) to descriptor.
 // Note that descriptor layout must support buffer in this binding and index
-func (ds *DescriptorSet) WriteDSSlice(biding uint32, index uint32, sl DSSlice) {
+func (ds *DescriptorSet) WriteDSSlice(biding uint32, index uint32, sl VSlice) {
 	if !ds.isValid() {
 		return
 	}
@@ -213,7 +220,7 @@ func (ds *DescriptorSet) WriteImage(biding uint32, index uint32, view *ImageView
 // WriteImage writes buffer view. Descriptors must be written before they can be bound to draw commands.
 // Note that descriptor layout must support image or sampled image in this binding and index
 // Samples may be nil if biding don't need sampler
-func (ds *DescriptorSet) WriteDSView(biding uint32, index uint32, view DSImageView, layout ImageLayout, sampler *Sampler) {
+func (ds *DescriptorSet) WriteDSView(biding uint32, index uint32, view VImageView, layout ImageLayout, sampler *Sampler) {
 	hs := hSampler(0)
 	if sampler != nil {
 		hs = sampler.hSampler

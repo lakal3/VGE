@@ -38,6 +38,7 @@ var libcall struct {
 	t_Command_Draw                      uintptr
 	t_Command_EndRenderPass             uintptr
 	t_Command_SetLayout                 uintptr
+	t_Command_Transfer                  uintptr
 	t_Command_Wait                      uintptr
 	t_Command_WriteTimer                uintptr
 	t_ComputePipeline_Create            uintptr
@@ -95,6 +96,7 @@ var libcall struct {
 	t_Pipeline_AddShader                uintptr
 	t_QueryPool_Get                     uintptr
 	t_RenderPass_NewFrameBuffer         uintptr
+	t_RenderPass_NewFrameBuffer2        uintptr
 	t_RenderPass_NewNullFrameBuffer     uintptr
 	t_Window_GetClipboard               uintptr
 	t_Window_GetNextFrame               uintptr
@@ -222,6 +224,10 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_Command_SetLayout, err = syscall.GetProcAddress(libcall.h_lib, "Command_SetLayout")
+	if err != nil {
+		return err
+	}
+	libcall.t_Command_Transfer, err = syscall.GetProcAddress(libcall.h_lib, "Command_Transfer")
 	if err != nil {
 		return err
 	}
@@ -450,6 +456,10 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_RenderPass_NewFrameBuffer, err = syscall.GetProcAddress(libcall.h_lib, "RenderPass_NewFrameBuffer")
+	if err != nil {
+		return err
+	}
+	libcall.t_RenderPass_NewFrameBuffer2, err = syscall.GetProcAddress(libcall.h_lib, "RenderPass_NewFrameBuffer2")
 	if err != nil {
 		return err
 	}
@@ -753,6 +763,14 @@ func call_Command_SetLayout(ctx apicontext, cmd hCommand, image hImage, imRange 
 	rc, _, _ := syscall.Syscall6(libcall.t_Command_SetLayout, 4, uintptr(cmd), uintptr(image), uintptr(unsafe.Pointer(&_tmp_imRange)), uintptr(newLayout), 0, 0)
 	handleError(ctx, rc)
 	*imRange = _tmp_imRange
+}
+func call_Command_Transfer(ctx apicontext, cmd hCommand, transfer []TransferItem) {
+	atEnd := ctx.begin("Command_Transfer")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall(libcall.t_Command_Transfer, 3, uintptr(cmd), sliceToUintptr(transfer), uintptr(len(transfer)))
+	handleError(ctx, rc)
 }
 func call_Command_Wait(ctx apicontext, cmd hCommand) {
 	atEnd := ctx.begin("Command_Wait")
@@ -1151,17 +1169,19 @@ func call_ImageLoader_Supported(ctx apicontext, loader hImageLoader, kind []byte
 	*read = _tmp_read
 	*write = _tmp_write
 }
-func call_Image_NewView(ctx apicontext, image hImage, imRange *ImageRange, imageView *hImageView, cube bool) {
+func call_Image_NewView(ctx apicontext, image hImage, imRange *ImageRange, imageView *hImageView, rawView *uintptr, cube bool) {
 	_tmp_imRange := *imRange
 	_tmp_imageView := *imageView
+	_tmp_rawView := *rawView
 	atEnd := ctx.begin("Image_NewView")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_Image_NewView, 4, uintptr(image), uintptr(unsafe.Pointer(&_tmp_imRange)), uintptr(unsafe.Pointer(&_tmp_imageView)), boolToUintptr(cube), 0, 0)
+	rc, _, _ := syscall.Syscall6(libcall.t_Image_NewView, 5, uintptr(image), uintptr(unsafe.Pointer(&_tmp_imRange)), uintptr(unsafe.Pointer(&_tmp_imageView)), uintptr(unsafe.Pointer(&_tmp_rawView)), boolToUintptr(cube), 0)
 	handleError(ctx, rc)
 	*imRange = _tmp_imRange
 	*imageView = _tmp_imageView
+	*rawView = _tmp_rawView
 }
 func call_Instance_GetPhysicalDevice(ctx apicontext, instance hInstance, index int32, info *DeviceInfo) {
 	_tmp_info := *info
@@ -1282,6 +1302,16 @@ func call_RenderPass_NewFrameBuffer(ctx apicontext, rp hRenderPass, attachments 
 		defer atEnd()
 	}
 	rc, _, _ := syscall.Syscall6(libcall.t_RenderPass_NewFrameBuffer, 4, uintptr(rp), sliceToUintptr(attachments), uintptr(len(attachments)), uintptr(unsafe.Pointer(&_tmp_fb)), 0, 0)
+	handleError(ctx, rc)
+	*fb = _tmp_fb
+}
+func call_RenderPass_NewFrameBuffer2(ctx apicontext, rp hRenderPass, width uint32, height uint32, attachments []uintptr, fb *hFramebuffer) {
+	_tmp_fb := *fb
+	atEnd := ctx.begin("RenderPass_NewFrameBuffer2")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall6(libcall.t_RenderPass_NewFrameBuffer2, 6, uintptr(rp), uintptr(width), uintptr(height), sliceToUintptr(attachments), uintptr(len(attachments)), uintptr(unsafe.Pointer(&_tmp_fb)))
 	handleError(ctx, rc)
 	*fb = _tmp_fb
 }

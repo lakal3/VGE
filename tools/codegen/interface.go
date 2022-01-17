@@ -241,6 +241,10 @@ type MainLib interface {
 		draws         []vk.DrawItem
 		pushConstants []byte
 	})
+	Command_Transfer(struct {
+		cmd      hCommand
+		transfer []vk.TransferItem
+	})
 	Command_WriteTimer(struct {
 		cmd        hCommand
 		qp         hQueryPool
@@ -307,6 +311,7 @@ type MainLib interface {
 		image     hImage
 		imRange   *vk.ImageRange
 		imageView *hImageView
+		rawView   *uintptr
 		cube      bool
 	})
 	/*
@@ -341,6 +346,13 @@ type MainLib interface {
 		width  uint32
 		height uint32
 		fb     *hFramebuffer
+	})
+	RenderPass_NewFrameBuffer2(struct {
+		rp          hRenderPass
+		width       uint32
+		height      uint32
+		attachments []uintptr
+		fb          *hFramebuffer
 	})
 	Device_NewSampler(struct {
 		dev        hDevice

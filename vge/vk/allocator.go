@@ -54,6 +54,14 @@ type AImage struct {
 	dev       *Device
 }
 
+func (ai *AImage) Describe() ImageDescription {
+	return ai.Description
+}
+
+func (ai *AImage) image() (hImage uintptr) {
+	return ai.hImage
+}
+
 type AImageView struct {
 	Range ImageRange
 
@@ -61,6 +69,10 @@ type AImageView struct {
 	hView uintptr
 	al    *Allocator
 	dev   *Device
+}
+
+func (av *AImageView) VImage() VImage {
+	return av.image
 }
 
 func (av *AImageView) imageView() (hView uintptr) {

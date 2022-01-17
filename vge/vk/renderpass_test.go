@@ -159,34 +159,29 @@ func testRender(t *testing.T, d *Device, ld ImageLoader) error {
 	t.Log("Time was ", times[0], times[1], times[1]-times[0])
 
 	defer tp.pl.Dispose()
-	im := image.NewRGBA(image.Rect(0, 0, int(mainImage.Description.Width), int(mainImage.Description.Height)))
-	copy(im.Pix, ib.Bytes())
-	imGray := image.NewRGBA(image.Rect(0, 0, int(mainImage.Description.Width), int(mainImage.Description.Height)))
-	copy(imGray.Pix, ibGray.Bytes())
+	savePng(t, "vk.png", ib.Bytes(), mainImage.Description)
+	savePng(t, "vk_gray.png", ibGray.Bytes(), mainImage.Description)
+	return nil
+}
+
+func savePng(t *testing.T, fileName string, bytes []byte, desc ImageDescription) {
 	testDir := os.Getenv("VGE_TEST_DIR")
 	if len(testDir) == 0 {
 		t.Log("Unable to save test image, missing environment variable VGE_TEST_DIR")
-		return nil
+		return
 	}
-	fOut, err := os.Create(filepath.Join(testDir, "vk.png"))
+	fOut, err := os.Create(filepath.Join(testDir, fileName))
 	if err != nil {
-		return err
+		t.Error("Create image ", fileName)
 	}
 	defer fOut.Close()
+	im := image.NewRGBA(image.Rect(0, 0, int(desc.Width), int(desc.Height)))
+	copy(im.Pix, bytes)
+
 	err = png.Encode(fOut, im)
 	if err != nil {
-		return err
+		t.Error("Write image ", fileName)
 	}
-	fOut2, err := os.Create(filepath.Join(testDir, "vk_gray.png"))
-	if err != nil {
-		return err
-	}
-	defer fOut2.Close()
-	err = png.Encode(fOut2, imGray)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // go:embed testsh/testsh.frag.spv

@@ -33,6 +33,7 @@ DLLEXPORT Exception * Command_CopyImageToBuffer(Command* cmd, Image* src, Buffer
 DLLEXPORT Exception * Command_Draw(Command* cmd, DrawItem* draws, size_t draws_len, uint8_t* pushConstants, size_t pushConstants_len);
 DLLEXPORT Exception * Command_EndRenderPass(Command* cmd);
 DLLEXPORT Exception * Command_SetLayout(Command* cmd, Image* image, ImageRange* imRange, int32_t newLayout);
+DLLEXPORT Exception * Command_Transfer(Command* cmd, TransferItem* transfer, size_t transfer_len);
 DLLEXPORT Exception * Command_Wait(Command* cmd);
 DLLEXPORT Exception * Command_WriteTimer(Command* cmd, QueryPool* qp, int32_t stages, uint32_t timerIndex);
 DLLEXPORT Exception * ComputePipeline_Create(ComputePipeline* cp);
@@ -76,7 +77,7 @@ DLLEXPORT Exception * ImageLoader_Describe(ImageLoader* loader, char * kind, siz
 DLLEXPORT Exception * ImageLoader_Load(ImageLoader* loader, char * kind, size_t kind_len, uint8_t* content, size_t content_len, Buffer* buf);
 DLLEXPORT Exception * ImageLoader_Save(ImageLoader* loader, char * kind, size_t kind_len, ImageDescription* desc, Buffer* buf, uint8_t* content, size_t content_len, uint64_t& reqSize);
 DLLEXPORT Exception * ImageLoader_Supported(ImageLoader* loader, char * kind, size_t kind_len, bool& read, bool& write);
-DLLEXPORT Exception * Image_NewView(Image* image, ImageRange* imRange, ImageView*& imageView, bool cube);
+DLLEXPORT Exception * Image_NewView(Image* image, ImageRange* imRange, ImageView*& imageView, void *& rawView, bool cube);
 DLLEXPORT Exception * Instance_GetPhysicalDevice(Instance* instance, int32_t index, DeviceInfo* info);
 DLLEXPORT Exception * Instance_NewDevice(Instance* instance, int32_t index, Device*& pd);
 DLLEXPORT Exception * MemoryBlock_Allocate(MemoryBlock* memBlock);
@@ -90,6 +91,7 @@ DLLEXPORT Exception * Pipeline_AddPushConstants(Pipeline* pl, uint32_t size, int
 DLLEXPORT Exception * Pipeline_AddShader(Pipeline* pl, int32_t stage, uint8_t* code, size_t code_len);
 DLLEXPORT Exception * QueryPool_Get(QueryPool* qp, uint64_t* values, size_t values_len, float& timestampPeriod);
 DLLEXPORT Exception * RenderPass_NewFrameBuffer(RenderPass* rp, ImageView** attachments, size_t attachments_len, Framebuffer*& fb);
+DLLEXPORT Exception * RenderPass_NewFrameBuffer2(RenderPass* rp, uint32_t width, uint32_t height, void ** attachments, size_t attachments_len, Framebuffer*& fb);
 DLLEXPORT Exception * RenderPass_NewNullFrameBuffer(RenderPass* rp, uint32_t width, uint32_t height, Framebuffer*& fb);
 DLLEXPORT Exception * Window_GetClipboard(Window* win, uint64_t& textLen, uint8_t* text, size_t text_len);
 DLLEXPORT Exception * Window_GetNextFrame(Window* win, Image*& image, SubmitInfo*& submitInfo, int32_t& viewIndex);
@@ -347,6 +349,15 @@ Exception * Command_EndRenderPass(Command* cmd) {
 Exception * Command_SetLayout(Command* cmd, Image* image, ImageRange* imRange, int32_t newLayout) {
     try {
         cmd->SetLayout(image, imRange, vk::ImageLayout(newLayout));
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Command_Transfer(Command* cmd, TransferItem* transfer, size_t transfer_len) {
+    try {
+        cmd->Transfer(transfer, transfer_len);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }
@@ -725,9 +736,9 @@ Exception * ImageLoader_Supported(ImageLoader* loader, char * kind, size_t kind_
     return Exception::getValidationError();
 }
 
-Exception * Image_NewView(Image* image, ImageRange* imRange, ImageView*& imageView, bool cube) {
+Exception * Image_NewView(Image* image, ImageRange* imRange, ImageView*& imageView, void *& rawView, bool cube) {
     try {
-        image->NewView(imRange, imageView, cube);
+        image->NewView(imRange, imageView, rawView, cube);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }
@@ -845,6 +856,15 @@ Exception * QueryPool_Get(QueryPool* qp, uint64_t* values, size_t values_len, fl
 Exception * RenderPass_NewFrameBuffer(RenderPass* rp, ImageView** attachments, size_t attachments_len, Framebuffer*& fb) {
     try {
         rp->NewFrameBuffer(attachments, attachments_len, fb);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * RenderPass_NewFrameBuffer2(RenderPass* rp, uint32_t width, uint32_t height, void ** attachments, size_t attachments_len, Framebuffer*& fb) {
+    try {
+        rp->NewFrameBuffer2(width, height, attachments, attachments_len, fb);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }

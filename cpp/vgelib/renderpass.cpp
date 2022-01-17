@@ -88,6 +88,18 @@ void vge::RenderPass::NewNullFrameBuffer(uint32_t width, uint32_t height, Frameb
 
 }
 
+void vge::RenderPass::NewFrameBuffer2(uint32_t width, uint32_t height, void** attachments, size_t attachments_len, Framebuffer*& fb)
+{
+	vk::FramebufferCreateInfo fbci;
+	fbci.layers = 1;
+	fbci.width = width;
+	fbci.height = height;
+	fbci.renderPass = _renderPass;
+	fbci.attachmentCount = static_cast<int32_t>(attachments_len);
+	fbci.pAttachments = reinterpret_cast<vk::ImageView *>(attachments);
+	fb = new Framebuffer(_dev, _dev->get_device().createFramebuffer(fbci, allocator, _dev->get_dispatch()), width, height);
+}
+
 
 void vge::RenderPass::Dispose()
 {

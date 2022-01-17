@@ -139,31 +139,7 @@ void vge::Command::SetLayout(Image *image, vge::ImageRange *range, vk::ImageLayo
 	imb.subresourceRange.aspectMask = image->get_aspect();
 	imb.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	imb.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	switch (imb.newLayout)
-	{
-	case vk::ImageLayout::eShaderReadOnlyOptimal:
-		imb.dstAccessMask = vk::AccessFlagBits::eMemoryRead;
-		dst = vk::PipelineStageFlagBits::eBottomOfPipe;
-		src = vk::PipelineStageFlagBits::eTransfer;
-	case vk::ImageLayout::eColorAttachmentOptimal:
-		imb.dstAccessMask = vk::AccessFlagBits::eMemoryWrite;
-		dst = vk::PipelineStageFlagBits::eBottomOfPipe;
-		src = vk::PipelineStageFlagBits::eTransfer;
-		break;
-	case vk::ImageLayout::eTransferDstOptimal:
-		imb.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-		src = vk::PipelineStageFlagBits::eTopOfPipe;
-		dst = vk::PipelineStageFlagBits::eTransfer;
-		break;
-	case vk::ImageLayout::eTransferSrcOptimal:
-		src = vk::PipelineStageFlagBits::eTopOfPipe;
-		imb.dstAccessMask = vk::AccessFlagBits::eTransferRead;
-		dst = vk::PipelineStageFlagBits::eTransfer;
-		break;
-	case vk::ImageLayout::eGeneral:
-		src = vk::PipelineStageFlagBits::eTopOfPipe;
-		dst = vk::PipelineStageFlagBits::eTopOfPipe;
-	}
+	quessBarrier(src, dst, imb);
 	vk::DependencyFlags df;
 	imb.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
 	_cmd.pipelineBarrier(src, dst, df, 0, nullptr, 0, nullptr, 1, &imb, _dev->get_dispatch());
@@ -296,6 +272,35 @@ void vge::Command::drawOne(DrawItem &draw, Pipeline *&pipeline, uint8_t* pushCon
 	}
 }
 
+void vge::Command::quessBarrier(vk::PipelineStageFlags& src, vk::PipelineStageFlags& dst, vk::ImageMemoryBarrier& imb)
+{
+	switch (imb.newLayout)
+	{
+	case vk::ImageLayout::eShaderReadOnlyOptimal:
+		imb.dstAccessMask = vk::AccessFlagBits::eMemoryRead;
+		dst = vk::PipelineStageFlagBits::eBottomOfPipe;
+		src = vk::PipelineStageFlagBits::eTransfer;
+	case vk::ImageLayout::eColorAttachmentOptimal:
+		imb.dstAccessMask = vk::AccessFlagBits::eMemoryWrite;
+		dst = vk::PipelineStageFlagBits::eBottomOfPipe;
+		src = vk::PipelineStageFlagBits::eTransfer;
+		break;
+	case vk::ImageLayout::eTransferDstOptimal:
+		imb.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+		src = vk::PipelineStageFlagBits::eTopOfPipe;
+		dst = vk::PipelineStageFlagBits::eTransfer;
+		break;
+	case vk::ImageLayout::eTransferSrcOptimal:
+		src = vk::PipelineStageFlagBits::eTopOfPipe;
+		imb.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+		dst = vk::PipelineStageFlagBits::eTransfer;
+		break;
+	case vk::ImageLayout::eGeneral:
+		src = vk::PipelineStageFlagBits::eTopOfPipe;
+		dst = vk::PipelineStageFlagBits::eTopOfPipe;
+	}
+}
+
 void vge::Command::init()
 {
 	vk::CommandPoolCreateInfo cpci;
@@ -315,6 +320,99 @@ void vge::Command::init()
 void vge::Command::WriteTimer(QueryPool* qp, vk::PipelineStageFlags stages, uint32_t timerIndex) {
 	auto stage = static_cast<vk::PipelineStageFlagBits>(static_cast<VkMemoryMapFlags>(stages));
 	_cmd.writeTimestamp(stage, qp->_handle, timerIndex, _dev->get_dispatch());
+}
+
+void vge::Command::Transfer(TransferItem* transfer, size_t transfer_len)
+{
+	for (size_t idx = 0; idx < transfer_len; idx++) {
+		auto tr = transfer[idx];
+		if (tr.direction == 0) {
+			continue;
+		}
+		
+		vk::BufferImageCopy bic;
+		bic.bufferOffset = tr.offset;
+		bic.imageExtent.width = tr.width;
+		bic.imageExtent.height = tr.height;
+		bic.imageExtent.depth = tr.depth;
+		bic.imageSubresource.baseArrayLayer = tr.layer;
+		bic.imageSubresource.mipLevel = tr.miplevel;
+		bic.imageSubresource.layerCount = 1;
+		bic.imageSubresource.aspectMask = (vk::ImageAspectFlags)(tr.aspect);
+		vk::ImageMemoryBarrier imb;
+		imb.image = static_cast<VkImage>(tr.image);
+		imb.subresourceRange.aspectMask = (vk::ImageAspectFlags)(tr.aspect);
+		imb.subresourceRange.baseArrayLayer = tr.layer;
+		imb.subresourceRange.baseMipLevel = tr.miplevel;
+		imb.subresourceRange.layerCount = 1;
+		imb.subresourceRange.levelCount = 1;
+		imb.oldLayout = (vk::ImageLayout)(tr.initialLayout);
+		imb.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		imb.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+		if (tr.direction == 1) {
+			if (tr.initialLayout != VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+				imb.dstAccessMask = vk::AccessFlagBits::eMemoryWrite;
+				imb.newLayout = vk::ImageLayout::eTransferDstOptimal;
+				_cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, vk::DependencyFlagBits::eByRegion,
+					0, nullptr, 0, nullptr, 1, &imb, _dev->get_dispatch());
+			}
+			_cmd.copyBufferToImage(static_cast<VkBuffer>(tr.buffer), static_cast<VkImage>(tr.image), vk::ImageLayout::eTransferDstOptimal, 1, &bic, _dev->get_dispatch());
+		} else {
+			if (tr.initialLayout != VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+				imb.dstAccessMask = vk::AccessFlagBits::eMemoryRead;
+				imb.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+				_cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, vk::DependencyFlagBits::eByRegion,
+					0, nullptr, 0, nullptr, 1, &imb, _dev->get_dispatch());
+			}
+			_cmd.copyImageToBuffer(static_cast<VkImage>(tr.image), vk::ImageLayout::eTransferSrcOptimal, static_cast<VkBuffer>(tr.buffer), 1, &bic, _dev->get_dispatch());
+		}
+		
+	}
+	for (size_t idx = 0; idx < transfer_len; idx++) {
+		auto tr = transfer[idx];
+		vk::ImageMemoryBarrier imb;
+		imb.image = static_cast<VkImage>(tr.image);
+		imb.subresourceRange.aspectMask = (vk::ImageAspectFlags)(tr.aspect);
+		imb.subresourceRange.baseArrayLayer = tr.layer;
+		imb.subresourceRange.baseMipLevel = tr.miplevel;
+		imb.subresourceRange.layerCount = 1;
+		imb.subresourceRange.levelCount = 1;
+		imb.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		imb.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		switch (tr.direction)
+		{
+		case 0:
+			imb.oldLayout = (vk::ImageLayout)(tr.initialLayout);
+			break;
+		case 1:
+			if (tr.finalLayout == VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+				continue;
+			}
+			imb.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+			imb.newLayout = (vk::ImageLayout)(tr.finalLayout);
+			imb.srcAccessMask = vk::AccessFlagBits::eMemoryWrite;
+			break;
+		case 2:
+			if (tr.finalLayout == VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+				continue;
+			}
+			imb.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+			imb.newLayout = (vk::ImageLayout)(tr.finalLayout);
+			imb.srcAccessMask = vk::AccessFlagBits::eMemoryRead;
+			break;
+		default:
+			continue;
+		}
+		vk::PipelineStageFlags src;
+		vk::PipelineStageFlags dst;
+		quessBarrier(src, dst, imb);
+		_cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, dst, vk::DependencyFlagBits::eByRegion,
+			0, nullptr, 0, nullptr, 1, &imb, _dev->get_dispatch());
+
+	}
+
+	
 }
 
 void vge::WaitForCmd::prepare(vk::SubmitInfo& si, std::vector<vk::Semaphore>& waitFor, std::vector<vk::PipelineStageFlags>& waitAt)
@@ -353,3 +451,4 @@ void vge::QueryPool::Dispose()
 {
 	_dev->get_device().destroyQueryPool(_handle, allocator, _dev->get_dispatch());
 }
+

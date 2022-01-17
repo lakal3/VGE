@@ -16,6 +16,10 @@ type DrawList struct {
 	pushConstants []byte
 }
 
+type TransferList struct {
+	list []TransferItem
+}
+
 type SubmitInfo struct {
 	info hSubmitInfo
 }
@@ -112,6 +116,7 @@ func (c *Command) ClearImage(dst *Image, imRange *ImageRange, color float32, alp
 		call_Command_ClearImage(c.dev, c.hCmd, dst.hImage, imRange, imRange.Layout, color, alpha)
 	}
 }
+
 func (c *Command) BeginRenderPass(renderPass *GeneralRenderPass, fb *Framebuffer) {
 	if !renderPass.isValid() || !fb.isValid() || !c.isValid() {
 		return
@@ -129,6 +134,13 @@ func (c *Command) Draw(dl *DrawList) {
 	}
 	dl.optimize()
 	call_Command_Draw(c.dev, c.hCmd, dl.list, dl.pushConstants)
+}
+
+func (c *Command) Transfer(tr TransferList) {
+	if !c.isValid() {
+		return
+	}
+	call_Command_Transfer(c.dev, c.hCmd, tr.list)
 }
 
 func (c *Command) SetLayout(img *Image, imRange *ImageRange, newLayout ImageLayout) {
@@ -214,6 +226,53 @@ func (dr *DrawList) DrawIndexed(pl Pipeline, from, count uint32) *DrawItem {
 	return &(dr.list[len(dr.list)-1])
 }
 
+func min1(val uint32) uint32 {
+	if val > 1 {
+		return val
+	}
+	return 1
+}
+
+func (tr *TransferList) CopyFrom(src VSlice, dst VImage, fromLayout ImageLayout, toLayout ImageLayout, layer uint32, mipLevel uint32) {
+	tr.doTransfer(src, dst, fromLayout, toLayout, layer, mipLevel, 1)
+}
+
+func (tr *TransferList) CopyTo(dst VSlice, src VImage, fromLayout ImageLayout, toLayout ImageLayout, layer uint32, mipLevel uint32) {
+	tr.doTransfer(dst, src, fromLayout, toLayout, layer, mipLevel, 2)
+}
+
+func (tr *TransferList) Transfer(src VImage, fromLayout ImageLayout, toLayout ImageLayout, layer uint32, mipLevel uint32) {
+	tr.doTransfer(nil, src, fromLayout, toLayout, layer, mipLevel, 0)
+}
+
+func (tr *TransferList) TransferAll(src VImage, fromLayout ImageLayout, toLayout ImageLayout) {
+	desc := src.Describe()
+	for layer := uint32(0); layer < desc.Layers; layer++ {
+		for mipLevel := uint32(0); mipLevel < desc.MipLevels; mipLevel++ {
+			tr.doTransfer(nil, src, fromLayout, toLayout, layer, mipLevel, 0)
+		}
+	}
+}
+
+func (tr *TransferList) doTransfer(src VSlice, dst VImage, fromLayout ImageLayout, toLayout ImageLayout, layer uint32, mipLevel uint32, dir uint32) {
+	ti := TransferItem{}
+	var size uint64
+	if dir != 0 {
+		ti.buffer, ti.offset, size = src.slice()
+	}
+	ti.image = dst.image()
+	ti.layer, ti.miplevel = layer, mipLevel
+	ti.fromLayout, ti.toLayout = fromLayout, toLayout
+	desc := dst.Describe()
+	ti.width = min1(desc.Width >> mipLevel)
+	ti.height = min1(desc.Height >> mipLevel)
+	ti.depth = min1(desc.Depth >> mipLevel)
+	ti.direction = dir
+	ti.aspect = Formats[desc.Format].Aspect
+	_ = size
+	tr.list = append(tr.list, ti)
+}
+
 func (dr *DrawList) optimize() {
 	if len(dr.list) < 2 {
 		return
@@ -278,7 +337,7 @@ func (di *DrawItem) AddDescriptors(descriptors ...*DescriptorSet) *DrawItem {
 	return di
 }
 
-func (di *DrawItem) AddInput(idx int, input DSSlice) *DrawItem {
+func (di *DrawItem) AddInput(idx int, input VSlice) *DrawItem {
 	if input != nil {
 		buf, off, _ := input.slice()
 		di.inputs[idx] = bufferInfo{buffer: buf, offset: off}

@@ -1,7 +1,6 @@
 package vk
 
 import (
-	"errors"
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"io/ioutil"
@@ -38,30 +37,6 @@ func (f *fcTestImages) Dispose() {
 	}
 }
 
-var tcInvokeCount = 0
-
-func newFcTestImages(dev *Device, inst *FrameInstance) *fcTestImages {
-	tcInvokeCount++
-	if tcInvokeCount > 1 {
-		dev.FatalError(errors.New("Shared allocation failed"))
-	}
-	_, total := inst.Index()
-	ti := &fcTestImages{}
-	ti.mp = NewMemoryPool(dev)
-	for idx := 0; idx < total*2; idx++ {
-		ti.frameImages = append(ti.frameImages, ti.mp.ReserveImage(ImageDescription{
-			Width:     1024,
-			Height:    768,
-			Depth:     1,
-			Format:    FORMATR8g8b8a8Unorm,
-			Layers:    1,
-			MipLevels: 1,
-		}, IMAGEUsageColorAttachmentBit|IMAGEUsageTransferSrcBit))
-	}
-	ti.mp.Allocate()
-	return ti
-}
-
 func (t *fcTest) Dispose() {
 	t.owner.Dispose()
 }
@@ -91,7 +66,7 @@ func TestNewFrameCache(t *testing.T) {
 	}
 	test.ld = NewNativeImageLoader(a)
 
-	err = test.testFrameCache()
+	err = test.testFrameCache(t)
 	if err != nil {
 		t.Error("Test render ", err)
 	}
@@ -100,7 +75,7 @@ func TestNewFrameCache(t *testing.T) {
 	a.Dispose()
 }
 
-func (t *fcTest) testFrameCache() error {
+func (t *fcTest) testFrameCache(tt *testing.T) error {
 	err := t.loadTestImage()
 	if err != nil {
 		return err
@@ -123,7 +98,7 @@ func (t *fcTest) testFrameCache() error {
 	wg := &sync.WaitGroup{}
 	for idx := 0; idx < len(t.fc.Instances); idx++ {
 		wg.Add(1)
-		go t.renderFrames(wg, t.fc.Instances[idx])
+		go t.renderFrames(tt, wg, t.fc.Instances[idx])
 		<-time.After(1 * time.Millisecond)
 	}
 	wg.Wait()
@@ -164,30 +139,44 @@ func (t *fcTest) loadTestImage() error {
 	return nil
 }
 
-func (t *fcTest) renderFrames(wg *sync.WaitGroup, instance *FrameInstance) {
+var fbDesc = ImageDescription{
+	Width:     1024,
+	Height:    768,
+	Depth:     1,
+	Format:    FORMATR8g8b8a8Unorm,
+	Layers:    1,
+	MipLevels: 1,
+}
+
+func (t *fcTest) renderFrames(tt *testing.T, wg *sync.WaitGroup, instance *FrameInstance) {
 	defer func() {
 		wg.Done()
 	}()
-	fiIndex, _ := instance.Index()
+	kFb := NewKeys(2)
+
 	cmd := NewCommand(t.dev, QUEUEGraphicsBit, false)
 	defer cmd.Dispose()
-	ti := instance.GetShared(fcTestKey, func() interface{} {
-		return newFcTestImages(t.dev, instance)
-	}).(*fcTestImages)
 	for loop := 0; loop < 10; loop++ {
+		last := loop == 9
 		instance.BeginFrame()
 		instance.ReserveSlice(BUFFERUsageVertexBufferBit, 3*2*4)
+		instance.ReserveImage(kFb, IMAGEUsageColorAttachmentBit|IMAGEUsageTransferSrcBit, fbDesc, ImageRange{LayerCount: 1, LevelCount: 1})
+		instance.ReserveImage(kFb+1, IMAGEUsageColorAttachmentBit|IMAGEUsageTransferSrcBit, fbDesc, ImageRange{LayerCount: 1, LevelCount: 1})
 		for idx := uint32(0); idx < triangleCount; idx++ {
 			instance.ReserveSlice(BUFFERUsageUniformBufferBit, uint64(unsafe.Sizeof(mgl32.Mat4{})))
 			instance.ReserveDescriptor(t.layout)
+		}
+		if last {
+			instance.ReserveSlice(BUFFERUsageTransferDstBit, uint64(fbDesc.Width*fbDesc.Height*4))
+			instance.ReserveSlice(BUFFERUsageTransferDstBit, uint64(fbDesc.Width*fbDesc.Height*4))
 		}
 		cmd.Begin()
 		instance.Commit()
 		vb := instance.AllocSlice(BUFFERUsageVertexBufferBit, 3*2*4)
 		copy(vb.Bytes(), Float32ToBytes(edges))
-		mainView := ti.frameImages[fiIndex*2].DefaultView()
-		grayView := ti.frameImages[fiIndex*2+1].DefaultView()
-		fb := NewFramebuffer(t.fp, []*ImageView{mainView, grayView})
+		mainImage, mainViews := instance.AllocImage(kFb)
+		grayImage, grayViews := instance.AllocImage(kFb + 1)
+		fb := NewFramebuffer2(t.fp, mainViews[0], grayViews[0])
 		defer fb.Dispose()
 		cmd.BeginRenderPass(t.fp, fb)
 		drawList := &DrawList{}
@@ -197,14 +186,27 @@ func (t *fcTest) renderFrames(wg *sync.WaitGroup, instance *FrameInstance) {
 			copy(ubMatrix.Bytes(), Float32ToBytes(mat[:]))
 			dsUbf := instance.AllocDescriptor(t.layout)
 			dsUbf.WriteDSSlice(0, 0, ubMatrix)
-			dsUbf.WriteImage(1, 0, t.testView, t.sampler)
+			dsUbf.WriteImage(1, 1, t.testView, t.sampler)
 			drawList.Draw(t.pl, 0, 3).AddInput(0, vb).AddDescriptor(0, dsUbf)
 		}
 		cmd.Draw(drawList)
 		cmd.EndRenderPass()
+		var im, imGray *ASlice
+		if last {
+			im = instance.AllocSlice(BUFFERUsageTransferDstBit, uint64(fbDesc.Width*fbDesc.Height*4))
+			imGray = instance.AllocSlice(BUFFERUsageTransferDstBit, uint64(fbDesc.Width*fbDesc.Height*4))
+			tl := TransferList{}
+			tl.CopyTo(im, mainImage, IMAGELayoutTransferSrcOptimal, IMAGELayoutTransferSrcOptimal, 0, 0)
+			tl.CopyTo(imGray, grayImage, IMAGELayoutTransferSrcOptimal, IMAGELayoutTransferSrcOptimal, 0, 0)
+			cmd.Transfer(tl)
+		}
 		instance.Freeze()
 		cmd.Submit()
 		cmd.Wait()
+		if last {
+			savePng(tt, "vkframe.png", im.Bytes(), fbDesc)
+			savePng(tt, "vkframe_gray.png", imGray.Bytes(), fbDesc)
+		}
 	}
 
 }

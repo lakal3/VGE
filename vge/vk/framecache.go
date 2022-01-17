@@ -9,6 +9,8 @@ type FrameCache struct {
 	ac        *Allocator
 }
 
+const hostMemOffset uint32 = 1024
+
 func (f *FrameCache) Dispose() {
 	if f.ac == nil {
 		return
@@ -26,7 +28,6 @@ type fMemory struct {
 	neededSize uint64
 	usedSize   uint64
 	realloc    bool
-	hostMem    bool
 }
 
 type fDescriptorPool struct {
@@ -44,6 +45,15 @@ type fSlice struct {
 	alignment  uint32
 }
 
+type fImage struct {
+	image      *AImage
+	usage      ImageUsageFlags
+	neededSize uint64
+	alignment  uint32
+	ranges     []ImageRange
+	views      []*AImageView
+}
+
 type FrameInstance struct {
 	index       int
 	perFrame    Owner
@@ -53,6 +63,7 @@ type FrameInstance struct {
 	memories    map[uint32]fMemory
 	descriptors map[*DescriptorLayout]fDescriptorPool
 	slices      map[BufferUsageFlags]fSlice
+	images      map[Key]fImage
 }
 
 func NewFrameCache(dev *Device, instances int) *FrameCache {
@@ -140,6 +151,43 @@ func (fi *FrameInstance) AllocDescriptor(layout *DescriptorLayout) *DescriptorSe
 	return ds
 }
 
+type FrameView struct {
+	Layout ImageLayout
+	Range  ImageRange
+}
+
+func (fi *FrameInstance) ReserveImage(key Key, usage ImageUsageFlags, description ImageDescription, views ...ImageRange) {
+	if !fi.checkReserve() {
+		return
+	}
+	fi.mx.Lock()
+	defer fi.mx.Unlock()
+	im := fi.images[key]
+	if im.image == nil {
+		im.image = fi.fc.ac.AllocImage(usage, description)
+		im.usage = usage
+		im.neededSize, im.alignment = im.image.Size()
+		im.ranges = views
+	} else {
+		im.neededSize, _ = im.image.Size()
+	}
+	rem := im.neededSize % uint64(im.alignment)
+	if rem > 0 {
+		im.neededSize += uint64(im.alignment) - rem
+	}
+	fi.images[key] = im
+}
+
+func (fi *FrameInstance) AllocImage(key Key) (image *AImage, views []*AImageView) {
+	if !fi.checkAlloc() {
+		return nil, nil
+	}
+	fi.mx.Lock()
+	defer fi.mx.Unlock()
+	im := fi.images[key]
+	return im.image, im.views
+}
+
 func (fi *FrameInstance) Commit() {
 	if !fi.checkReserve() {
 		return
@@ -150,6 +198,7 @@ func (fi *FrameInstance) Commit() {
 	fi.commitDescriptors()
 	fi.reserveMemory()
 	fi.commitBuffers()
+	fi.commitImages()
 	fi.state = 3
 }
 
@@ -200,6 +249,10 @@ func (fi *FrameInstance) cleanUp() {
 		des.needed = 0
 		fi.descriptors[idx] = des
 	}
+	for idx, im := range fi.images {
+		im.neededSize = 0
+		fi.images[idx] = im
+	}
 	for idx, mem := range fi.memories {
 		mem.neededSize, mem.realloc = 0, false
 		fi.memories[idx] = mem
@@ -213,6 +266,14 @@ func (fi *FrameInstance) dispose() {
 			sl.buffer.Dispose()
 		}
 	}
+	for _, img := range fi.images {
+		if img.image != nil {
+			for _, v := range img.views {
+				v.Dispose()
+			}
+			img.image.Dispose()
+		}
+	}
 	for _, des := range fi.descriptors {
 		if des.dp != nil {
 			des.dp.Dispose()
@@ -223,7 +284,7 @@ func (fi *FrameInstance) dispose() {
 			mem.mem.Dispose()
 		}
 	}
-	fi.slices, fi.memories, fi.descriptors = nil, nil, nil
+	fi.slices, fi.memories, fi.descriptors, fi.images = nil, nil, nil, nil
 }
 
 func (fi *FrameInstance) commitDescriptors() {
@@ -245,30 +306,68 @@ func (fi *FrameInstance) commitDescriptors() {
 
 func (fi *FrameInstance) commitBuffers() {
 	for usage, sl := range fi.slices {
-		m := fi.memories[sl.buffer.MemoryType()]
+		mt := sl.buffer.MemoryType() + hostMemOffset
+		m := fi.memories[mt]
 		if m.realloc {
 			sl.buffer.Dispose()
 			sl.buffer = fi.fc.ac.AllocBuffer(usage, sl.neededSize, true)
 			sl.buffer.Bind(m.mem, m.usedSize)
 			m.usedSize += sl.neededSize
-			fi.memories[sl.buffer.MemoryType()] = m
+			fi.memories[mt] = m
 		}
 		sl.usedSize = 0
 		fi.slices[usage] = sl
 	}
 }
 
+func (fi *FrameInstance) commitImages() {
+	for key, img := range fi.images {
+		mt := img.image.MemoryType()
+		m := fi.memories[mt]
+		if m.realloc {
+			if img.views != nil {
+				for _, v := range img.views {
+					v.Dispose()
+				}
+				desc := img.image.Description
+				img.image.Dispose()
+				img.image = fi.fc.ac.AllocImage(img.usage, desc)
+			}
+			img.views = make([]*AImageView, len(img.ranges))
+			img.image.Bind(m.mem, m.usedSize)
+			m.usedSize += img.neededSize
+			for idx := range img.views {
+				rg := img.ranges[idx]
+				img.views[idx] = img.image.AllocView(rg, rg.LayerCount == 6)
+			}
+			fi.memories[mt] = m
+			fi.images[key] = img
+		}
+	}
+}
+
 func (fi *FrameInstance) reserveMemory() {
 	for _, sl := range fi.slices {
 		if sl.neededSize != 0 {
-			m := fi.memories[sl.buffer.MemoryType()]
+			mt := sl.buffer.MemoryType() + hostMemOffset
+			m := fi.memories[mt]
 			m.neededSize += sl.neededSize
-			m.hostMem = true
 			sz, _ := sl.buffer.Size()
 			if sz < sl.neededSize {
 				m.realloc = true
 			}
-			fi.memories[sl.buffer.MemoryType()] = m
+			fi.memories[mt] = m
+		}
+	}
+	for _, img := range fi.images {
+		if img.neededSize != 0 {
+			mt := img.image.MemoryType()
+			m := fi.memories[mt]
+			m.neededSize += img.neededSize
+			if img.views == nil {
+				m.realloc = true
+			}
+			fi.memories[mt] = m
 		}
 	}
 	for mt, mem := range fi.memories {
@@ -282,7 +381,11 @@ func (fi *FrameInstance) reserveMemory() {
 		}
 		if mem.mem == nil {
 			mem.realloc = true
-			mem.mem = fi.fc.ac.AllocMemory(mem.neededSize, mt, mem.hostMem)
+			if mt >= hostMemOffset {
+				mem.mem = fi.fc.ac.AllocMemory(mem.neededSize, mt-hostMemOffset, true)
+			} else {
+				mem.mem = fi.fc.ac.AllocMemory(mem.neededSize, mt, false)
+			}
 		}
 		fi.memories[mt] = mem
 	}
@@ -293,6 +396,7 @@ func newFrameInstance(fc *FrameCache, idx int) *FrameInstance {
 	fi.descriptors = make(map[*DescriptorLayout]fDescriptorPool)
 	fi.slices = make(map[BufferUsageFlags]fSlice)
 	fi.memories = make(map[uint32]fMemory)
+	fi.images = make(map[Key]fImage)
 	fi.perFrame = NewOwner(true)
 	fi.mx = &SpinLock{}
 	return fi

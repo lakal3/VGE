@@ -74,6 +74,10 @@ type Image struct {
 	swapbuffer  bool
 }
 
+func (i *Image) Describe() ImageDescription {
+	return i.Description
+}
+
 func (i *Image) image() (hImage uintptr) {
 	return i.rawImage
 }
@@ -82,6 +86,14 @@ type ImageView struct {
 	image   *Image
 	view    hImageView
 	rawView uintptr
+}
+
+func (im *ImageView) VImage() VImage {
+	return im.image
+}
+
+func (im *ImageView) imageView() (hView uintptr) {
+	return im.rawView
 }
 
 func (im ImageView) Handle() uintptr {

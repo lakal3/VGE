@@ -55,6 +55,8 @@ type fImage struct {
 }
 
 type FrameInstance struct {
+	Output VImage
+
 	index       int
 	perFrame    Owner
 	fc          *FrameCache
@@ -81,6 +83,10 @@ func (fi *FrameInstance) Index() (current int, total int) {
 
 func (fi *FrameInstance) Get(key Key, ctor Constructor) interface{} {
 	return fi.perFrame.Get(key, ctor)
+}
+
+func (fi *FrameInstance) Set(key Key, value interface{}) {
+	fi.perFrame.Set(key, value)
 }
 
 func (fi *FrameInstance) GetShared(key Key, ctor Constructor) interface{} {

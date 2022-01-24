@@ -40,7 +40,7 @@ namespace vge {
 		}
 		void copyView(Buffer* buffer, Image* image, ImageRange* range, size_t offset, bool copyToImage);
 		void drawOne(DrawItem &draw, Pipeline*& pipeline, uint8_t* pushConstants);
-		void quessBarrier(vk::PipelineStageFlags& src, vk::PipelineStageFlags& dst, vk::ImageMemoryBarrier& imb);
+		vk::AccessFlags quessAccess(vk::ImageLayout layout);
 		void init();
 		Device* _dev;
 		WaitForCmd* _waitSem = nullptr;

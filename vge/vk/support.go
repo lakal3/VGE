@@ -169,7 +169,7 @@ func (o *Owner) Set(key Key, val interface{}) {
 		defer o.mx.Unlock()
 	}
 	if o.keyMap == nil {
-		return
+		o.keyMap = make(map[Key]interface{})
 	}
 	if val == nil {
 		delete(o.keyMap, key)

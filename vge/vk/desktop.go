@@ -87,6 +87,23 @@ func (d *Desktop) removeWindow(w *Window) {
 	d.windows.Delete(w.hWin)
 }
 
+func (d *Desktop) GetClipboard() string {
+	var buf []byte
+	var cpLen uint64
+	call_Desktop_GetClipboard(d.app, d.hDesk, &cpLen, buf)
+	if cpLen > 0 {
+		buf = make([]byte, cpLen)
+		// call_Window_GetClipboard(w.desktop.app, w.hWin, &cpLen, buf)
+		return string(buf[:])
+	}
+	return ""
+}
+
+func (d *Desktop) SetClipboard(newContent string) {
+	var bytes = []byte(newContent)
+	call_Desktop_SetClipboard(d.app, d.hDesk, bytes)
+}
+
 func (w *Window) Dispose() {
 	if w.hWin != 0 {
 		w.desktop.removeWindow(w)
@@ -110,20 +127,11 @@ func (w *Window) SetPos(pos WindowPos) {
 }
 
 func (w *Window) GetClipboard() string {
-	var buf []byte
-	var cpLen uint64
-	call_Window_GetClipboard(w.desktop.app, w.hWin, &cpLen, buf)
-	if cpLen > 0 {
-		buf = make([]byte, cpLen)
-		call_Window_GetClipboard(w.desktop.app, w.hWin, &cpLen, buf)
-		return string(buf[:])
-	}
-	return ""
+	return w.desktop.GetClipboard()
 }
 
 func (w *Window) SetClipboard(newContent string) {
-	var bytes = []byte(newContent)
-	call_Window_SetClipboard(w.desktop.app, w.hWin, bytes)
+	w.desktop.SetClipboard(newContent)
 }
 
 func (w *Window) GetNextFrame(dev *Device) (im *Image, imageIndex int32, info SubmitInfo) {

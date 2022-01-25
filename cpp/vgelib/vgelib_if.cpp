@@ -46,9 +46,11 @@ DLLEXPORT Exception * DescriptorSet_WriteDSImageView(DescriptorSet* ds, uint32_t
 DLLEXPORT Exception * DescriptorSet_WriteDSSlice(DescriptorSet* ds, uint32_t binding, uint32_t at, void * buffer, uint64_t from, uint64_t size);
 DLLEXPORT Exception * DescriptorSet_WriteImage(DescriptorSet* ds, uint32_t binding, uint32_t at, ImageView* view, Sampler* sampler);
 DLLEXPORT Exception * Desktop_CreateWindow(Desktop* desktop, char * title, size_t title_len, WindowPos* pos, Window*& win);
+DLLEXPORT Exception * Desktop_GetClipboard(Desktop* desktop, uint64_t& textLen, uint8_t* text, size_t text_len);
 DLLEXPORT Exception * Desktop_GetKeyName(Desktop* desktop, uint32_t keyCode, uint8_t* name, size_t name_len, uint32_t& strLen);
 DLLEXPORT Exception * Desktop_GetMonitor(Desktop* desktop, uint32_t monitor, WindowPos* info);
 DLLEXPORT Exception * Desktop_PullEvent(Desktop* desktop, RawEvent* ev);
+DLLEXPORT Exception * Desktop_SetClipboard(Desktop* desktop, uint8_t* text, size_t text_len);
 DLLEXPORT Exception * Device_NewAllocator(Device* dev, Allocator*& allocator);
 DLLEXPORT Exception * Device_NewBuffer(Device* dev, uint64_t size, bool hostMemory, int32_t usage, Buffer*& buffer, void *& rawBuffer);
 DLLEXPORT Exception * Device_NewCommand(Device* dev, int32_t queueType, bool once, Command*& command);
@@ -93,11 +95,9 @@ DLLEXPORT Exception * QueryPool_Get(QueryPool* qp, uint64_t* values, size_t valu
 DLLEXPORT Exception * RenderPass_NewFrameBuffer(RenderPass* rp, ImageView** attachments, size_t attachments_len, Framebuffer*& fb);
 DLLEXPORT Exception * RenderPass_NewFrameBuffer2(RenderPass* rp, uint32_t width, uint32_t height, void ** attachments, size_t attachments_len, Framebuffer*& fb);
 DLLEXPORT Exception * RenderPass_NewNullFrameBuffer(RenderPass* rp, uint32_t width, uint32_t height, Framebuffer*& fb);
-DLLEXPORT Exception * Window_GetClipboard(Window* win, uint64_t& textLen, uint8_t* text, size_t text_len);
 DLLEXPORT Exception * Window_GetNextFrame(Window* win, Image*& image, SubmitInfo*& submitInfo, int32_t& viewIndex);
 DLLEXPORT Exception * Window_GetPos(Window* win, WindowPos* pos);
 DLLEXPORT Exception * Window_PrepareSwapchain(Window* win, Device* dev, ImageDescription* imageDesc, int32_t& imageCount);
-DLLEXPORT Exception * Window_SetClipboard(Window* win, uint8_t* text, size_t text_len);
 DLLEXPORT Exception * Window_SetPos(Window* win, WindowPos* pos);
 }
 
@@ -467,6 +467,15 @@ Exception * Desktop_CreateWindow(Desktop* desktop, char * title, size_t title_le
     return Exception::getValidationError();
 }
 
+Exception * Desktop_GetClipboard(Desktop* desktop, uint64_t& textLen, uint8_t* text, size_t text_len) {
+    try {
+        desktop->GetClipboard(textLen, text, text_len);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
 Exception * Desktop_GetKeyName(Desktop* desktop, uint32_t keyCode, uint8_t* name, size_t name_len, uint32_t& strLen) {
     try {
         desktop->GetKeyName(keyCode, name, name_len, strLen);
@@ -488,6 +497,15 @@ Exception * Desktop_GetMonitor(Desktop* desktop, uint32_t monitor, WindowPos* in
 Exception * Desktop_PullEvent(Desktop* desktop, RawEvent* ev) {
     try {
         desktop->PullEvent(ev);
+    } catch (const std::exception &ex) {
+        return new Exception(ex);
+    }
+    return Exception::getValidationError();
+}
+
+Exception * Desktop_SetClipboard(Desktop* desktop, uint8_t* text, size_t text_len) {
+    try {
+        desktop->SetClipboard(text, text_len);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }
@@ -880,15 +898,6 @@ Exception * RenderPass_NewNullFrameBuffer(RenderPass* rp, uint32_t width, uint32
     return Exception::getValidationError();
 }
 
-Exception * Window_GetClipboard(Window* win, uint64_t& textLen, uint8_t* text, size_t text_len) {
-    try {
-        win->GetClipboard(textLen, text, text_len);
-    } catch (const std::exception &ex) {
-        return new Exception(ex);
-    }
-    return Exception::getValidationError();
-}
-
 Exception * Window_GetNextFrame(Window* win, Image*& image, SubmitInfo*& submitInfo, int32_t& viewIndex) {
     try {
         win->GetNextFrame(image, submitInfo, viewIndex);
@@ -910,15 +919,6 @@ Exception * Window_GetPos(Window* win, WindowPos* pos) {
 Exception * Window_PrepareSwapchain(Window* win, Device* dev, ImageDescription* imageDesc, int32_t& imageCount) {
     try {
         win->PrepareSwapchain(dev, imageDesc, imageCount);
-    } catch (const std::exception &ex) {
-        return new Exception(ex);
-    }
-    return Exception::getValidationError();
-}
-
-Exception * Window_SetClipboard(Window* win, uint8_t* text, size_t text_len) {
-    try {
-        win->SetClipboard(text, text_len);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }

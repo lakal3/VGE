@@ -32,10 +32,6 @@ type Desktop struct {
 
 var winCount int
 
-func GetMonitorArea(monitor uint32) (pos vk.WindowPos, exists bool) {
-	return appStatic.desktop.GetMonitor(monitor)
-}
-
 // NewRenderWindow creates new default size window (1024 x 768)
 func NewRenderWindow(title string, renderer vscene.Renderer) *RenderWindow {
 	return NewRenderWindowAt(title, vk.WindowPos{Left: -1, Top: -1, Width: 1024, Height: 768}, renderer)

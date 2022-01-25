@@ -243,9 +243,9 @@ void vge::Window::GetPos(WindowPos* position)
 	pollDone(done);
 }
 
-void vge::Window::GetClipboard(uint64_t& textLen, uint8_t* text, size_t text_len)
+void vge::Desktop::GetClipboard(uint64_t& textLen, uint8_t* text, size_t text_len)
 {
-	const char * cPtr = glfwGetClipboardString(_win);
+	const char * cPtr = glfwGetClipboardString(nullptr);
 	if (cPtr == nullptr) {
 		textLen = 0;
 		return;
@@ -260,11 +260,11 @@ void vge::Window::GetClipboard(uint64_t& textLen, uint8_t* text, size_t text_len
 	}	
 }
 
-void vge::Window::SetClipboard(uint8_t* text, size_t text_len)
+void vge::Desktop::SetClipboard(uint8_t* text, size_t text_len)
 {
 	std::string str(reinterpret_cast<const char *>(text), text_len);
 	str.push_back(0);
-	glfwSetClipboardString(this->_win, str.c_str());
+	glfwSetClipboardString(nullptr, str.c_str());
 }
 
 

@@ -51,9 +51,11 @@ var libcall struct {
 	t_DescriptorSet_WriteDSSlice        uintptr
 	t_DescriptorSet_WriteImage          uintptr
 	t_Desktop_CreateWindow              uintptr
+	t_Desktop_GetClipboard              uintptr
 	t_Desktop_GetKeyName                uintptr
 	t_Desktop_GetMonitor                uintptr
 	t_Desktop_PullEvent                 uintptr
+	t_Desktop_SetClipboard              uintptr
 	t_Device_NewAllocator               uintptr
 	t_Device_NewBuffer                  uintptr
 	t_Device_NewCommand                 uintptr
@@ -98,11 +100,9 @@ var libcall struct {
 	t_RenderPass_NewFrameBuffer         uintptr
 	t_RenderPass_NewFrameBuffer2        uintptr
 	t_RenderPass_NewNullFrameBuffer     uintptr
-	t_Window_GetClipboard               uintptr
 	t_Window_GetNextFrame               uintptr
 	t_Window_GetPos                     uintptr
 	t_Window_PrepareSwapchain           uintptr
-	t_Window_SetClipboard               uintptr
 	t_Window_SetPos                     uintptr
 }
 
@@ -279,6 +279,10 @@ func loadLib() (err error) {
 	if err != nil {
 		return err
 	}
+	libcall.t_Desktop_GetClipboard, err = syscall.GetProcAddress(libcall.h_lib, "Desktop_GetClipboard")
+	if err != nil {
+		return err
+	}
 	libcall.t_Desktop_GetKeyName, err = syscall.GetProcAddress(libcall.h_lib, "Desktop_GetKeyName")
 	if err != nil {
 		return err
@@ -288,6 +292,10 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_Desktop_PullEvent, err = syscall.GetProcAddress(libcall.h_lib, "Desktop_PullEvent")
+	if err != nil {
+		return err
+	}
+	libcall.t_Desktop_SetClipboard, err = syscall.GetProcAddress(libcall.h_lib, "Desktop_SetClipboard")
 	if err != nil {
 		return err
 	}
@@ -467,10 +475,6 @@ func loadLib() (err error) {
 	if err != nil {
 		return err
 	}
-	libcall.t_Window_GetClipboard, err = syscall.GetProcAddress(libcall.h_lib, "Window_GetClipboard")
-	if err != nil {
-		return err
-	}
 	libcall.t_Window_GetNextFrame, err = syscall.GetProcAddress(libcall.h_lib, "Window_GetNextFrame")
 	if err != nil {
 		return err
@@ -480,10 +484,6 @@ func loadLib() (err error) {
 		return err
 	}
 	libcall.t_Window_PrepareSwapchain, err = syscall.GetProcAddress(libcall.h_lib, "Window_PrepareSwapchain")
-	if err != nil {
-		return err
-	}
-	libcall.t_Window_SetClipboard, err = syscall.GetProcAddress(libcall.h_lib, "Window_SetClipboard")
 	if err != nil {
 		return err
 	}
@@ -871,6 +871,16 @@ func call_Desktop_CreateWindow(ctx apicontext, desktop hDesktop, title []byte, p
 	*pos = _tmp_pos
 	*win = _tmp_win
 }
+func call_Desktop_GetClipboard(ctx apicontext, desktop hDesktop, textLen *uint64, text []uint8) {
+	_tmp_textLen := *textLen
+	atEnd := ctx.begin("Desktop_GetClipboard")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall6(libcall.t_Desktop_GetClipboard, 4, uintptr(desktop), uintptr(unsafe.Pointer(&_tmp_textLen)), sliceToUintptr(text), uintptr(len(text)), 0, 0)
+	handleError(ctx, rc)
+	*textLen = _tmp_textLen
+}
 func call_Desktop_GetKeyName(ctx apicontext, desktop hDesktop, keyCode uint32, name []uint8, strLen *uint32) {
 	_tmp_strLen := *strLen
 	atEnd := ctx.begin("Desktop_GetKeyName")
@@ -900,6 +910,14 @@ func call_Desktop_PullEvent(ctx apicontext, desktop hDesktop, ev *RawEvent) {
 	rc, _, _ := syscall.Syscall(libcall.t_Desktop_PullEvent, 2, uintptr(desktop), uintptr(unsafe.Pointer(&_tmp_ev)), 0)
 	handleError(ctx, rc)
 	*ev = _tmp_ev
+}
+func call_Desktop_SetClipboard(ctx apicontext, desktop hDesktop, text []uint8) {
+	atEnd := ctx.begin("Desktop_SetClipboard")
+	if atEnd != nil {
+		defer atEnd()
+	}
+	rc, _, _ := syscall.Syscall(libcall.t_Desktop_SetClipboard, 3, uintptr(desktop), sliceToUintptr(text), uintptr(len(text)))
+	handleError(ctx, rc)
 }
 func call_Device_NewAllocator(ctx apicontext, dev hDevice, allocator *hAllocator) {
 	_tmp_allocator := *allocator
@@ -1325,16 +1343,6 @@ func call_RenderPass_NewNullFrameBuffer(ctx apicontext, rp hRenderPass, width ui
 	handleError(ctx, rc)
 	*fb = _tmp_fb
 }
-func call_Window_GetClipboard(ctx apicontext, win hWindow, textLen *uint64, text []uint8) {
-	_tmp_textLen := *textLen
-	atEnd := ctx.begin("Window_GetClipboard")
-	if atEnd != nil {
-		defer atEnd()
-	}
-	rc, _, _ := syscall.Syscall6(libcall.t_Window_GetClipboard, 4, uintptr(win), uintptr(unsafe.Pointer(&_tmp_textLen)), sliceToUintptr(text), uintptr(len(text)), 0, 0)
-	handleError(ctx, rc)
-	*textLen = _tmp_textLen
-}
 func call_Window_GetNextFrame(ctx apicontext, win hWindow, image *hImage, submitInfo *hSubmitInfo, viewIndex *int32) {
 	_tmp_image := *image
 	_tmp_submitInfo := *submitInfo
@@ -1370,14 +1378,6 @@ func call_Window_PrepareSwapchain(ctx apicontext, win hWindow, dev hDevice, imag
 	handleError(ctx, rc)
 	*imageDesc = _tmp_imageDesc
 	*imageCount = _tmp_imageCount
-}
-func call_Window_SetClipboard(ctx apicontext, win hWindow, text []uint8) {
-	atEnd := ctx.begin("Window_SetClipboard")
-	if atEnd != nil {
-		defer atEnd()
-	}
-	rc, _, _ := syscall.Syscall(libcall.t_Window_SetClipboard, 3, uintptr(win), sliceToUintptr(text), uintptr(len(text)))
-	handleError(ctx, rc)
 }
 func call_Window_SetPos(ctx apicontext, win hWindow, pos *WindowPos) {
 	_tmp_pos := *pos

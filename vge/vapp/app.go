@@ -23,6 +23,23 @@ var appStatic struct {
 	desktop   *vk.Desktop
 }
 
+func GetMonitorArea(monitor uint32) (pos vk.WindowPos, exists bool) {
+	return appStatic.desktop.GetMonitor(monitor)
+}
+
+func GetClipboard() string {
+	if appStatic.desktop == nil {
+		return ""
+	}
+	return appStatic.desktop.GetClipboard()
+}
+
+func SetClipboard(newValue string) {
+	if appStatic.desktop != nil {
+		appStatic.desktop.SetClipboard(newValue)
+	}
+}
+
 type ApplicationOption interface {
 	InitApp()
 	TerminateApp()

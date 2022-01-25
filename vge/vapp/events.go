@@ -136,6 +136,8 @@ func (us *UIState) hasNumlock(arg3 int32) bool {
 
 type SourcedEvent interface {
 	IsSource(es EventSource) bool
+	Location() image.Point
+	SetHandled()
 }
 
 type UIEvent struct {
@@ -145,12 +147,16 @@ type UIEvent struct {
 	handled     bool
 }
 
+func (u *UIEvent) Location() image.Point {
+	return u.MousePos
+}
+
 // Deprecated: Use IsSource
 func (u *UIEvent) IsWin(rw *RenderWindow) bool {
 	return u.Source == rw
 }
 
-func (u UIEvent) IsSource(es EventSource) bool {
+func (u *UIEvent) IsSource(es EventSource) bool {
 	return u.Source == es
 }
 
@@ -203,7 +209,7 @@ type MouseMoveEvent struct {
 	UIEvent
 }
 
-var _ SourcedEvent = MouseMoveEvent{}
+var _ SourcedEvent = &MouseMoveEvent{}
 
 type MouseUpEvent struct {
 	// first button = 0

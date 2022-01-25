@@ -460,12 +460,12 @@ type MainLib interface {
 		win hWindow
 		pos *vk.WindowPos
 	})
-	Window_SetClipboard(struct {
-		win  hWindow
-		text []byte
+	Desktop_SetClipboard(struct {
+		desktop hDesktop
+		text    []byte
 	})
-	Window_GetClipboard(struct {
-		win     hWindow
+	Desktop_GetClipboard(struct {
+		desktop hDesktop
 		textLen *uint64
 		text    []byte
 	})

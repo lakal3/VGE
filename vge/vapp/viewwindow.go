@@ -127,6 +127,7 @@ func (w *ViewWindow) eventHandler(ev Event) (unregister bool) {
 func (w *ViewWindow) renderLoop() {
 	w.wg = &sync.WaitGroup{}
 	w.wg.Add(1)
+	w.state = 1
 	for w.state == 1 {
 		im, imageIndex, submitInfo := w.win.GetNextFrame(Dev)
 		if imageIndex < 0 {
@@ -195,11 +196,11 @@ func (w *ViewWindow) newCommand(fi *vk.FrameInstance) *vk.Command {
 
 func (w *ViewWindow) handleMyEvent(ev Event) {
 	se, ok := ev.(SourcedEvent)
-	if !ok || se.IsSource(w) {
+	if !ok || !se.IsSource(w) {
 		return
 	}
 	views := w.Views()
-	for idx := len(views); idx >= 0; idx-- {
+	for idx := len(views) - 1; idx >= 0; idx-- {
 		if ev.Handled() {
 			return
 		}

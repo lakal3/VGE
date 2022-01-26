@@ -10,7 +10,7 @@ Planned VGE features (not in priority order)
 - [x] Deferred renderer (experimental version available in 0.20.1)
 - [ ] Improved decals in deferred shader
 - [ ] Basic dialogs like yes/no
-- [ ] Vector drawing support
+- [x] Vector drawing support
 - [ ] Less 'game' like UI using vector graphics and immediate mode UI principles
   - Standard dialogs (file open, color picker)
   - Clipboard handling

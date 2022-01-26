@@ -3,6 +3,7 @@
 ## Version 0.next (dev branch)
 
 New features:
+- New vector drawing library (vdraw)
 - Integrated glsl -> SPIR-V compiler
   - Allows dynamic shader compilation while application is running
 - Support for Push Constants in DrawList

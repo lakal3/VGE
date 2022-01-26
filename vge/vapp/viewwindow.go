@@ -9,7 +9,7 @@ import (
 type Completed func() []vk.SubmitInfo
 
 type View interface {
-	Allocate(fi *vk.FrameInstance)
+	Reserve(fi *vk.FrameInstance)
 	PreRender(fi *vk.FrameInstance) (done Completed)
 	Render(fi *vk.FrameInstance, cmd *vk.Command, rp *vk.GeneralRenderPass)
 }
@@ -143,7 +143,7 @@ func (w *ViewWindow) renderLoop() {
 		submits := []vk.SubmitInfo{submitInfo}
 		var completed []Completed
 		for _, v := range views {
-			v.Allocate(fi)
+			v.Reserve(fi)
 		}
 		fi.Commit()
 		for _, v := range views {

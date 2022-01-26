@@ -199,6 +199,8 @@ Probe will also generate spherical harmonics to approximate ambient lightning.  
 - Calculating algorithms in GPU. VGE supports Vulkan compute shaders. (See for example vglyph/vdepth shader)
 - (Experimental) Decal support [Scene](docs/vscene.md)
 - (Experimental) Apply BVH animations to existing rigged models
+- (Experimental, new in 0.30.x) [Vector drawing library](docs/vdraw.md)
+
 
 
 ## Status

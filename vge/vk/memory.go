@@ -61,6 +61,17 @@ type Slice struct {
 	size    uint64
 }
 
+func (s *Slice) Bytes() []byte {
+	return s.Content
+}
+
+func (s *Slice) slice() (hBuffer uintptr, from uint64, size uint64) {
+	if s.isValid() {
+		return s.buffer.rawBuf, s.from, s.size
+	}
+	return 0, 0, 0
+}
+
 type Image struct {
 	owner       Owner
 	Usage       ImageUsageFlags

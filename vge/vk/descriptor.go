@@ -176,20 +176,10 @@ func (ds *DescriptorSet) WriteBuffer(biding uint32, index uint32, buffer *Buffer
 
 // WriteSlice writes part of buffer (slice) to descriptor.
 // Note that descriptor layout must support buffer in this binding and index
-func (ds *DescriptorSet) WriteSlice(biding uint32, index uint32, sl *Slice) {
-	if !ds.isValid() || !sl.isValid() {
-		return
-	}
-	call_DescriptorSet_WriteBuffer(ds.pool.dev, ds.hSet, biding, index, sl.buffer.hBuf, sl.from, sl.size)
-}
-
-// WriteSlice writes part of buffer (slice) to descriptor.
-// Note that descriptor layout must support buffer in this binding and index
-func (ds *DescriptorSet) WriteDSSlice(biding uint32, index uint32, sl VSlice) {
+func (ds *DescriptorSet) WriteSlice(biding uint32, index uint32, sl VSlice) {
 	if !ds.isValid() {
 		return
 	}
-
 	hBuf, from, size := sl.slice()
 	if hBuf == 0 {
 		return
@@ -217,10 +207,10 @@ func (ds *DescriptorSet) WriteImage(biding uint32, index uint32, view *ImageView
 	call_DescriptorSet_WriteImage(ds.pool.dev, ds.hSet, biding, index, view.view, hs)
 }
 
-// WriteImage writes buffer view. Descriptors must be written before they can be bound to draw commands.
+// WriteView writes image view. Descriptors must be written before they can be bound to draw commands.
 // Note that descriptor layout must support image or sampled image in this binding and index
 // Samples may be nil if biding don't need sampler
-func (ds *DescriptorSet) WriteDSView(biding uint32, index uint32, view VImageView, layout ImageLayout, sampler *Sampler) {
+func (ds *DescriptorSet) WriteView(biding uint32, index uint32, view VImageView, layout ImageLayout, sampler *Sampler) {
 	hs := hSampler(0)
 	if sampler != nil {
 		hs = sampler.hSampler

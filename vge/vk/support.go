@@ -3,6 +3,7 @@ package vk
 import (
 	"errors"
 	"reflect"
+	"sync/atomic"
 	"unsafe"
 )
 
@@ -296,3 +297,42 @@ func (st State) Clone() State {
 	}
 	return sNew
 }
+
+var lastKey uint64 = 1
+
+type Key uint64
+
+// NewKey returns unique key
+func NewKey() Key {
+	return Key(atomic.AddUint64(&lastKey, 1))
+}
+
+// NewKeys returns howMany unique keys. First key in set is returned value. Next key is value + 1 etc...
+func NewKeys(howMany uint64) Key {
+	return Key(atomic.AddUint64(&lastKey, howMany) - howMany + 1)
+}
+
+// NewHashKey constructs key from strings using quite fast hash. If key is converted to int64, hashes keys are negative, keys from NewKey positive
+func NewHashKey(tags ...string) Key {
+	h := Key(prime1 * 33)
+	for _, s := range tags {
+		l := len(s)
+		for idx := 0; idx < l; idx++ {
+			h = rotLeft(Key(s[idx]) + h*prime1)
+		}
+		h = rotLeft(9 + h*prime1)
+	}
+	return h | hashKeyOffset
+}
+
+const (
+	prime1        Key = 2654435761
+	rotBits           = 13
+	hashKeyOffset Key = 0x8000_0000_0000_0000
+)
+
+func rotLeft(h Key) Key {
+	return (h << rotBits) | (h >> (64 - rotBits))
+}
+
+type Constructor func() interface{}

@@ -2,14 +2,22 @@
 
 ## Version 0.next (dev branch)
 
-New features:
-- New vector drawing library (vdraw)
+### New major features:
+- New vector drawing library [vdraw](docs/vdraw.md)
+- New immediate mode user interface [vimgui](docs/vimgui.md)
+  - Greatly simplifies building dynamic UI:s using just Go functions
+  - Based on vdraw library
 - Integrated glsl -> SPIR-V compiler
   - Allows dynamic shader compilation while application is running
+- FrameCache that allows better management on resources needed to render one frame
+- MultiView window support splitting one real OS window to multiple areas to 
+
+### New minor features: 
 - Support for Push Constants in DrawList
 - SpinLock for very short locking needs
+- State container to store different kind of state values (like Styles)
 
-Breaking changes:
+### Breaking changes:
 - APIContext is now private to vk module. No public API takes APIContext parameter
 
 

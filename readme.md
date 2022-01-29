@@ -165,9 +165,10 @@ These examples try to pinpoint most important aspects of VGE and it's features.
 - Model - Additional samples on how to load models and manipulate a scene.
 - WebView - Render images in the background and serve them to the web client
 (*The demo will show that Vulkan can do multithreaded rendering, and you can easily use Vulkan to render images in the background*)
-- glTFViewer - A tool to browse some of the glTF sample images.
+- glTFViewer - A tool to browse some of the glTF sample scenes.
 - Robomaze - A performance test tool / example that supports some advanced features like decals.
 - Animate (Experimental) - Support for reading animations from the BVH (Biovision Hierarchy) files and apply them on rigged models.
+- Gallery (New) - Demonstrates how to use vdraw drawing library and vimgui immediate mode user interface
 
 The VGE documentation does not go into the details of the Vulkan API.
 To lean the core Vulkan features, below I have listed some nice web articles about it.
@@ -185,12 +186,12 @@ This is a short list of the features (existing). [Roadmap](docs/roadmap.md) has 
 - Basic materials: Unlit, Phong and PBR [Model](docs/vmodel.md)
 - Lights: Point and directional, including shadows for point lights
 - Scene building and animation [Scene](docs/vscene.md)
-- Glyph rendering including support for TTF fonts. Mainly used to support [VGE UI](docs/vui.md).
+- Glyph rendering including support for TTF fonts in [Vector drawing library](docs/vdraw.md)
 - Background environment using (HDR) equirectangular images [Scene](docs/vscene.md)
 - An environmental probe to support reflections of PBR materials.
 Probe will also generate spherical harmonics to approximate ambient lightning.  [Scene](docs/vscene.md)
-- Easily extendable game UI support [VGE UI](docs/vui.md).
-- UI theming [VGE UI](docs/vui.md).
+- Easily extendable game UI support [Immediate mode UI](docs/vimgui.md) (<s>[VGE UI](docs/vui.md)</s>).
+- UI theming [Immediate mode UI](docs/vimgui.md) (<s>[VGE UI](docs/vui.md)</s>).
 - Event queue to handle system level events [VGE App](docs/vapp.md)
 - Window, mouse, keyboard etc management  (Uses GLFW C library for multi platform support)
 - High level, easier to use setup for basic applications [VGE App](docs/vapp.md)
@@ -199,7 +200,9 @@ Probe will also generate spherical harmonics to approximate ambient lightning.  
 - Calculating algorithms in GPU. VGE supports Vulkan compute shaders. (See for example vglyph/vdepth shader)
 - (Experimental) Decal support [Scene](docs/vscene.md)
 - (Experimental) Apply BVH animations to existing rigged models
-- (Experimental, new in 0.30.x) [Vector drawing library](docs/vdraw.md)
+- Integrated glsl -> SPIR-V compiler
+- (New) [Vector drawing library](docs/vdraw.md)
+- (New,Exprimental) [Immediate mode UI](docs/vimgui.md)
 
 
 

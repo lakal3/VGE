@@ -182,18 +182,117 @@ func (o *Owner) Set(key Key, val interface{}) {
 	}
 }
 
-// Simple APIContext to panic on all errors
-type PanicContext struct {
+// State hold any number of different state values. State values keys are types them self
+// State values should always be plain structs. If you need reference or pointer values put those in structure members
+type State struct {
+	properties map[reflect.Type]interface{}
+	mx         *SpinLock
 }
 
-func (p PanicContext) SetError(err error) {
-	panic(err)
+// NewState creates new state. Multithreaded flag makes state thread save using a spinlock.
+func NewState(multithreaded bool) State {
+	s := State{}
+	if multithreaded {
+		s.mx = &SpinLock{}
+	}
+	return s
 }
 
-func (p PanicContext) IsValid() bool {
-	return true
+// CloneProperty if implemented is called when State is Cloned to clone property value.
+// Otherwise, value is just copied from state to new state
+type CloneProperty interface {
+	CloneProperty() interface{}
 }
 
-func (p PanicContext) Begin(callName string) (atEnd func()) {
-	return nil
+// Get retrieves property value or default value from state. Value should be struct of some type
+func (st State) Get(defaultValue interface{}) interface{} {
+	if st.mx != nil {
+		st.mx.Lock()
+		defer st.mx.Unlock()
+	}
+	if st.properties == nil {
+		return defaultValue
+	}
+	pv, ok := st.properties[reflect.TypeOf(defaultValue)]
+	if ok {
+		return pv
+	}
+	return defaultValue
+}
+
+// GetExists retrieves property from state and boolean flag to indicate if value existed
+func (st State) GetExists(valueType interface{}) (value interface{}, exists bool) {
+	if st.mx != nil {
+		st.mx.Lock()
+		defer st.mx.Unlock()
+	}
+	if st.properties == nil {
+		return valueType, false
+	}
+	pv, ok := st.properties[reflect.TypeOf(valueType)]
+	if ok {
+		return pv, true
+	}
+	return valueType, false
+}
+
+// Has check if value has been set
+func (st State) Has(valueType interface{}) bool {
+	if st.mx != nil {
+		st.mx.Lock()
+		defer st.mx.Unlock()
+	}
+	if st.properties == nil {
+		return false
+	}
+	_, ok := st.properties[reflect.TypeOf(valueType)]
+	return ok
+}
+
+// Set value
+func (st *State) Set(values ...interface{}) {
+	if st.mx != nil {
+		st.mx.Lock()
+		defer st.mx.Unlock()
+	}
+	if st.properties == nil {
+		st.properties = make(map[reflect.Type]interface{})
+	}
+	for _, value := range values {
+		st.properties[reflect.TypeOf(value)] = value
+	}
+}
+
+// Clear removes existing value
+func (st *State) Clear(valueType interface{}) {
+	if st.mx != nil {
+		st.mx.Lock()
+		defer st.mx.Unlock()
+	}
+	if st.properties != nil {
+		delete(st.properties, reflect.TypeOf(valueType))
+	}
+}
+
+// Clone state
+func (st State) Clone() State {
+	sNew := State{properties: make(map[reflect.Type]interface{})}
+	if st.mx != nil {
+		st.mx.Lock()
+		sNew.mx = &SpinLock{}
+		defer st.mx.Unlock()
+	}
+
+	for t, v := range st.properties {
+		cl, ok := v.(CloneProperty)
+		if ok {
+			c := cl.CloneProperty()
+			if reflect.TypeOf(c) == t {
+				sNew.properties[t] = c
+				continue
+			}
+		}
+		sNew.properties[t] = v
+	}
+	return sNew
 }

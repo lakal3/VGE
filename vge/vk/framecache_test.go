@@ -185,7 +185,7 @@ func (t *fcTest) renderFrames(tt *testing.T, wg *sync.WaitGroup, instance *Frame
 			mat := mgl32.HomogRotate3DZ(float32(idx) * math.Pi * 2 / triangleCount)
 			copy(ubMatrix.Bytes(), Float32ToBytes(mat[:]))
 			dsUbf := instance.AllocDescriptor(t.layout)
-			dsUbf.WriteDSSlice(0, 0, ubMatrix)
+			dsUbf.WriteSlice(0, 0, ubMatrix)
 			dsUbf.WriteImage(1, 1, t.testView, t.sampler)
 			drawList.Draw(t.pl, 0, 3).AddInput(0, vb).AddDescriptor(0, dsUbf)
 		}

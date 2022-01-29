@@ -38,12 +38,14 @@ func (c *Command) isValid() bool {
 	return true
 }
 
+// Begin recording of command. Must be first call to start command recording
 func (c *Command) Begin() {
 	if c.isValid() {
 		call_Command_Begin(c.dev, c.hCmd)
 	}
 }
 
+// Submit command to GPU with optional waits (SubmitInfo)
 func (c *Command) Submit(infos ...SubmitInfo) {
 	if !c.isValid() {
 		return
@@ -59,6 +61,12 @@ func (c *Command) Submit(infos ...SubmitInfo) {
 	runtime.KeepAlive(infoList)
 }
 
+// SubmitForWait submits command to GPU and return wait state (SubmitInfo) than can be waited for in other submits. This allows chaining multiple
+// command queue. For example shadow casting light may render it's shadow map using SubmitForWait. Main rendering command will then wait
+// that this shadowmap rendering is completed before starting fragment shader stage in main command.
+//
+// Stage tells at what point in next Submit / SubmitForWait information from this submit is required
+// You must always pass returned submit info to another Submit or SubmitForWait otherwise there will be small memory leak!
 func (c *Command) SubmitForWait(priority uint32, stage PipelineStageFlags, infos ...SubmitInfo) SubmitInfo {
 	if !c.isValid() {
 		return SubmitInfo{}
@@ -74,6 +82,7 @@ func (c *Command) SubmitForWait(priority uint32, stage PipelineStageFlags, infos
 	return SubmitInfo{info: si}
 }
 
+// Wait in CPU side that Submit command has been completed. You can't wait SubmitForWait commands, only Submit commands
 func (c *Command) Wait() {
 	if c.isValid() {
 		call_Command_Wait(c.dev, c.hCmd)

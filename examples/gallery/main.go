@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vapp"
@@ -17,9 +18,18 @@ var app struct {
 	rw *vapp.ViewWindow
 }
 
+var timed bool
+
 func main() {
+	flag.BoolVar(&timed, "timed", false, "Time rendering (disables validations)")
+	flag.Parse()
 	// Initialize application framework. Add validate options to check Vulkan calls and desktop to enable windowing.
-	err := vapp.Init("UItest", vapp.Validate{}, vapp.Desktop{}, vapp.DynamicDescriptors{MaxDescriptors: 1024})
+	var err error
+	if timed {
+		err = vapp.Init("UItest", vapp.Desktop{}, vapp.DynamicDescriptors{MaxDescriptors: 1024})
+	} else {
+		err = vapp.Init("UItest", vapp.Validate{}, vapp.Desktop{}, vapp.DynamicDescriptors{MaxDescriptors: 1024})
+	}
 	if err != nil {
 		log.Fatal("App init failed ", err)
 	}
@@ -32,6 +42,9 @@ func main() {
 	// Create a new window. Window will has it's own scene that will be rendered using ForwardRenderer.
 	// This first demo is only showing UI so we don't need depth buffer
 	app.rw = vapp.NewViewWindow("UITest", vk.WindowPos{Left: -1, Top: -1, Width: 1024, Height: 768})
+	if timed {
+		app.rw.SetTimedOutput(renderDone)
+	}
 	// Build scene
 	err = buildScene()
 	if err != nil {
@@ -96,8 +109,10 @@ func menu(fr *vimgui.UIFrame) {
 	vimgui.TabButton(fr, "page3", "Shapes", 2, &page)
 	fr.NewLine(-95, 3, 3)
 	vimgui.Border(fr)
-	fr.NewLine(-95, 20, 2)
-	vimgui.Label(fr, fmt.Sprintf("Frame time %.3f us", totalGPU))
+	if timed {
+		fr.NewLine(-95, 20, 2)
+		vimgui.Label(fr, fmt.Sprintf("Frame time %.3f us", totalGPU))
+	}
 }
 
 func pages(fr *vimgui.UIFrame) {

@@ -4,6 +4,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vk"
 	"sync"
+	"time"
 )
 
 type Completed func() []vk.SubmitInfo
@@ -28,7 +29,12 @@ type ViewWindow struct {
 	sp         *vk.SpinLock
 	win        *vk.Window
 	wg         *sync.WaitGroup
+	timed      func(started time.Time, gpuTimes []float64)
 	state      int
+}
+
+func (w *ViewWindow) SetTimedOutput(output func(started time.Time, gpuTimes []float64)) {
+	w.timed = output
 }
 
 func NewViewWindow(title string, wp vk.WindowPos, views ...View) *ViewWindow {
@@ -124,11 +130,14 @@ func (w *ViewWindow) eventHandler(ev Event) (unregister bool) {
 	return false
 }
 
+var kTimer = vk.NewKeys(2)
+
 func (w *ViewWindow) renderLoop() {
 	w.wg = &sync.WaitGroup{}
 	w.wg.Add(1)
 	w.state = 1
 	for w.state == 1 {
+		start := time.Now()
 		im, imageIndex, submitInfo := w.win.GetNextFrame(Dev)
 		if imageIndex < 0 {
 			continue
@@ -136,6 +145,7 @@ func (w *ViewWindow) renderLoop() {
 		if w.fc == nil {
 			w.fc = vk.NewFrameCache(Dev, w.win.GetImageCount())
 		}
+		tp := w.timed
 		fi := w.fc.Instances[imageIndex]
 		fi.Output = im
 		fi.BeginFrame()
@@ -146,6 +156,16 @@ func (w *ViewWindow) renderLoop() {
 			v.Reserve(fi)
 		}
 		fi.Commit()
+		var timer *vk.TimerPool
+		if tp != nil {
+			timer = vk.NewTimerPool(Dev, 3)
+			timeCmd := vk.NewCommand(Dev, vk.QUEUEComputeBit, true)
+			timeCmd.Begin()
+			timeCmd.WriteTimer(timer, 0, vk.PIPELINEStageTopOfPipeBit)
+			fi.Set(kTimer, timer)
+			fi.Set(kTimer+1, timeCmd)
+			submits = append(submits, timeCmd.SubmitForWait(0, vk.PIPELINEStageTopOfPipeBit))
+		}
 		for _, v := range views {
 			c := v.PreRender(fi)
 			if c != nil {
@@ -155,6 +175,9 @@ func (w *ViewWindow) renderLoop() {
 		rp, fb := w.getRenderPass(fi, im.DefaultView())
 		cmd := w.newCommand(fi)
 		cmd.Begin()
+		if tp != nil {
+			cmd.WriteTimer(timer, 1, vk.PIPELINEStageTopOfPipeBit)
+		}
 		cmd.BeginRenderPass(rp, fb)
 		for _, v := range views {
 			v.Render(fi, cmd, rp)
@@ -164,8 +187,14 @@ func (w *ViewWindow) renderLoop() {
 			submits = append(submits, c()...)
 		}
 		fi.Freeze()
+		if tp != nil {
+			cmd.WriteTimer(timer, 2, vk.PIPELINEStageAllCommandsBit)
+		}
 		cmd.Submit(submits...)
 		cmd.Wait()
+		if tp != nil {
+			tp(start, timer.Get())
+		}
 	}
 	w.wg.Done()
 }

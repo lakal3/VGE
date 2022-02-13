@@ -315,14 +315,19 @@ func NewKeys(howMany uint64) Key {
 // NewHashKey constructs key from strings using quite fast hash. If key is converted to int64, hashes keys are negative, keys from NewKey positive
 func NewHashKey(tags ...string) Key {
 	h := Key(prime1 * 33)
+	return h.AddTags(tags...)
+}
+
+// AddTags add more tags to hashed key and get a new key
+func (k Key) AddTags(tags ...string) Key {
 	for _, s := range tags {
+		k = rotLeft(9 + k*prime1)
 		l := len(s)
 		for idx := 0; idx < l; idx++ {
-			h = rotLeft(Key(s[idx]) + h*prime1)
+			k = rotLeft(Key(s[idx]) + k*prime1)
 		}
-		h = rotLeft(9 + h*prime1)
 	}
-	return h | hashKeyOffset
+	return k | hashKeyOffset
 }
 
 const (

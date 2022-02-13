@@ -30,15 +30,12 @@ func (c *OrbitControl) CameraProjection(size image.Point) (projection, view mgl3
 	return c.pc.CameraProjection(size)
 }
 
-func (c *OrbitControl) eventHandler(ev Event) (unregister bool) {
-	if c.win.Closed() {
-		return true
-	}
+func (c *OrbitControl) Handle(ev Event) {
 	if !c.Active {
-		return false
+		return
 	}
 	mm, ok := ev.(*MouseMoveEvent)
-	if ok && mm.IsWin(c.win) {
+	if ok {
 		// fmt.Println(mm.CurrentMods)
 		if c.RotateMode != 0 && mm.HasMods(c.RotateMode) {
 			if c.prevPoint.X != 0 {
@@ -65,7 +62,7 @@ func (c *OrbitControl) eventHandler(ev Event) (unregister bool) {
 		}
 	}
 	ms, ok := ev.(*ScrollEvent)
-	if ok && ms.IsWin(c.win) && ms.HasMods(c.ZoomMode) {
+	if ok && ms.HasMods(c.ZoomMode) {
 		l := c.target.Sub(c.position).Len()
 		if ms.Range.Y < 0 {
 			l = l * 0.95
@@ -74,6 +71,16 @@ func (c *OrbitControl) eventHandler(ev Event) (unregister bool) {
 		}
 		c.position = c.target.Sub(c.GetDirection().Mul(-l))
 		c.apply()
+	}
+}
+
+func (c *OrbitControl) eventHandler(ev Event) (unregister bool) {
+	if c.win.Closed() {
+		return true
+	}
+	es, ok := ev.(SourcedEvent)
+	if ok && es.IsSource(c.win) {
+		c.Handle(ev)
 	}
 	return false
 }
@@ -93,8 +100,10 @@ func NewOrbitControl(priority float64, win *RenderWindow) *OrbitControl {
 		Active: true, PanMode: MODMouseButton2}
 	oc.pc = vscene.NewPerspectiveCamera(1000)
 	oc.position = oc.target.Sub(oc.GetDirection().Mul(-1))
-	win.Camera = oc
-	RegisterHandler(priority, oc.eventHandler)
+	if win != nil {
+		win.Camera = oc
+		RegisterHandler(priority, oc.eventHandler)
+	}
 	oc.apply()
 	return oc
 }
@@ -107,7 +116,9 @@ func OrbitControlFrom(priority float64, win *RenderWindow, pc *vscene.Perspectiv
 	dir := oc.position.Sub(oc.target).Normalize()
 	oc.Yaw = math.Atan2(float64(dir.X()), float64(dir.Z()))
 	oc.Pitch = math.Asin(float64(dir.Y()))
-	RegisterHandler(priority, oc.eventHandler)
+	if win != nil {
+		RegisterHandler(priority, oc.eventHandler)
+	}
 	oc.apply()
 	return oc
 }
@@ -116,13 +127,16 @@ func (oc *OrbitControl) Zoom(sc *vscene.Scene) {
 	bb := &vscene.BoudingBox{}
 	sc.Process(oc.win.GetSceneTime(), vscene.NullFrame{}, bb)
 	aabb, empty := bb.Get()
-	var l float32
 	if empty {
-		l = 1
+		oc.ZoomTo(mgl32.Vec3{}, 1)
 	} else {
-		l = aabb.Max.Sub(aabb.Min).Len()
+		oc.ZoomTo(aabb.Center(), aabb.Len())
 	}
-	oc.position = oc.target.Sub(oc.GetDirection().Mul(-l))
+}
+
+func (oc *OrbitControl) ZoomTo(target mgl32.Vec3, distance float32) {
+	oc.target = target
+	oc.position = oc.target.Sub(oc.GetDirection().Mul(-distance))
 	oc.apply()
 }
 

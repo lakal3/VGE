@@ -36,7 +36,7 @@ func (dl *DrawLights) Begin() (atEnd func()) {
 
 func (dl *DrawLights) atEnd() {
 	dl.frame.writeLightsFrame()
-	dl.dl.Draw(dl.pipeline, 0, 6).AddDescriptor(0, dl.frame.dsLight)
+	dl.dl.Draw(dl.pipeline, 0, 3).AddDescriptor(0, dl.frame.dsLight)
 	dl.cmd.Draw(dl.dl)
 }
 

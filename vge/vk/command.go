@@ -294,8 +294,10 @@ func (dr *DrawList) optimize() {
 			anyChange := false
 			for idx := 0; idx < 8; idx++ {
 				if di.descriptors[idx].hSet != 0 && di.descriptors[idx].hSet == prev.descriptors[idx].hSet {
-					di.descriptors[idx].hSet = 0
-					anyChange = true
+					if di.pipeline == prev.pipeline {
+						di.descriptors[idx].hSet = 0
+						anyChange = true
+					}
 				}
 				if di.descriptors[idx].hSet != 0 {
 					anyDif = true

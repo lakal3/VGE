@@ -340,7 +340,9 @@ func (mb *ModelBuilder) buildMaterials(dev *vk.Device, m *Model) (uint64, error)
 				return 0, errors.New("Set ShaderFactory")
 			}
 			mt.mat, mt.layout, mt.ubf, mt.images = mb.ShaderFactory(dev, mt.Props)
-			mCounts[mt.layout] = mCounts[mt.layout] + 1
+			if mt.mat != nil {
+				mCounts[mt.layout] = mCounts[mt.layout] + 1
+			}
 		}
 		mb.Materials[idx] = mt
 
@@ -354,7 +356,7 @@ func (mb *ModelBuilder) buildMaterials(dev *vk.Device, m *Model) (uint64, error)
 
 	offset := uint64(0)
 	for idx, mi := range mb.Materials {
-		if mi.Decal {
+		if mi.mat == nil {
 			m.materials = append(m.materials, Material{Props: mi.Props, Name: mi.Name})
 			continue
 		}

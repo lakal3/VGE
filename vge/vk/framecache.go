@@ -93,6 +93,10 @@ func (fi *FrameInstance) GetShared(key Key, ctor Constructor) interface{} {
 	return fi.fc.shared.Get(key, ctor)
 }
 
+func (fi *FrameInstance) Device() *Device {
+	return fi.fc.dev
+}
+
 func (fi *FrameInstance) ReserveSlice(usage BufferUsageFlags, size uint64) {
 	if !fi.checkReserve() {
 		return

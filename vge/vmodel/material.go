@@ -13,12 +13,15 @@ const (
 	CAlbedo             = Color + 1
 	CEmissive           = Color + 2
 	CSpecular           = Color + 3
+	CIntensity          = Color + 10
+	CUser               = Color + 0x10000
 	Texture             = Property(0x02000000)
 	TxAlbedo            = Texture + 1
 	TxEmissive          = Texture + 2
 	TxSpecular          = Texture + 3
 	TxBump              = Texture + 4
 	TxMetallicRoughness = Texture + 5
+	TxUser              = Texture + 0x10000
 	Factor              = Property(0x03000000)
 	FSpeculaPower       = Factor + 1
 	FMetalness          = Factor + 2
@@ -28,9 +31,19 @@ const (
 	FNormalAttenuation = Factor + 4
 	// Max level of alpha to discard pixel.
 	FAlphaCutoff = Factor + 5
-	Special      = Property(0xFF000000)
-	SMaxIndex    = Special + 1
-	PropertyKind = Property(0xFF000000)
+	// Light attenuation is calculate with formulate attn = FLightAttenuation0 + FLightAttenuation1 * distanceToLight + FLightAttenuation2 * distanceToLight^2
+	// For directional lights, default is FLightAttenuation0 = 1, for point lights FLightAttenuation2 = 1
+	FLightAttenuation0 = Factor + 10
+	FLightAttenuation1 = Factor + 11
+	FLightAttenuation2 = Factor + 12
+	FInnerAngle        = Factor + 13
+	FOuterAngle        = Factor + 14
+	FUser              = Factor + 0x10000
+	Uint               = Property(0x04000000)
+	UShadowMapSize     = Uint + 1
+	Special            = Property(0xFF000000)
+	SMaxIndex          = Special + 1
+	PropertyKind       = Property(0xFF000000)
 )
 
 type MaterialProperties map[Property]interface{}
@@ -54,6 +67,11 @@ func (mp MaterialProperties) SetImage(prop Property, im ImageIndex) MaterialProp
 	return mp
 }
 
+func (mp MaterialProperties) SetUInt(prop Property, i uint32) MaterialProperties {
+	mp[prop] = i
+	return mp
+}
+
 func (mp MaterialProperties) GetColor(prop Property, defaultValue mgl32.Vec4) mgl32.Vec4 {
 	v, ok := mp[prop]
 	if ok {
@@ -66,6 +84,14 @@ func (mp MaterialProperties) GetFactor(prop Property, defaultValue float32) floa
 	v, ok := mp[prop]
 	if ok {
 		return v.(float32)
+	}
+	return defaultValue
+}
+
+func (mp MaterialProperties) GetUInt(prop Property, defaultValue uint32) uint32 {
+	v, ok := mp[prop]
+	if ok {
+		return v.(uint32)
 	}
 	return defaultValue
 }

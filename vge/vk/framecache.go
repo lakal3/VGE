@@ -198,6 +198,12 @@ func (fi *FrameInstance) AllocImage(key Key) (image *AImage, views []*AImageView
 	return im.image, im.views
 }
 
+func (fi *FrameInstance) AllocCommand(queue QueueFlags) *Command {
+	cmd := NewCommand(fi.Device(), queue, true)
+	fi.perFrame.AddChild(cmd)
+	return cmd
+}
+
 func (fi *FrameInstance) Commit() {
 	if !fi.checkReserve() {
 		return

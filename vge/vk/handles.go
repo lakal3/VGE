@@ -69,12 +69,20 @@ type ImageDescription struct {
 	MipLevels uint32
 }
 
+type ViewType uint32
+
+const (
+	NormalView ViewType = 0
+	CubeView   ViewType = 1
+)
+
 type ImageRange struct {
 	FirstLayer    uint32
 	LayerCount    uint32
 	FirstMipLevel uint32
 	LevelCount    uint32
 	Layout        ImageLayout
+	ViewType      ViewType
 }
 
 type descriptorInfo struct {

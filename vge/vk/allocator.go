@@ -292,12 +292,12 @@ func (ai *AImage) isValid() bool {
 	return ai.mem.isValid()
 }
 
-func (ai *AImage) AllocView(ir ImageRange, cubeView bool) *AImageView {
+func (ai *AImage) AllocView(ir ImageRange) *AImageView {
 	if !ai.isValid() {
 		return nil
 	}
 	av := &AImageView{dev: ai.dev, al: ai.al, image: ai, Range: ir}
-	call_Allocator_AllocView(ai.dev, ai.al.hAllocator, ai.hImage, &ir, &ai.Description, cubeView, &av.hView)
+	call_Allocator_AllocView(ai.dev, ai.al.hAllocator, ai.hImage, &ir, &ai.Description, &av.hView)
 	return av
 }
 

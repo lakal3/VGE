@@ -257,10 +257,11 @@ func NewImageView(image *Image, imRange *ImageRange) *ImageView {
 	}
 
 	iv := &ImageView{image: image}
-	call_Image_NewView(image.dev, image.hImage, imRange, &iv.view, &iv.rawView, false)
+	call_Image_NewView(image.dev, image.hImage, imRange, &iv.view, &iv.rawView)
 	return iv
 }
 
+// Deprecated: Use NewImageView with ViewType settings in ImageRange
 func NewCubeView(image *Image, imRange *ImageRange) *ImageView {
 
 	if !image.isValid() {
@@ -271,8 +272,10 @@ func NewCubeView(image *Image, imRange *ImageRange) *ImageView {
 		image.dev.ReportError(errors.New("Cube hView must have 6 layers"))
 		return nil
 	}
+	ir := *imRange
+	ir.ViewType = CubeView
 	iv := &ImageView{image: image}
-	call_Image_NewView(image.dev, image.hImage, imRange, &iv.view, &iv.rawView, true)
+	call_Image_NewView(image.dev, image.hImage, &ir, &iv.view, &iv.rawView)
 	return iv
 }
 

@@ -85,14 +85,14 @@ void vge::Image::bind()
 	_dev->get_device().bindImageMemory(_image, _owner->get_mem(), _offset, _dev->get_dispatch());
 }
 
-void vge::Image::NewView(vge::ImageRange *range, ImageView*& view, void*& rawView, bool cubeView)
+void vge::Image::NewView(vge::ImageRange *range, ImageView*& view, void*& rawView)
 {
 	auto ivci = cvInfo(0, 0);
 	ivci.subresourceRange.layerCount = range->LayerCount;
 	ivci.subresourceRange.baseArrayLayer = range->FirstLayer;
 	ivci.subresourceRange.levelCount = range->LevelCount;
 	ivci.subresourceRange.baseMipLevel = range->FirstMipLevel;
-	if (cubeView) {
+	if (range->ViewType == 1) {
 		if (ivci.viewType == vk::ImageViewType::e2D) {
 			ivci.viewType = vk::ImageViewType::eCube;
 		}
@@ -327,7 +327,7 @@ void vge::Allocator::AllocImage(vk::ImageUsageFlags usage, ImageDescription* im,
 	memType = findMemIndex(mr, false);
 }
 
-void vge::Allocator::AllocView(void* hImage, ImageRange* rg, ImageDescription *description,bool cubeView, void*& hView)
+void vge::Allocator::AllocView(void* hImage, ImageRange* rg, ImageDescription *description, void*& hView)
 {
 	vk::ImageViewCreateInfo ivci;
 	ivci.image = static_cast<VkImage>(hImage);
@@ -350,7 +350,7 @@ void vge::Allocator::AllocView(void* hImage, ImageRange* rg, ImageDescription *d
 	ivci.subresourceRange.baseMipLevel = rg->FirstMipLevel;
 	ivci.subresourceRange.layerCount = rg->LayerCount;
 	ivci.subresourceRange.levelCount = rg->LevelCount;
-	if (cubeView) {
+	if (rg->ViewType == 1) {
 		if (ivci.viewType == vk::ImageViewType::e2D) {
 			ivci.viewType = vk::ImageViewType::eCube;
 		}

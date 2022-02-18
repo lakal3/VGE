@@ -7,6 +7,13 @@ type FrameCache struct {
 	dev       *Device
 	Instances []*FrameInstance
 	ac        *Allocator
+	rings     map[Key]*frameRing
+}
+
+type frameRing struct {
+	current   int
+	recording bool
+	instances [2]*FrameInstance
 }
 
 const hostMemOffset uint32 = 1024
@@ -17,6 +24,9 @@ func (f *FrameCache) Dispose() {
 	}
 	for _, fi := range f.Instances {
 		fi.dispose()
+	}
+	for _, r := range f.rings {
+		r.dispose()
 	}
 	f.ac.Dispose()
 	f.shared.Dispose()
@@ -66,19 +76,30 @@ type FrameInstance struct {
 	descriptors map[*DescriptorLayout]fDescriptorPool
 	slices      map[BufferUsageFlags]fSlice
 	images      map[Key]fImage
+	ring        Key
+	rRings      []Key
 }
 
 func NewFrameCache(dev *Device, instances int) *FrameCache {
 	fc := &FrameCache{shared: NewOwner(true), dev: dev}
 	fc.ac = NewAllocator(dev)
 	for idx := 0; idx < instances; idx++ {
-		fc.Instances = append(fc.Instances, newFrameInstance(fc, idx))
+		fc.Instances = append(fc.Instances, newFrameInstance(fc, idx, 0))
 	}
+	fc.rings = make(map[Key]*frameRing)
 	return fc
 }
 
 func (fi *FrameInstance) Index() (current int, total int) {
 	return fi.index, len(fi.fc.Instances)
+}
+
+func (fi *FrameInstance) GetRing(ring Key) (ringInstance *FrameInstance, recording bool) {
+	r := fi.fc.rings[ring]
+	if r == nil || r.current < 0 {
+		return nil, false
+	}
+	return r.instances[r.current], r.recording
 }
 
 func (fi *FrameInstance) Get(key Key, ctor Constructor) interface{} {
@@ -208,8 +229,20 @@ func (fi *FrameInstance) Commit() {
 	if !fi.checkReserve() {
 		return
 	}
+	if fi.ring != 0 {
+		fi.fc.dev.FatalError(errors.New("FrameInstance is not main instance"))
+		return
+	}
 	fi.mx.Lock()
 	defer fi.mx.Unlock()
+	for _, ring := range fi.rRings {
+		r := fi.fc.rings[ring]
+		r.instances[r.current].commitOne()
+	}
+	fi.commitOne()
+}
+
+func (fi *FrameInstance) commitOne() {
 	fi.state = 2
 	fi.commitDescriptors()
 	fi.reserveMemory()
@@ -229,13 +262,61 @@ func (fi *FrameInstance) BeginFrame() {
 		fi.fc.dev.FatalError(errors.New("FrameInstance not in Initial state"))
 		return
 	}
+	if fi.ring != 0 {
+		fi.fc.dev.FatalError(errors.New("FrameInstance is not main instance"))
+		return
+	}
+	fi.rRings = nil
+
 	fi.state = 1
+}
+
+func (fi *FrameInstance) BeginRing(ring Key) {
+	if fi.state != 1 {
+		fi.fc.dev.FatalError(errors.New("FrameInstance not in Reserve state"))
+		return
+	}
+	if fi.ring != 0 {
+		fi.fc.dev.FatalError(errors.New("FrameInstance is not main instance"))
+		return
+	}
+	fi.mx.Lock()
+	defer fi.mx.Unlock()
+
+	r := fi.fc.rings[ring]
+	if r == nil {
+		r = newRing(ring, fi.fc)
+		fi.fc.rings[ring] = r
+	} else {
+		if r.recording {
+			return
+		}
+	}
+	fi.rRings = append(fi.rRings, ring)
+	r.current++
+	if r.current > 1 {
+		r.current = 0
+	}
+	r.recording = true
+	if r.instances[r.current].state == 4 {
+		r.instances[r.current].cleanUp()
+	}
+	r.instances[r.current].state = 1
 }
 
 func (fi *FrameInstance) Freeze() {
 	fi.checkAlloc()
+	if fi.ring != 0 {
+		fi.fc.dev.FatalError(errors.New("FrameInstance is not main instance"))
+		return
+	}
 	fi.mx.Lock()
 	defer fi.mx.Unlock()
+	for _, ring := range fi.rRings {
+		r := fi.fc.rings[ring]
+		r.instances[r.current].state = 4
+		r.recording = false
+	}
 	fi.state = 4
 }
 
@@ -354,7 +435,7 @@ func (fi *FrameInstance) commitImages() {
 			m.usedSize += img.neededSize
 			for idx := range img.views {
 				rg := img.ranges[idx]
-				img.views[idx] = img.image.AllocView(rg, rg.LayerCount == 6)
+				img.views[idx] = img.image.AllocView(rg)
 			}
 			fi.memories[mt] = m
 			fi.images[key] = img
@@ -407,7 +488,7 @@ func (fi *FrameInstance) reserveMemory() {
 	}
 }
 
-func newFrameInstance(fc *FrameCache, idx int) *FrameInstance {
+func newFrameInstance(fc *FrameCache, idx int, ring Key) *FrameInstance {
 	fi := &FrameInstance{fc: fc, index: idx}
 	fi.descriptors = make(map[*DescriptorLayout]fDescriptorPool)
 	fi.slices = make(map[BufferUsageFlags]fSlice)
@@ -415,5 +496,24 @@ func newFrameInstance(fc *FrameCache, idx int) *FrameInstance {
 	fi.images = make(map[Key]fImage)
 	fi.perFrame = NewOwner(true)
 	fi.mx = &SpinLock{}
+	fi.ring = ring
 	return fi
+}
+
+func (r *frameRing) dispose() {
+	if r.instances[0] != nil {
+		r.instances[0].dispose()
+	}
+	if r.instances[1] != nil {
+		r.instances[1].dispose()
+	}
+	r.instances = [2]*FrameInstance{nil, nil}
+	r.current = -1
+}
+
+func newRing(key Key, fc *FrameCache) *frameRing {
+	r := &frameRing{current: -1}
+	r.instances[0] = newFrameInstance(fc, 0, key)
+	r.instances[1] = newFrameInstance(fc, 1, key)
+	return r
 }

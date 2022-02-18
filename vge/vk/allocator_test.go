@@ -102,7 +102,7 @@ func BenchmarkAllocator_AllocImage(b *testing.B) {
 		img := al.AllocImage(IMAGEUsageSampledBit|IMAGEUsageTransferSrcBit|IMAGEUsageTransferDstBit, desc)
 		img.Bind(mem, uint64(alignment))
 		ir := ImageRange{LayerCount: 1, LevelCount: 1}
-		v := img.AllocView(ir, false)
+		v := img.AllocView(ir)
 		v.Dispose()
 		img.Dispose()
 	}

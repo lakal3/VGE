@@ -312,7 +312,6 @@ type MainLib interface {
 		imRange   *vk.ImageRange
 		imageView *hImageView
 		rawView   *uintptr
-		cube      bool
 	})
 	/*
 		NewForwardRenderPass(struct {
@@ -554,7 +553,6 @@ type MainLib interface {
 		hImage    uintptr
 		rg        *vk.ImageRange
 		im        *vk.ImageDescription
-		cube      bool
 		hView     *uintptr
 	})
 

@@ -21,6 +21,8 @@ namespace vge {
         uint32_t FirstMipLevel;
         uint32_t LevelCount;
         uint32_t Layout;
+        uint32_t ViewType;
+
         vk::ImageLayout get_layout() {
             return vk::ImageLayout(Layout);
         }

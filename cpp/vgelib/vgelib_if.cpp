@@ -12,7 +12,7 @@ DLLEXPORT Exception * Allocator_AllocBuffer(Allocator* allocator, int32_t usage,
 DLLEXPORT Exception * Allocator_AllocDeviceBuffer(Allocator* allocator, int32_t usage, uint64_t size, void *& hBuffer, uint32_t& memType, uint32_t& alignment);
 DLLEXPORT Exception * Allocator_AllocImage(Allocator* allocator, int32_t usage, ImageDescription* im, void *& hImage, uint64_t& size, uint32_t& memType, uint32_t& alignment);
 DLLEXPORT Exception * Allocator_AllocMemory(Allocator* allocator, uint64_t size, uint32_t memType, bool hostMemory, void *& hMem, void *& memPtr);
-DLLEXPORT Exception * Allocator_AllocView(Allocator* allocator, void * hImage, ImageRange* rg, ImageDescription* im, bool cube, void *& hView);
+DLLEXPORT Exception * Allocator_AllocView(Allocator* allocator, void * hImage, ImageRange* rg, ImageDescription* im, void *& hView);
 DLLEXPORT Exception * Allocator_BindBuffer(Allocator* allocator, void * hMem, void * hBuffer, uint64_t offset);
 DLLEXPORT Exception * Allocator_BindImage(Allocator* allocator, void * hMem, void * hBuffer, uint64_t offset);
 DLLEXPORT Exception * Allocator_FreeBuffer(Allocator* allocator, void * hBuffer);
@@ -79,7 +79,7 @@ DLLEXPORT Exception * ImageLoader_Describe(ImageLoader* loader, char * kind, siz
 DLLEXPORT Exception * ImageLoader_Load(ImageLoader* loader, char * kind, size_t kind_len, uint8_t* content, size_t content_len, Buffer* buf);
 DLLEXPORT Exception * ImageLoader_Save(ImageLoader* loader, char * kind, size_t kind_len, ImageDescription* desc, Buffer* buf, uint8_t* content, size_t content_len, uint64_t& reqSize);
 DLLEXPORT Exception * ImageLoader_Supported(ImageLoader* loader, char * kind, size_t kind_len, bool& read, bool& write);
-DLLEXPORT Exception * Image_NewView(Image* image, ImageRange* imRange, ImageView*& imageView, void *& rawView, bool cube);
+DLLEXPORT Exception * Image_NewView(Image* image, ImageRange* imRange, ImageView*& imageView, void *& rawView);
 DLLEXPORT Exception * Instance_GetPhysicalDevice(Instance* instance, int32_t index, DeviceInfo* info);
 DLLEXPORT Exception * Instance_NewDevice(Instance* instance, int32_t index, Device*& pd);
 DLLEXPORT Exception * MemoryBlock_Allocate(MemoryBlock* memBlock);
@@ -166,9 +166,9 @@ Exception * Allocator_AllocMemory(Allocator* allocator, uint64_t size, uint32_t 
     return Exception::getValidationError();
 }
 
-Exception * Allocator_AllocView(Allocator* allocator, void * hImage, ImageRange* rg, ImageDescription* im, bool cube, void *& hView) {
+Exception * Allocator_AllocView(Allocator* allocator, void * hImage, ImageRange* rg, ImageDescription* im, void *& hView) {
     try {
-        allocator->AllocView(hImage, rg, im, cube, hView);
+        allocator->AllocView(hImage, rg, im, hView);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }
@@ -754,9 +754,9 @@ Exception * ImageLoader_Supported(ImageLoader* loader, char * kind, size_t kind_
     return Exception::getValidationError();
 }
 
-Exception * Image_NewView(Image* image, ImageRange* imRange, ImageView*& imageView, void *& rawView, bool cube) {
+Exception * Image_NewView(Image* image, ImageRange* imRange, ImageView*& imageView, void *& rawView) {
     try {
-        image->NewView(imRange, imageView, rawView, cube);
+        image->NewView(imRange, imageView, rawView);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }

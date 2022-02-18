@@ -576,7 +576,7 @@ func call_Allocator_AllocMemory(ctx apicontext, allocator hAllocator, size uint6
 	*hMem = _tmp_hMem
 	*memPtr = _tmp_memPtr
 }
-func call_Allocator_AllocView(ctx apicontext, allocator hAllocator, hImage uintptr, rg *ImageRange, im *ImageDescription, cube bool, hView *uintptr) {
+func call_Allocator_AllocView(ctx apicontext, allocator hAllocator, hImage uintptr, rg *ImageRange, im *ImageDescription, hView *uintptr) {
 	_tmp_rg := *rg
 	_tmp_im := *im
 	_tmp_hView := *hView
@@ -584,7 +584,7 @@ func call_Allocator_AllocView(ctx apicontext, allocator hAllocator, hImage uintp
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_Allocator_AllocView, 6, uintptr(allocator), uintptr(hImage), uintptr(unsafe.Pointer(&_tmp_rg)), uintptr(unsafe.Pointer(&_tmp_im)), boolToUintptr(cube), uintptr(unsafe.Pointer(&_tmp_hView)))
+	rc, _, _ := syscall.Syscall6(libcall.t_Allocator_AllocView, 5, uintptr(allocator), uintptr(hImage), uintptr(unsafe.Pointer(&_tmp_rg)), uintptr(unsafe.Pointer(&_tmp_im)), uintptr(unsafe.Pointer(&_tmp_hView)), 0)
 	handleError(ctx, rc)
 	*rg = _tmp_rg
 	*im = _tmp_im
@@ -1187,7 +1187,7 @@ func call_ImageLoader_Supported(ctx apicontext, loader hImageLoader, kind []byte
 	*read = _tmp_read
 	*write = _tmp_write
 }
-func call_Image_NewView(ctx apicontext, image hImage, imRange *ImageRange, imageView *hImageView, rawView *uintptr, cube bool) {
+func call_Image_NewView(ctx apicontext, image hImage, imRange *ImageRange, imageView *hImageView, rawView *uintptr) {
 	_tmp_imRange := *imRange
 	_tmp_imageView := *imageView
 	_tmp_rawView := *rawView
@@ -1195,7 +1195,7 @@ func call_Image_NewView(ctx apicontext, image hImage, imRange *ImageRange, image
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_Image_NewView, 5, uintptr(image), uintptr(unsafe.Pointer(&_tmp_imRange)), uintptr(unsafe.Pointer(&_tmp_imageView)), uintptr(unsafe.Pointer(&_tmp_rawView)), boolToUintptr(cube), 0)
+	rc, _, _ := syscall.Syscall6(libcall.t_Image_NewView, 4, uintptr(image), uintptr(unsafe.Pointer(&_tmp_imRange)), uintptr(unsafe.Pointer(&_tmp_imageView)), uintptr(unsafe.Pointer(&_tmp_rawView)), 0, 0)
 	handleError(ctx, rc)
 	*imRange = _tmp_imRange
 	*imageView = _tmp_imageView

@@ -74,7 +74,7 @@ namespace vge {
 		friend class Device;
 	public:
 		
-		void NewView(ImageRange *range, ImageView*& view, void*& rawView, bool cube);
+		void NewView(ImageRange *range, ImageView*& view, void*& rawView);
 
 		
 		const ImageDescription& get_desc() const {
@@ -186,7 +186,7 @@ namespace vge {
 		void AllocDeviceBuffer(vk::BufferUsageFlags usage, uint64_t size, void*& hBuffer, uint32_t& memType, uint32_t& alignment);
 		void AllocMemory(uint64_t size, uint32_t memType, bool hostMemory, void*& hMem, void*& memHandle);
 		void AllocImage(vk::ImageUsageFlags usage, ImageDescription* im, void*& hImage, uint64_t& size, uint32_t& memType, uint32_t& alignment);
-		void AllocView(void* hImage, ImageRange* rg, ImageDescription* im,  bool cube, void*& hView);
+		void AllocView(void* hImage, ImageRange* rg, ImageDescription* im, void*& hView);
 		void BindBuffer(void* hMem, void* hBuffer, uint64_t offset);
 		void BindImage(void* hMem, void* hBuffer, uint64_t offset);
 		void FreeBuffer(void* hBuffer);

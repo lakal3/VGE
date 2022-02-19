@@ -124,6 +124,14 @@ func (cp *ComputePipeline) Create() {
 	cp.initialized = true
 }
 
+func (cp *ComputePipeline) AddPushConstants(stages ShaderStageFlags, size uint32) {
+	if size > 256 {
+		cp.dev.setError(errors.New("Max size of push constants is 256"))
+		return
+	}
+	call_Pipeline_AddPushConstants(cp.dev, cp.handle(), size, stages)
+}
+
 func addShader(ctx apicontext, pl Pipeline, stage ShaderStageFlags, code []byte) {
 	call_Pipeline_AddShader(ctx, pl.handle(), stage, code)
 }

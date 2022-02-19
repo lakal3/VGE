@@ -94,9 +94,14 @@ func (i *Image) image() (hImage uintptr) {
 }
 
 type ImageView struct {
+	imRange ImageRange
 	image   *Image
 	view    hImageView
 	rawView uintptr
+}
+
+func (im *ImageView) Range() ImageRange {
+	return im.imRange
 }
 
 func (im *ImageView) VImage() VImage {
@@ -256,7 +261,7 @@ func NewImageView(image *Image, imRange *ImageRange) *ImageView {
 		return nil
 	}
 
-	iv := &ImageView{image: image}
+	iv := &ImageView{image: image, imRange: *imRange}
 	call_Image_NewView(image.dev, image.hImage, imRange, &iv.view, &iv.rawView)
 	return iv
 }
@@ -274,7 +279,7 @@ func NewCubeView(image *Image, imRange *ImageRange) *ImageView {
 	}
 	ir := *imRange
 	ir.ViewType = CubeView
-	iv := &ImageView{image: image}
+	iv := &ImageView{image: image, imRange: ir}
 	call_Image_NewView(image.dev, image.hImage, &ir, &iv.view, &iv.rawView)
 	return iv
 }

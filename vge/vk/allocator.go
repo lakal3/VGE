@@ -63,7 +63,7 @@ func (ai *AImage) image() (hImage uintptr) {
 }
 
 type AImageView struct {
-	Range ImageRange
+	imRange ImageRange
 
 	image *AImage
 	hView uintptr
@@ -73,6 +73,10 @@ type AImageView struct {
 
 func (av *AImageView) VImage() VImage {
 	return av.image
+}
+
+func (av *AImageView) Range() ImageRange {
+	return av.imRange
 }
 
 func (av *AImageView) imageView() (hView uintptr) {
@@ -296,7 +300,7 @@ func (ai *AImage) AllocView(ir ImageRange) *AImageView {
 	if !ai.isValid() {
 		return nil
 	}
-	av := &AImageView{dev: ai.dev, al: ai.al, image: ai, Range: ir}
+	av := &AImageView{dev: ai.dev, al: ai.al, image: ai, imRange: ir}
 	call_Allocator_AllocView(ai.dev, ai.al.hAllocator, ai.hImage, &ir, &ai.Description, &av.hView)
 	return av
 }

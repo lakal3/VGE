@@ -156,13 +156,17 @@ func (fi *FrameInstance) AllocSlice(usage BufferUsageFlags, size uint64) *ASlice
 }
 
 func (fi *FrameInstance) ReserveDescriptor(layout *DescriptorLayout) {
+	fi.ReserveDescriptors(layout, 1)
+}
+
+func (fi *FrameInstance) ReserveDescriptors(layout *DescriptorLayout, count int) {
 	if !fi.checkReserve() {
 		return
 	}
 	fi.mx.Lock()
 	defer fi.mx.Unlock()
 	b := fi.descriptors[layout]
-	b.needed++
+	b.needed += count
 	fi.descriptors[layout] = b
 }
 

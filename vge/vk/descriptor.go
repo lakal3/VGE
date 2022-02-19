@@ -17,6 +17,7 @@ type VImage interface {
 
 type VImageView interface {
 	VImage() VImage
+	Range() ImageRange
 	imageView() (hView uintptr)
 }
 

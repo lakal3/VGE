@@ -165,7 +165,18 @@ func (c *Command) Compute(cp *ComputePipeline, x uint32, y uint32, z uint32, des
 			hds[idx] = ds.hSet
 		}
 	}
-	call_Command_Compute(c.dev, c.hCmd, cp.hPl, x, y, z, hds)
+	call_Command_Compute(c.dev, c.hCmd, cp.hPl, x, y, z, nil, hds)
+}
+
+func (c *Command) ComputeWith(cp *ComputePipeline, x uint32, y uint32, z uint32, push_constants []byte, descs ...*DescriptorSet) {
+	// call_command_co
+	hds := make([]hDescriptorSet, len(descs))
+	for idx, ds := range descs {
+		if ds != nil {
+			hds[idx] = ds.hSet
+		}
+	}
+	call_Command_Compute(c.dev, c.hCmd, cp.hPl, x, y, z, push_constants, hds)
 }
 
 // Write value of timer after all commands in stage has completed

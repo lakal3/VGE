@@ -9,7 +9,7 @@ namespace vge {
 		RenderPass(const Device* dev, bool depthAttachment, AttachmentInfo* attachments, size_t attachmentCount);
 		void NewFrameBuffer(ImageView** attachments, size_t attachments_len, Framebuffer*& fb);
 		void NewNullFrameBuffer(uint32_t width,uint32_t height, Framebuffer*& fb);
-		void NewFrameBuffer2(uint32_t width, uint32_t height, void** attachments, size_t attachments_len, Framebuffer*& fb);
+		void NewFrameBuffer2(uint32_t width, uint32_t height, uint32_t layers, void** attachments, size_t attachments_len, Framebuffer*& fb);
 		void init();
 		const vk::RenderPass get_handle() const {
 			return _renderPass;

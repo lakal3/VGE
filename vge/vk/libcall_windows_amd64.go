@@ -702,12 +702,12 @@ func call_Command_ClearImage(ctx apicontext, cmd hCommand, dst hImage, imRange *
 	handleError(ctx, rc)
 	*imRange = _tmp_imRange
 }
-func call_Command_Compute(ctx apicontext, hCmd hCommand, hPl hComputePipeline, x uint32, y uint32, z uint32, descriptors []hDescriptorSet) {
+func call_Command_Compute(ctx apicontext, hCmd hCommand, hPl hComputePipeline, x uint32, y uint32, z uint32, push_constants []uint8, descriptors []hDescriptorSet) {
 	atEnd := ctx.begin("Command_Compute")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall9(libcall.t_Command_Compute, 7, uintptr(hCmd), uintptr(hPl), uintptr(x), uintptr(y), uintptr(z), sliceToUintptr(descriptors), uintptr(len(descriptors)), 0, 0)
+	rc, _, _ := syscall.Syscall9(libcall.t_Command_Compute, 9, uintptr(hCmd), uintptr(hPl), uintptr(x), uintptr(y), uintptr(z), sliceToUintptr(push_constants), uintptr(len(push_constants)), sliceToUintptr(descriptors), uintptr(len(descriptors)))
 	handleError(ctx, rc)
 }
 func call_Command_CopyBuffer(ctx apicontext, cmd hCommand, src hBuffer, dst hBuffer) {
@@ -1323,13 +1323,13 @@ func call_RenderPass_NewFrameBuffer(ctx apicontext, rp hRenderPass, attachments 
 	handleError(ctx, rc)
 	*fb = _tmp_fb
 }
-func call_RenderPass_NewFrameBuffer2(ctx apicontext, rp hRenderPass, width uint32, height uint32, attachments []uintptr, fb *hFramebuffer) {
+func call_RenderPass_NewFrameBuffer2(ctx apicontext, rp hRenderPass, width uint32, height uint32, layers uint32, attachments []uintptr, fb *hFramebuffer) {
 	_tmp_fb := *fb
 	atEnd := ctx.begin("RenderPass_NewFrameBuffer2")
 	if atEnd != nil {
 		defer atEnd()
 	}
-	rc, _, _ := syscall.Syscall6(libcall.t_RenderPass_NewFrameBuffer2, 6, uintptr(rp), uintptr(width), uintptr(height), sliceToUintptr(attachments), uintptr(len(attachments)), uintptr(unsafe.Pointer(&_tmp_fb)))
+	rc, _, _ := syscall.Syscall9(libcall.t_RenderPass_NewFrameBuffer2, 7, uintptr(rp), uintptr(width), uintptr(height), uintptr(layers), sliceToUintptr(attachments), uintptr(len(attachments)), uintptr(unsafe.Pointer(&_tmp_fb)), 0, 0)
 	handleError(ctx, rc)
 	*fb = _tmp_fb
 }

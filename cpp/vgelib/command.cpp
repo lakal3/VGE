@@ -178,7 +178,7 @@ void vge::Command::Draw(DrawItem* draws, size_t draws_len, uint8_t *pushConstant
 	}
 }
 
-void vge::Command::Compute(ComputePipeline* pl, uint32_t x, uint32_t y, uint32_t z, DescriptorSet** descriptors, size_t descriptors_len)
+void vge::Command::Compute(ComputePipeline* pl, uint32_t x, uint32_t y, uint32_t z, uint8_t* push_constants, size_t push_constants_len, DescriptorSet** descriptors, size_t descriptors_len)
 {
 	_cmd.bindPipeline(vk::PipelineBindPoint::eCompute, pl->get_handle(), _dev->get_dispatch());
 	for (size_t idx = 0; idx < descriptors_len; idx++) {
@@ -187,8 +187,12 @@ void vge::Command::Compute(ComputePipeline* pl, uint32_t x, uint32_t y, uint32_t
 			auto dss = ds->get_descriptorSet();
 			_cmd.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pl->get_layout(), static_cast<uint32_t>(idx), 1, &dss, 0, nullptr, _dev->get_dispatch());
 		}
+		
 	}
-	_cmd.dispatch(x, y, z);
+	if (push_constants_len > 0) {
+		_cmd.pushConstants(pl->get_layout(), pl->get_pushConstantStages(), 0, static_cast<uint32_t>(push_constants_len), push_constants, _dev->get_dispatch());
+	}
+	_cmd.dispatch(x, y, z, _dev->get_dispatch());
 }
 
 void vge::Command::Wait()
@@ -370,6 +374,7 @@ void vge::Command::Transfer(TransferItem* transfer, size_t transfer_len)
 		{
 		case 0:
 			imb.oldLayout = (vk::ImageLayout)(tr.initialLayout);
+			imb.newLayout = (vk::ImageLayout)(tr.finalLayout);
 			break;
 		case 1:
 			if (tr.finalLayout == VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {

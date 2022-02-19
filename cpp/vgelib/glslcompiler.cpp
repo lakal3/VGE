@@ -178,8 +178,11 @@ namespace vge {
         else if (stage == vk::ShaderStageFlagBits::eGeometry) {
             cp->input.stage = GLSLANG_STAGE_GEOMETRY;
         }
+        else if (stage == vk::ShaderStageFlagBits::eCompute) {
+            cp->input.stage = GLSLANG_STAGE_COMPUTE;
+        }
         else {
-            throw new std::runtime_error("Invalid stage");
+            throw std::runtime_error("Invalid stage");
         }
         fillLimits(cp);
         // cp->input.stage = stage;

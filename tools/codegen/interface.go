@@ -350,6 +350,7 @@ type MainLib interface {
 		rp          hRenderPass
 		width       uint32
 		height      uint32
+		layers      uint32
 		attachments []uintptr
 		fb          *hFramebuffer
 	})
@@ -470,12 +471,13 @@ type MainLib interface {
 	})
 
 	Command_Compute(struct {
-		hCmd        hCommand
-		hPl         hComputePipeline
-		x           uint32
-		y           uint32
-		z           uint32
-		descriptors []hDescriptorSet
+		hCmd           hCommand
+		hPl            hComputePipeline
+		x              uint32
+		y              uint32
+		z              uint32
+		push_constants []byte
+		descriptors    []hDescriptorSet
 	})
 
 	QueryPool_Get(struct {

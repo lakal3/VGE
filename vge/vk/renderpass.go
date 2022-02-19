@@ -142,7 +142,8 @@ func NewFramebuffer2(rp *GeneralRenderPass, attachments ...VImageView) *Framebuf
 		}
 		att[idx] = h
 	}
+	rg := attachments[0].Range()
 	// _ = desc
-	call_RenderPass_NewFrameBuffer2(rp.dev, rp.hRp, desc.Width, desc.Height, att, &fb.hFb)
+	call_RenderPass_NewFrameBuffer2(rp.dev, rp.hRp, desc.Width, desc.Height, rg.LayerCount, att, &fb.hFb)
 	return fb
 }

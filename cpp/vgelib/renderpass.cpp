@@ -88,10 +88,10 @@ void vge::RenderPass::NewNullFrameBuffer(uint32_t width, uint32_t height, Frameb
 
 }
 
-void vge::RenderPass::NewFrameBuffer2(uint32_t width, uint32_t height, void** attachments, size_t attachments_len, Framebuffer*& fb)
+void vge::RenderPass::NewFrameBuffer2(uint32_t width, uint32_t height, uint32_t layers, void** attachments, size_t attachments_len, Framebuffer*& fb)
 {
 	vk::FramebufferCreateInfo fbci;
-	fbci.layers = 1;
+	fbci.layers = layers;
 	fbci.width = width;
 	fbci.height = height;
 	fbci.renderPass = _renderPass;

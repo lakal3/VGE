@@ -26,7 +26,7 @@ DLLEXPORT Exception * Buffer_NewView(Buffer* buffer, int32_t format, uint64_t of
 DLLEXPORT Exception * Command_Begin(Command* cmd);
 DLLEXPORT Exception * Command_BeginRenderPass(Command* cmd, RenderPass* rp, Framebuffer* fb);
 DLLEXPORT Exception * Command_ClearImage(Command* cmd, Image* dst, ImageRange* imRange, int32_t layout, float color, float alpha);
-DLLEXPORT Exception * Command_Compute(Command* hCmd, ComputePipeline* hPl, uint32_t x, uint32_t y, uint32_t z, DescriptorSet** descriptors, size_t descriptors_len);
+DLLEXPORT Exception * Command_Compute(Command* hCmd, ComputePipeline* hPl, uint32_t x, uint32_t y, uint32_t z, uint8_t* push_constants, size_t push_constants_len, DescriptorSet** descriptors, size_t descriptors_len);
 DLLEXPORT Exception * Command_CopyBuffer(Command* cmd, Buffer* src, Buffer* dst);
 DLLEXPORT Exception * Command_CopyBufferToImage(Command* cmd, Buffer* src, Image* dst, ImageRange* imRange, uint64_t offset);
 DLLEXPORT Exception * Command_CopyImageToBuffer(Command* cmd, Image* src, Buffer* dst, ImageRange* imRange, uint64_t offset);
@@ -93,7 +93,7 @@ DLLEXPORT Exception * Pipeline_AddPushConstants(Pipeline* pl, uint32_t size, int
 DLLEXPORT Exception * Pipeline_AddShader(Pipeline* pl, int32_t stage, uint8_t* code, size_t code_len);
 DLLEXPORT Exception * QueryPool_Get(QueryPool* qp, uint64_t* values, size_t values_len, float& timestampPeriod);
 DLLEXPORT Exception * RenderPass_NewFrameBuffer(RenderPass* rp, ImageView** attachments, size_t attachments_len, Framebuffer*& fb);
-DLLEXPORT Exception * RenderPass_NewFrameBuffer2(RenderPass* rp, uint32_t width, uint32_t height, void ** attachments, size_t attachments_len, Framebuffer*& fb);
+DLLEXPORT Exception * RenderPass_NewFrameBuffer2(RenderPass* rp, uint32_t width, uint32_t height, uint32_t layers, void ** attachments, size_t attachments_len, Framebuffer*& fb);
 DLLEXPORT Exception * RenderPass_NewNullFrameBuffer(RenderPass* rp, uint32_t width, uint32_t height, Framebuffer*& fb);
 DLLEXPORT Exception * Window_GetNextFrame(Window* win, Image*& image, SubmitInfo*& submitInfo, int32_t& viewIndex);
 DLLEXPORT Exception * Window_GetPos(Window* win, WindowPos* pos);
@@ -292,9 +292,9 @@ Exception * Command_ClearImage(Command* cmd, Image* dst, ImageRange* imRange, in
     return Exception::getValidationError();
 }
 
-Exception * Command_Compute(Command* hCmd, ComputePipeline* hPl, uint32_t x, uint32_t y, uint32_t z, DescriptorSet** descriptors, size_t descriptors_len) {
+Exception * Command_Compute(Command* hCmd, ComputePipeline* hPl, uint32_t x, uint32_t y, uint32_t z, uint8_t* push_constants, size_t push_constants_len, DescriptorSet** descriptors, size_t descriptors_len) {
     try {
-        hCmd->Compute(hPl, x, y, z, descriptors, descriptors_len);
+        hCmd->Compute(hPl, x, y, z, push_constants, push_constants_len, descriptors, descriptors_len);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }
@@ -880,9 +880,9 @@ Exception * RenderPass_NewFrameBuffer(RenderPass* rp, ImageView** attachments, s
     return Exception::getValidationError();
 }
 
-Exception * RenderPass_NewFrameBuffer2(RenderPass* rp, uint32_t width, uint32_t height, void ** attachments, size_t attachments_len, Framebuffer*& fb) {
+Exception * RenderPass_NewFrameBuffer2(RenderPass* rp, uint32_t width, uint32_t height, uint32_t layers, void ** attachments, size_t attachments_len, Framebuffer*& fb) {
     try {
-        rp->NewFrameBuffer2(width, height, attachments, attachments_len, fb);
+        rp->NewFrameBuffer2(width, height, layers, attachments, attachments_len, fb);
     } catch (const std::exception &ex) {
         return new Exception(ex);
     }

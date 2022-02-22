@@ -279,9 +279,9 @@ vk::AccessFlags vge::Command::quessAccess(vk::ImageLayout layout)
 	switch (layout)
 	{
 	case vk::ImageLayout::eShaderReadOnlyOptimal:
-		return vk::AccessFlagBits::eShaderRead;
+		return vk::AccessFlagBits::eMemoryRead;
 	case vk::ImageLayout::eColorAttachmentOptimal:
-		return vk::AccessFlagBits::eShaderWrite;
+		return vk::AccessFlagBits::eMemoryWrite;
 	case vk::ImageLayout::eTransferDstOptimal:
 		return vk::AccessFlagBits::eTransferWrite;
 	case vk::ImageLayout::eTransferSrcOptimal:

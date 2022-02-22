@@ -229,6 +229,10 @@ func (fi *FrameInstance) AllocCommand(queue QueueFlags) *Command {
 	return cmd
 }
 
+func (fi *FrameInstance) AddChild(obj Disposable) {
+	fi.perFrame.AddChild(obj)
+}
+
 func (fi *FrameInstance) Commit() {
 	if !fi.checkReserve() {
 		return

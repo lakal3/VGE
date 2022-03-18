@@ -6,6 +6,7 @@ import (
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vdraw"
 	"github.com/lakal3/vge/vge/vimgui"
+	"github.com/lakal3/vge/vge/vk"
 	"image"
 )
 
@@ -15,22 +16,24 @@ var p3shapes int
 var brGreenBlue = vdraw.Brush{Color: mgl32.Vec4{0, 1, 0, 1}, Color2: mgl32.Vec4{0, 0, 1, 1}, UVTransform: mgl32.Scale2D(0.01, 0.01)}
 var uvScale float32 = 100
 
+var vPage3 = vk.NewKeys(10)
+
 func page3(fr *vimgui.UIFrame) {
 	if gsPage3 == nil {
 		buildGlyphs()
 	}
 	fr.NewLine(-33, 26, 0)
-	vimgui.TabButton(fr, "p3tab1", "Path shapes", 0, &p3shapes)
+	vimgui.TabButton(fr, vPage3+0, "Path shapes", 0, &p3shapes)
 	fr.NewColumn(-33, 10)
-	vimgui.TabButton(fr, "p3tab2", "Glyph shapes", 1, &p3shapes)
+	vimgui.TabButton(fr, vPage3+1, "Glyph shapes", 1, &p3shapes)
 	fr.NewColumn(-33, 10)
-	vimgui.TabButton(fr, "p3tab2", "Shader shapes", 2, &p3shapes)
+	vimgui.TabButton(fr, vPage3+2, "Shader shapes", 2, &p3shapes)
 	fr.NewLine(-100, 3, 3)
 	vimgui.Border(fr)
 	fr.NewLine(100, 20, 2)
 	vimgui.Label(fr, "UV scale")
 	fr.NewColumn(-50, 5)
-	if vimgui.HorizontalSlider(fr, "uvscale", 10, 300, 1, &uvScale) {
+	if vimgui.HorizontalSlider(fr, vPage3+3, 10, 300, 1, &uvScale) {
 		brGreenBlue.UVTransform = mgl32.Scale2D(1/uvScale, 1/uvScale)
 	}
 	fr.NewColumn(40, 5)

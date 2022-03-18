@@ -3,6 +3,7 @@ package vimgui
 import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vdraw"
+	"github.com/lakal3/vge/vge/vk"
 )
 
 func Label(uf *UIFrame, text string) {
@@ -73,7 +74,7 @@ func DrawBorder(uf *UIFrame, ss StyleSet) (inside vdraw.Area) {
 	return
 }
 
-func Button(uf *UIFrame, id string, title string) bool {
+func Button(uf *UIFrame, id vk.Key, title string) bool {
 	if uf.IsHidden() {
 		return false
 	}
@@ -90,7 +91,7 @@ func Button(uf *UIFrame, id string, title string) bool {
 	return uf.MouseClick(1)
 }
 
-func ToggleButton(uf *UIFrame, id string, kind, title string, myValue int, value *int) (changed bool) {
+func ToggleButton(uf *UIFrame, id vk.Key, kind, title string, myValue int, value *int) (changed bool) {
 	if uf.IsHidden() {
 		return
 	}
@@ -125,15 +126,15 @@ func ToggleButton(uf *UIFrame, id string, kind, title string, myValue int, value
 	return false
 }
 
-func RadioButton(uf *UIFrame, id string, title string, myValue int, value *int) (changed bool) {
+func RadioButton(uf *UIFrame, id vk.Key, title string, myValue int, value *int) (changed bool) {
 	return ToggleButton(uf, id, "radiobutton", title, myValue, value)
 }
 
-func TabButton(uf *UIFrame, id string, title string, myValue int, value *int) (changed bool) {
+func TabButton(uf *UIFrame, id vk.Key, title string, myValue int, value *int) (changed bool) {
 	return ToggleButton(uf, id, "tab", title, myValue, value)
 }
 
-func CheckBox(uf *UIFrame, id string, title string, value *bool) (changed bool) {
+func CheckBox(uf *UIFrame, id vk.Key, title string, value *bool) (changed bool) {
 	v := 0
 	if *value {
 		v = 1
@@ -145,7 +146,7 @@ func CheckBox(uf *UIFrame, id string, title string, value *bool) (changed bool) 
 	return false
 }
 
-func HorizontalSlider(uf *UIFrame, id string, min float32, max float32, visible float32, value *float32) bool {
+func HorizontalSlider(uf *UIFrame, id vk.Key, min float32, max float32, visible float32, value *float32) bool {
 	var styles = []string{"*slider", "horizontal"}
 	if uf.MouseHover() {
 		styles = []string{":hover", "*slider", "horizontal"}
@@ -153,7 +154,7 @@ func HorizontalSlider(uf *UIFrame, id string, min float32, max float32, visible 
 	return DrawSlider(uf, uf.GetStyles(styles...), true, min, max, visible, value)
 }
 
-func VerticalSlider(uf *UIFrame, id string, min float32, max float32, visible float32, value *float32) bool {
+func VerticalSlider(uf *UIFrame, id vk.Key, min float32, max float32, visible float32, value *float32) bool {
 	var styles = []string{"*slider", "vertical"}
 	if uf.MouseHover() {
 		styles = []string{":hover", "*slider", "vertical"}
@@ -226,9 +227,9 @@ func DrawSlider(uf *UIFrame, ss StyleSet, horizontal bool, min float32, max floa
 		changed = true
 		var newValue float32
 		if horizontal {
-			newValue = (uf.MousePos[0]-uf.ControlArea.From[0])/uf.ControlArea.Width()*(max-visible-min) + min
+			newValue = (uf.MousePos[0]-uf.ControlArea.From[0])/uf.ControlArea.Width()*(max-min) + min - visible/2
 		} else {
-			newValue = (uf.MousePos[1]-uf.ControlArea.From[1])/uf.ControlArea.Height()*(max-visible-min) + min
+			newValue = (uf.MousePos[1]-uf.ControlArea.From[1])/uf.ControlArea.Height()*(max-min) + min - visible/2
 		}
 		if newValue > max-visible {
 			*value = max - visible

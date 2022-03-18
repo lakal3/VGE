@@ -39,6 +39,8 @@ func newPopup() {
 	app.rw.AddView(vPopup)
 }
 
+var kbtnClose = vk.NewHashKey("btnclose")
+
 func paintDialog(fr *vimgui.UIFrame) {
 	fr.ControlArea = fr.DrawArea
 	vimgui.Panel(fr.WithTags("dialog"), func(uf *vimgui.UIFrame) {
@@ -48,7 +50,7 @@ func paintDialog(fr *vimgui.UIFrame) {
 		vimgui.Label(fr.WithTags(""), "Click close to close dialog")
 		fr.NewLine(-35, 30, 5)
 		fr.NewColumn(120, 10)
-		if vimgui.Button(fr, "btnclose", "Close dialog") {
+		if vimgui.Button(fr, kbtnClose, "Close dialog") {
 			app.rw.RemoveView(vDialog)
 		}
 	})

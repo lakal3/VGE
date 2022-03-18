@@ -55,9 +55,15 @@ func BuildMinTheme() (err error) {
 		vimgui.ForeColor{Brush: vdraw.SolidColor(mgl32.Vec4{0.3, 1, 0.3, 1})},
 		vimgui.BorderColor{Brush: vdraw.SolidColor(mgl32.Vec4{0.3, 1, 0.3, 1})},
 	)
+	Theme.Add(20, vimgui.Tags("error"),
+		vimgui.ForeColor{Brush: vdraw.SolidColor(mgl32.Vec4{1, 0.2, 0.2, 1})},
+		vimgui.BorderColor{Brush: vdraw.SolidColor(mgl32.Vec4{1, 0.2, 0.2, 1})},
+	)
 	Theme.Add(1, vimgui.Tags("*slider"),
 		vimgui.BorderColor{Brush: vdraw.SolidColor(mgl32.Vec4{0.8, 0.8, 0.8, 0.8})})
 	Theme.Add(1, vimgui.Tags("*divider"),
+		vimgui.BackgroudColor{Brush: vdraw.SolidColor(mgl32.Vec4{0.4, 0.4, 0.4, 1})})
+	Theme.Add(1, vimgui.Tags("*border"),
 		vimgui.BackgroudColor{Brush: vdraw.SolidColor(mgl32.Vec4{0.4, 0.4, 0.4, 1})})
 	Theme.Add(1, vimgui.Tags("*textbox"), vimgui.UnderlineThickness{Thickness: 2},
 		vimgui.BorderColor{Brush: vdraw.SolidColor(mgl32.Vec4{0.4, 0.4, 0.4, 1})})
@@ -76,6 +82,7 @@ func BuildMinTheme() (err error) {
 		vimgui.BackgroudColor{Brush: vdraw.SolidColor(mgl32.Vec4{0.2, 0.2, 0.2, 1})})
 	Theme.Add(10, vimgui.Tags("h2"),
 		vimgui.FontStyle{Font: PrimaryFont, Size: 24})
+
 	return nil
 }
 

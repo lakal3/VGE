@@ -36,7 +36,7 @@ func NewView(dev *vk.Device, mode ViewMode, th *Theme, painter func(fr *UIFrame)
 	f.c = vdraw.NewCanvas(dev)
 	f.mode = mode
 	f.nextFrame.theme = th
-	f.nextFrame.states = make(map[string]*vk.State)
+	f.nextFrame.states = make(map[vk.Key]*vk.State)
 	return f
 }
 

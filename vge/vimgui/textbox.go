@@ -4,6 +4,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vdraw"
+	"github.com/lakal3/vge/vge/vk"
 )
 
 type TextSelection struct {
@@ -12,7 +13,7 @@ type TextSelection struct {
 }
 
 type textBox struct {
-	id       string
+	id       vk.Key
 	sel      TextSelection
 	t        string
 	hasFocus bool
@@ -175,7 +176,7 @@ func (tb *textBox) draw(uf *UIFrame) {
 
 }
 
-func TextBox(uf *UIFrame, id string, text *string) (changed bool) {
+func TextBox(uf *UIFrame, id vk.Key, text *string) (changed bool) {
 	tb := textBox{id: id, t: *text}
 	var styles = []string{"*textbox"}
 	if uf.MousePress(1) {

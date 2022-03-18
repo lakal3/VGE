@@ -31,9 +31,9 @@ type UIFrame struct {
 	DeltaTime float64
 
 	theme         *Theme
-	states        map[string]*vk.State
-	focusCtrl     string
-	prevFocusCtrl string
+	states        map[vk.Key]*vk.State
+	focusCtrl     vk.Key
+	prevFocusCtrl vk.Key
 	popStack      []func()
 	winArea       vdraw.Area
 	dev           *vk.Device
@@ -68,19 +68,19 @@ func (f *UIFrame) WithTags(tags ...string) *UIFrame {
 	return f
 }
 
-func (f *UIFrame) GetState(ctrlName string, defaultValue interface{}) interface{} {
-	s, ok := f.states[ctrlName]
+func (f *UIFrame) GetState(ctrlID vk.Key, defaultValue interface{}) interface{} {
+	s, ok := f.states[ctrlID]
 	if ok {
 		return s.Get(defaultValue)
 	}
 	return defaultValue
 }
 
-func (f *UIFrame) SetState(ctrlName string, values ...interface{}) {
-	s, ok := f.states[ctrlName]
+func (f *UIFrame) SetState(ctrlID vk.Key, values ...interface{}) {
+	s, ok := f.states[ctrlID]
 	if !ok {
 		s = &vk.State{}
-		f.states[ctrlName] = s
+		f.states[ctrlID] = s
 	}
 	s.Set(values...)
 }
@@ -159,18 +159,18 @@ func (f *UIFrame) MouseDrag(button uint32) bool {
 	return f.HasMods(vapp.MODMouseButton1 << (button - 1))
 }
 
-func (f *UIFrame) SetFocus(ctrlName string) {
-	f.focusCtrl = ctrlName
+func (f *UIFrame) SetFocus(ctrlId vk.Key) {
+	f.focusCtrl = ctrlId
 }
 
-func (f *UIFrame) HasFocus(ctrlName string) bool {
-	if len(f.focusCtrl) == 0 {
-		f.focusCtrl = ctrlName
+func (f *UIFrame) HasFocus(ctrlId vk.Key) bool {
+	if f.focusCtrl == 0 {
+		f.focusCtrl = ctrlId
 	}
-	if f.focusCtrl == ctrlName {
+	if f.focusCtrl == ctrlId {
 		if f.Ev.KeyDown == vapp.GLFWKeyTab {
 			if f.HasMods(0) {
-				f.focusCtrl = ""
+				f.focusCtrl = 0
 				f.Ev.KeyDown = 0
 				return false
 			}
@@ -182,7 +182,7 @@ func (f *UIFrame) HasFocus(ctrlName string) bool {
 		}
 		return true
 	}
-	f.prevFocusCtrl = ctrlName
+	f.prevFocusCtrl = ctrlId
 	return false
 }
 

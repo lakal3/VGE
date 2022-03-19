@@ -7,6 +7,7 @@ import (
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vdraw"
 	"github.com/lakal3/vge/vge/vimgui"
+	materialicons2 "github.com/lakal3/vge/vge/vimgui/materialicons"
 	"github.com/lakal3/vge/vge/vimgui/mintheme"
 	"github.com/lakal3/vge/vge/vk"
 	"image"
@@ -142,20 +143,20 @@ func page1(fr *vimgui.UIFrame) {
 	vimgui.Border(fr)
 	fr.Pop()
 
-	fr.NewLine(120, 30, 5)
+	fr.NewLine(140, 30, 5)
 	fr.PushTags("primary")
-	if vimgui.Button(fr, kPage1+0, "Quit button") {
+	if vimgui.IconButton(fr, kPage1+0, materialicons2.GetRunes("power_off")[0], "Quit button") {
 		fmt.Println("Here")
 		go func() {
 			vapp.Terminate()
 		}()
 	}
 	fr.Pop()
-	fr.NewColumn(120, 10)
+	fr.NewColumn(140, 10)
 	if vimgui.Button(fr, kPage1+1, "Open dialog") {
 		newDialog()
 	}
-	fr.NewColumn(120, 10)
+	fr.NewColumn(140, 10)
 	if vimgui.Button(fr, kPage1+2, "Open popup") {
 		newPopup()
 	}

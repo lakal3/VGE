@@ -15,6 +15,10 @@ func (l *GLTF2Loader) LoadGLB(name string) (err error) {
 	if err != nil {
 		return err
 	}
+	return l.ParseGLB(glb)
+}
+
+func (l *GLTF2Loader) ParseGLB(glb []byte) (err error) {
 	if len(glb) < 12 {
 		return errors.New("Not a GLB content")
 	}
@@ -48,12 +52,17 @@ func (l *GLTF2Loader) LoadGLB(name string) (err error) {
 
 func (l *GLTF2Loader) LoadGltf(mainUri string) (err error) {
 
-	l.Model = &GLTF2{}
 	core, err := l.loadContent(mainUri)
 	if err != nil {
 		return err
 	}
-	err = json.Unmarshal(core, l.Model)
+	return l.ParseGltf(core)
+}
+
+func (l *GLTF2Loader) ParseGltf(gltf []byte) (err error) {
+
+	l.Model = &GLTF2{}
+	err = json.Unmarshal(gltf, l.Model)
 	if err != nil {
 		return err
 	}

@@ -7,6 +7,12 @@ type FontStyle struct {
 	Size float32
 }
 
+type IconStyle struct {
+	Font    *vdraw.Font
+	Size    float32
+	Padding float32
+}
+
 type ForeColor struct {
 	Brush vdraw.Brush
 }

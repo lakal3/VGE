@@ -91,6 +91,30 @@ func Button(uf *UIFrame, id vk.Key, title string) bool {
 	return uf.MouseClick(1)
 }
 
+// IconButton draws button with icon and text. Icon comes from IconStyle style settings
+func IconButton(uf *UIFrame, id vk.Key, icon rune, title string) bool {
+	if uf.IsHidden() {
+		return false
+	}
+	var styles = []string{"*button"}
+	if uf.MouseHover() {
+		styles = []string{":hover", "*button"}
+	}
+	s := uf.GetStyles(styles...)
+	is := s.Get(IconStyle{}).(IconStyle)
+	fc := s.Get(ForeColor{}).(ForeColor)
+	DrawBorder(uf, s)
+	uf.PushControlArea()
+	uf.ControlArea = vdraw.UniformEdge(5).Shrink(uf.ControlArea, 0)
+	if is.Font != nil {
+		uf.Canvas().DrawText(is.Font, is.Size, uf.ControlArea.From, &fc.Brush, string(icon))
+		uf.ControlArea.From[0] += is.Size + is.Padding
+	}
+	DrawLabel(uf, title, s)
+	uf.Pop()
+	return uf.MouseClick(1)
+}
+
 func ToggleButton(uf *UIFrame, id vk.Key, kind, title string, myValue int, value *int) (changed bool) {
 	if uf.IsHidden() {
 		return

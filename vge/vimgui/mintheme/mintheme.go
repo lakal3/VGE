@@ -29,6 +29,7 @@ func BuildMinTheme() (err error) {
 		vimgui.ForeColor{Brush: vdraw.SolidColor(mgl32.Vec4{1, 1, 1, 1})},
 		vimgui.BorderColor{Brush: vdraw.SolidColor(mgl32.Vec4{1, 1, 1, 1})},
 		vimgui.ThumbSize{ThumbSize: 3},
+		vimgui.IconStyle{Font: materialicons.Icons, Size: 20, Padding: 5},
 	)
 	Theme.AddStyle(root)
 	label := vimgui.Style{Tags: []string{"*label"}, Priority: 1}

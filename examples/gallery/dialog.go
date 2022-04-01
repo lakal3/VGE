@@ -24,21 +24,6 @@ func newDialog() {
 	app.rw.AddView(vDialog)
 }
 
-func newPopup() {
-	vPopup = vimgui.NewView(vapp.Dev, vimgui.VMPopup, mintheme.Theme, paintPopup)
-	vPopup.OnClose = func() {
-		app.rw.RemoveView(vPopup)
-	}
-	vPopup.OnSize = func(fi *vk.FrameInstance) vdraw.Area {
-		oDesc := fi.Output.Describe()
-		var a vdraw.Area
-		a.From = mgl32.Vec2{float32(oDesc.Width/2) - 250, 200}
-		a.To = mgl32.Vec2{a.From[0] + 500, a.From[1] + 150}
-		return a
-	}
-	app.rw.AddView(vPopup)
-}
-
 var kbtnClose = vk.NewHashKey("btnclose")
 
 func paintDialog(fr *vimgui.UIFrame) {
@@ -53,14 +38,5 @@ func paintDialog(fr *vimgui.UIFrame) {
 		if vimgui.Button(fr, kbtnClose, "Close dialog") {
 			app.rw.RemoveView(vDialog)
 		}
-	})
-}
-
-func paintPopup(fr *vimgui.UIFrame) {
-	fr.ControlArea = fr.DrawArea
-	vimgui.Panel(fr.WithTags("dialog", "notitle"), nil, func(uf *vimgui.UIFrame) {
-		fr.NewLine(-100, 20, 0)
-		vimgui.Label(fr.WithTags(""), "Click outside popup to close it")
-		fr.NewLine(-35, 30, 5)
 	})
 }

@@ -17,6 +17,7 @@ type Font struct {
 }
 
 const FontStrokeSize = 64
+const DefaultKern = 1.0
 
 // LoadFontFile loads truetype font from a file.
 func LoadFontFile(filePath string) (*Font, error) {
@@ -139,7 +140,9 @@ func (f *Font) MeasureTextWith(size float32, text string,
 		if iPrev > 0 {
 			defKern, err = f.sf.Kern(f.buf, iPrev, iGl, toFixed(size), font.HintingFull)
 			if err == nil {
-				at = advance(idx, at, float32(defKern)/FontStrokeSize, true)
+				at = advance(idx, at, DefaultKern+float32(defKern)/FontStrokeSize, true)
+			} else {
+				at = advance(idx, at, DefaultKern, true)
 			}
 		}
 		defAdvance, err := f.sf.GlyphAdvance(f.buf, iGl, toFixed(size), font.HintingFull)

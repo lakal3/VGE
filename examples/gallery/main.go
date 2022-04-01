@@ -7,6 +7,7 @@ import (
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vdraw"
 	"github.com/lakal3/vge/vge/vimgui"
+	"github.com/lakal3/vge/vge/vimgui/dialog"
 	materialicons2 "github.com/lakal3/vge/vge/vimgui/materialicons"
 	"github.com/lakal3/vge/vge/vimgui/mintheme"
 	"github.com/lakal3/vge/vge/vk"
@@ -133,6 +134,11 @@ func pages(fr *vimgui.UIFrame) {
 
 var kPage1 = vk.NewKeys(20)
 
+const longText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam ut mi id lorem tempus consequat vel mollis massa. Vestibulum in elit dui. Quisque mattis consectetur dolor ut dapibus. Nunc fermentum metus quis augue congue, in tincidunt arcu egestas. Donec id laoreet magna.Aliquam nisl nisl, tincidunt nec dignissim eu, condimentum vel tortor. Proin luctus nulla nisl, sit amet aliquet mauris malesuada a. Vestibulum arcu risus, viverra accumsan diam a, lobortis faucibus nisi. Cras efficitur, magna sit amet mollis finibus, nulla risus mattis massa, at hendrerit nisl nisl eget elit. Maecenas at elit at lacus suscipit lobortis. Morbi ut volutpat mauris. Nunc et orci lobortis orci mattis tristique sed in est. Vivamus nec pellentesque velit."
+
+var incValue = 1
+var price = 12.2
+
 func page1(fr *vimgui.UIFrame) {
 	fr.NewLine(-100, 25, 0)
 	vimgui.Label(fr, "Hello VGE imgui!")
@@ -146,10 +152,11 @@ func page1(fr *vimgui.UIFrame) {
 	fr.NewLine(140, 30, 5)
 	fr.PushTags("primary")
 	if vimgui.IconButton(fr, kPage1+0, materialicons2.GetRunes("power_off")[0], "Quit button") {
-		fmt.Println("Here")
-		go func() {
-			vapp.Terminate()
-		}()
+		dialog.Query(app.rw, mintheme.Theme, "Quit?", "Do you really want to quit gallery application?", func(yes bool) {
+			if yes {
+				quit()
+			}
+		})
 	}
 	fr.Pop()
 	fr.NewColumn(140, 10)
@@ -158,7 +165,15 @@ func page1(fr *vimgui.UIFrame) {
 	}
 	fr.NewColumn(140, 10)
 	if vimgui.Button(fr, kPage1+2, "Open popup") {
-		newPopup()
+		dialog.PopupFor(app.rw, mintheme.Theme, fr, func(popup *dialog.Popup, childFrame *vimgui.UIFrame) {
+			childFrame.NewLine(-100, 20, 0)
+			vimgui.Text(childFrame, "Click outside popup to close it")
+			childFrame.NewLine(-35, 30, 5)
+		})
+	}
+	fr.NewColumn(140, 10)
+	if vimgui.Button(fr, kPage1+2, "Alert") {
+		dialog.Alert(app.rw, mintheme.Theme, "Alert", "Test alert", nil)
 	}
 	fr.NewLine(150, 25, 5)
 	vimgui.RadioButton(fr, kPage1+3, "Choice 1", 0, &choice)
@@ -168,7 +183,19 @@ func page1(fr *vimgui.UIFrame) {
 	vimgui.CheckBox(fr, kPage1+5, "Check 1", &ch1)
 	fr.NewColumn(150, 5)
 	vimgui.CheckBox(fr, kPage1+6, "Check 2", &ch2)
-	fr.NewLine(120, 3, 5)
+	fr.NewLine(-100, 3, 5)
+	vimgui.Border(fr)
+	fr.NewLine(100, 22, 2)
+	vimgui.Label(fr, "Increment:")
+	fr.NewColumn(200, 5)
+	vimgui.Increment(fr, kPage1+11, 1, 5, func(val int) string {
+		return fmt.Sprintf("Value %d", val)
+	}, &incValue)
+	fr.NewColumn(120, 5)
+	vimgui.Number(fr, kPage1+12, 3, &price)
+	fr.NewColumn(120, 5)
+	vimgui.Label(fr, fmt.Sprintf("Value is %.4f", price))
+	fr.NewLine(-100, 3, 5)
 	vimgui.Border(fr)
 	fr.NewLine(120, 20, 2)
 	vimgui.Label(fr, "Text")
@@ -180,6 +207,8 @@ func page1(fr *vimgui.UIFrame) {
 	vimgui.Label(fr, "Name 2")
 	fr.NewColumn(fr.DrawArea.Size()[0]-160, 5)
 	vimgui.TextBox(fr, kPage1+8, &name2)
+	fr.NewLine(-100, 20, 2)
+	vimgui.Text(fr, longText)
 	fr.NewLine(120, 20, 2)
 	vimgui.Label(fr, "Sliders")
 	fr.Offset = mgl32.Vec2{20}
@@ -196,6 +225,12 @@ func page1(fr *vimgui.UIFrame) {
 	vimgui.VerticalSlider(fr, kPage1+10, -100, 200, 10, &sl1)
 	fr.Pop()
 
+}
+
+func quit() {
+	go func() {
+		vapp.Terminate()
+	}()
 }
 
 func makeGlyphs() error {

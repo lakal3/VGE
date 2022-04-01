@@ -173,11 +173,7 @@ func (cp *CanvasPainter) End() {
 func (cp *CanvasPainter) DrawText(font *Font, size float32, at mgl32.Vec2, br *Brush, text string) {
 	scale := mgl32.Vec2{size / 64, size / 64}
 	cp.DrawTextWith(font, size, at, text, func(idx int, at mgl32.Vec2, advance float32, kern bool) (nextAt mgl32.Vec2) {
-		extra := float32(0)
-		if !kern {
-			extra = 1.0
-		}
-		return at.Add(mgl32.Vec2{advance + extra, 0})
+		return at.Add(mgl32.Vec2{advance, 0})
 	}, func(idx int, at mgl32.Vec2, ch Drawable) {
 		cp.Draw(ch, at, scale, br)
 	})
@@ -206,7 +202,9 @@ func (cp *CanvasPainter) DrawTextWith(font *Font, size float32, at mgl32.Vec2, t
 		if iPrev > 0 {
 			defKern, err = font.sf.Kern(font.buf, iPrev, iGl, toFixed(size), font2.HintingFull)
 			if err == nil {
-				at = advance(idx, at, float32(defKern)/FontStrokeSize, true)
+				at = advance(idx, at, DefaultKern+float32(defKern)/FontStrokeSize, true)
+			} else {
+				at = advance(idx, at, DefaultKern, true)
 			}
 		}
 		defAdvance, err := font.sf.GlyphAdvance(font.buf, iGl, toFixed(size), font2.HintingFull)

@@ -164,6 +164,10 @@ func (f *UIFrame) SetFocus(ctrlId vk.Key) {
 }
 
 func (f *UIFrame) HasFocus(ctrlId vk.Key) bool {
+	return f.focusCtrl == ctrlId
+}
+
+func (f *UIFrame) MoveFocus(ctrlId vk.Key) bool {
 	if f.focusCtrl == 0 {
 		f.focusCtrl = ctrlId
 	}

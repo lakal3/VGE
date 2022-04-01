@@ -72,7 +72,11 @@ func Panel(uf *UIFrame, title Painter, content Painter) {
 	sz := mgl32.Vec2{inside.Size()[0], ps.TitleHeight + ps.Edges.Top - inside.From[1] + dr.From[1]}
 	uf.PushControlArea()
 	defer uf.Pop()
-	if ps.TitleHeight > 0 {
+	th := ps.TitleHeight
+	if title == nil {
+		th = 0
+	}
+	if th > 0 {
 		var titleBg vdraw.Path
 		if br.IsEmpty() {
 			titleBg.AddRect(true, inside.From, sz)
@@ -83,7 +87,7 @@ func Panel(uf *UIFrame, title Painter, content Painter) {
 		}
 		uf.Canvas().Draw(titleBg.Fill(), mgl32.Vec2{0, 0}, mgl32.Vec2{1, 1}, &ps.TitleBg)
 		drTitle := ps.Edges.Shrink(dr, 0)
-		drTitle.To[1] = drTitle.From[1] + ps.TitleHeight
+		drTitle.To[1] = drTitle.From[1] + th
 		uf.PushArea(drTitle, true)
 		uf.ResetControlArea()
 		if title != nil {
@@ -92,7 +96,7 @@ func Panel(uf *UIFrame, title Painter, content Painter) {
 		uf.Pop()
 	}
 	drContent := ps.Edges.Shrink(dr, 0)
-	drContent.From[1] += ps.TitleHeight
+	drContent.From[1] += th
 	uf.PushArea(drContent, true)
 	uf.ResetControlArea()
 	if content != nil {

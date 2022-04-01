@@ -23,6 +23,57 @@ func DrawLabel(uf *UIFrame, text string, ss StyleSet) {
 	uf.Canvas().DrawText(ft.Font, ft.Size, uf.ControlArea.From, &fc.Brush, text)
 }
 
+func Text(uf *UIFrame, text string) {
+	s := uf.GetStyles("*label")
+	DrawText(uf, text, s)
+}
+
+func DrawText(uf *UIFrame, text string, ss StyleSet) {
+	if uf.IsHidden() {
+		return
+	}
+	ft := ss.Get(FontStyle{}).(FontStyle)
+	if ft.Font == nil {
+		return
+	}
+	fc := ss.Get(ForeColor{}).(ForeColor)
+	lines := 0
+	for len(text) > 0 {
+		if lines > 0 {
+			h := uf.ControlArea.Height()
+			uf.ControlArea.From[1] += h
+			uf.ControlArea.To[1] += h
+		}
+		lines++
+		w := uf.ControlArea.Width()
+		lastPos := 0
+		spacePos := 0
+		_, _ = ft.Font.MeasureTextWith(ft.Size, text, func(idx int, at mgl32.Vec2, advance float32, kern bool) (nextAt mgl32.Vec2) {
+			if lastPos == 0 {
+				if at[0] > w {
+					lastPos = idx
+				} else if text[idx] == ' ' {
+					spacePos = idx
+				}
+			}
+			return at.Add(mgl32.Vec2{advance, 0})
+		})
+		if lastPos == 0 {
+			uf.Canvas().DrawText(ft.Font, ft.Size, uf.ControlArea.From, &fc.Brush, text)
+			text = ""
+		} else {
+			if spacePos > 0 && spacePos*2 >= lastPos {
+				lastPos = spacePos
+			}
+			uf.Canvas().DrawText(ft.Font, ft.Size, uf.ControlArea.From, &fc.Brush, text[:lastPos])
+			text = text[lastPos:]
+			for len(text) > 0 && text[0] == ' ' {
+				text = text[1:]
+			}
+		}
+	}
+}
+
 func Border(uf *UIFrame) {
 	s := uf.GetStyles("*border")
 	DrawBorder(uf, s)
@@ -69,7 +120,7 @@ func DrawBorder(uf *UIFrame, ss StyleSet) (inside vdraw.Area) {
 	if br.IsEmpty() {
 		uf.Canvas().Draw(vdraw.Rect{Area: inside}, mgl32.Vec2{0, 0}, mgl32.Vec2{1, 1}, &bg.Brush)
 	} else {
-		uf.Canvas().Draw(vdraw.RoudedRect{Area: area, Corners: br.Corners}, mgl32.Vec2{0, 0}, mgl32.Vec2{1, 1}, &bg.Brush)
+		uf.Canvas().Draw(vdraw.RoudedRect{Area: inside, Corners: br.Corners}, mgl32.Vec2{0, 0}, mgl32.Vec2{1, 1}, &bg.Brush)
 	}
 	return
 }
@@ -83,9 +134,13 @@ func Button(uf *UIFrame, id vk.Key, title string) bool {
 		styles = []string{":hover", "*button"}
 	}
 	s := uf.GetStyles(styles...)
-	DrawBorder(uf, s)
+	is := s.Get(IconStyle{}).(IconStyle)
+
+	inside := DrawBorder(uf, s)
+
+	inside.From[0] += is.Padding
 	uf.PushControlArea()
-	uf.ControlArea = vdraw.UniformEdge(5).Shrink(uf.ControlArea, 0)
+	uf.ControlArea = inside
 	DrawLabel(uf, title, s)
 	uf.Pop()
 	return uf.MouseClick(1)
@@ -103,9 +158,9 @@ func IconButton(uf *UIFrame, id vk.Key, icon rune, title string) bool {
 	s := uf.GetStyles(styles...)
 	is := s.Get(IconStyle{}).(IconStyle)
 	fc := s.Get(ForeColor{}).(ForeColor)
-	DrawBorder(uf, s)
+	inside := DrawBorder(uf, s)
 	uf.PushControlArea()
-	uf.ControlArea = vdraw.UniformEdge(5).Shrink(uf.ControlArea, 0)
+	uf.ControlArea = inside
 	if is.Font != nil {
 		uf.Canvas().DrawText(is.Font, is.Size, uf.ControlArea.From, &fc.Brush, string(icon))
 		uf.ControlArea.From[0] += is.Size + is.Padding

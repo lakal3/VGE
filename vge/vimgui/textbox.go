@@ -182,7 +182,7 @@ func TextBox(uf *UIFrame, id vk.Key, text *string) (changed bool) {
 	if uf.MousePress(1) {
 		uf.SetFocus(id)
 	}
-	tb.hasFocus = uf.HasFocus(id)
+	tb.hasFocus = uf.MoveFocus(id)
 	if tb.hasFocus {
 		styles = append(styles, ":focus")
 	}
@@ -203,4 +203,24 @@ func TextBox(uf *UIFrame, id vk.Key, text *string) (changed bool) {
 	}
 	tb.draw(uf)
 	return changed
+}
+
+type ptState struct {
+	err error
+	val string
+}
+
+func ParsedTextBox(uf *UIFrame, id vk.Key, format func() string, parse func(val string) (err error)) {
+	ns := uf.GetState(id, ptState{}).(ptState)
+	if !uf.HasFocus(id) {
+		ns.val, ns.err = format(), nil
+	}
+	if ns.err != nil {
+		uf.PushTags("error")
+		defer uf.Pop()
+	}
+	if TextBox(uf, id, &ns.val) {
+		ns.err = parse(ns.val)
+	}
+	uf.SetState(id, ns)
 }

@@ -41,6 +41,8 @@ func BuildMinTheme() (err error) {
 	Theme.AddStyle(btn)
 	Theme.Add(1, vimgui.Tags(":hover"),
 		vimgui.BackgroudColor{Brush: vdraw.SolidColor(mgl32.Vec4{0.5, 0.5, 0.5, 0.2})})
+	Theme.Add(1, vimgui.Tags(":disabled"),
+		vimgui.ForeColor{Brush: vdraw.SolidColor(mgl32.Vec4{0.5, 0.5, 0.5, 1})})
 	Theme.Add(0, vimgui.Tags(),
 		vimgui.SelectedTextColor{Text: vdraw.SolidColor(mgl32.Vec4{1, 1, 1, 1}),
 			Caret: vdraw.SolidColor(mgl32.Vec4{0.0, 0.8, 0.0, 1})})
@@ -81,9 +83,14 @@ func BuildMinTheme() (err error) {
 		vimgui.PanelStyle{Edges: vdraw.Edges{Left: 10, Top: 5, Right: 10, Bottom: 5}, TitleHeight: 0})
 	Theme.Add(10, vimgui.Tags("dialog", "*panel"),
 		vimgui.BackgroudColor{Brush: vdraw.SolidColor(mgl32.Vec4{0.2, 0.2, 0.2, 1})})
+	Theme.Add(10, vimgui.Tags("alert", "dialog", "*panel"),
+		vimgui.BorderColor{Brush: vdraw.SolidColor(mgl32.Vec4{1, 0.2, 0.2, 1})})
 	Theme.Add(10, vimgui.Tags("h2"),
 		vimgui.FontStyle{Font: PrimaryFont, Size: 24})
 
+	lr := materialicons.GetRunes("arrow_left", "arrow_right")
+	Theme.Add(1, vimgui.Tags("*increment"),
+		vimgui.IncrementIcons{Font: materialicons.Icons, Size: 20, Padding: 5, Decrement: lr[0], Increment: lr[1]})
 	return nil
 }
 

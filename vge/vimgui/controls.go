@@ -6,11 +6,13 @@ import (
 	"github.com/lakal3/vge/vge/vk"
 )
 
+// Label draws single line text label
 func Label(uf *UIFrame, text string) {
 	s := uf.GetStyles("*label")
 	DrawLabel(uf, text, s)
 }
 
+// DrawLabel draws single line text label with given styles
 func DrawLabel(uf *UIFrame, text string, ss StyleSet) {
 	if uf.IsHidden() {
 		return
@@ -23,20 +25,24 @@ func DrawLabel(uf *UIFrame, text string, ss StyleSet) {
 	uf.Canvas().DrawText(ft.Font, ft.Size, uf.ControlArea.From, &fc.Brush, text)
 }
 
+// Text draws multiple line text. Text is splitted to fit ControlArea.
+// ControlArea also describes size of single line. Height of each line is same than first line
+// Text controls trys to keeps whole words in same line
 func Text(uf *UIFrame, text string) {
 	s := uf.GetStyles("*label")
 	DrawText(uf, text, s)
 }
 
-func DrawText(uf *UIFrame, text string, ss StyleSet) {
+// DrawText draws multiple line of text with given style
+func DrawText(uf *UIFrame, text string, style StyleSet) {
 	if uf.IsHidden() {
 		return
 	}
-	ft := ss.Get(FontStyle{}).(FontStyle)
+	ft := style.Get(FontStyle{}).(FontStyle)
 	if ft.Font == nil {
 		return
 	}
-	fc := ss.Get(ForeColor{}).(ForeColor)
+	fc := style.Get(ForeColor{}).(ForeColor)
 	lines := 0
 	for len(text) > 0 {
 		if lines > 0 {
@@ -74,11 +80,13 @@ func DrawText(uf *UIFrame, text string, ss StyleSet) {
 	}
 }
 
+// Border draws just border and background
 func Border(uf *UIFrame) {
 	s := uf.GetStyles("*border")
 	DrawBorder(uf, s)
 }
 
+// DrawBorder draws border and background with given style. DrawBorder returns inner size of control
 func DrawBorder(uf *UIFrame, ss StyleSet) (inside vdraw.Area) {
 	if uf.IsHidden() {
 		return
@@ -125,6 +133,7 @@ func DrawBorder(uf *UIFrame, ss StyleSet) (inside vdraw.Area) {
 	return
 }
 
+// Button draws single clickable button. Function will return true when button is clicked
 func Button(uf *UIFrame, id vk.Key, title string) bool {
 	if uf.IsHidden() {
 		return false
@@ -146,7 +155,8 @@ func Button(uf *UIFrame, id vk.Key, title string) bool {
 	return uf.MouseClick(1)
 }
 
-// IconButton draws button with icon and text. Icon comes from IconStyle style settings
+// IconButton draws button with icon and text. Icon comes from IconStyle style settings.
+// IconButton returns true when button is clicked
 func IconButton(uf *UIFrame, id vk.Key, icon rune, title string) bool {
 	if uf.IsHidden() {
 		return false
@@ -170,6 +180,9 @@ func IconButton(uf *UIFrame, id vk.Key, icon rune, title string) bool {
 	return uf.MouseClick(1)
 }
 
+// ToggleButton toggles between two values. This is helper function for RadioButton, TabButton and CheckBox
+// Kind should match type of control to draw like radiobutton. You can use theming to build new kind of toggle buttons
+// ToggleButton return trues when value is changed
 func ToggleButton(uf *UIFrame, id vk.Key, kind, title string, myValue int, value *int) (changed bool) {
 	if uf.IsHidden() {
 		return
@@ -205,14 +218,17 @@ func ToggleButton(uf *UIFrame, id vk.Key, kind, title string, myValue int, value
 	return false
 }
 
+// RadioButton is ToggleButton with radiobutton style tag
 func RadioButton(uf *UIFrame, id vk.Key, title string, myValue int, value *int) (changed bool) {
 	return ToggleButton(uf, id, "radiobutton", title, myValue, value)
 }
 
+// TabButton is ToggleButton with tab style tag
 func TabButton(uf *UIFrame, id vk.Key, title string, myValue int, value *int) (changed bool) {
 	return ToggleButton(uf, id, "tab", title, myValue, value)
 }
 
+// CheckBox toggles boolean value
 func CheckBox(uf *UIFrame, id vk.Key, title string, value *bool) (changed bool) {
 	v := 0
 	if *value {
@@ -225,6 +241,7 @@ func CheckBox(uf *UIFrame, id vk.Key, title string, value *bool) (changed bool) 
 	return false
 }
 
+// HorizontalSlider draws horizontal slider with given values. HorizontalSlider returns true then user changes slider position
 func HorizontalSlider(uf *UIFrame, id vk.Key, min float32, max float32, visible float32, value *float32) bool {
 	var styles = []string{"*slider", "horizontal"}
 	if uf.MouseHover() {
@@ -233,6 +250,7 @@ func HorizontalSlider(uf *UIFrame, id vk.Key, min float32, max float32, visible 
 	return DrawSlider(uf, uf.GetStyles(styles...), true, min, max, visible, value)
 }
 
+// VerticalSlider draws vertical slider with given values. VerticalSlider returns true then user changes slider position
 func VerticalSlider(uf *UIFrame, id vk.Key, min float32, max float32, visible float32, value *float32) bool {
 	var styles = []string{"*slider", "vertical"}
 	if uf.MouseHover() {
@@ -241,6 +259,7 @@ func VerticalSlider(uf *UIFrame, id vk.Key, min float32, max float32, visible fl
 	return DrawSlider(uf, uf.GetStyles(styles...), false, min, max, visible, value)
 }
 
+// DrawSlider is helped to vertical or horizontal slider. DrawSlider returns true is user changes slider value
 func DrawSlider(uf *UIFrame, ss StyleSet, horizontal bool, min float32, max float32, visible float32, value *float32) (changed bool) {
 	if uf.IsHidden() {
 		return

@@ -95,7 +95,7 @@ func (c *Canvas) BeginDraw(fi *vk.FrameInstance, rp *vk.GeneralRenderPass, dl *v
 	return cp
 }
 
-// Draw a single drawable to drawing list given in BeginDraw. All shapes can be move and scaled from their initial position
+// Draw a single drawable to drawing list given in BeginDraw. All shapes can be moved and scaled from their initial position
 func (cp *CanvasPainter) Draw(dr Drawable, at mgl32.Vec2, scale mgl32.Vec2, br *Brush) {
 	segOffset, ok := cp.offsets[dr]
 	areas, segments := dr.GetDrawData()

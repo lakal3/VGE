@@ -12,14 +12,25 @@ import (
 type ViewMode int
 
 const (
+	// VMTransparent View will not mark handled any events
 	VMTransparent ViewMode = 0
-	VMNormal      ViewMode = 1
-	VMDialog      ViewMode = 2
-	VMPopup       ViewMode = 3
+
+	// VMNormal View will mark handled all UI events that happens when mouse is over view's area
+	VMNormal ViewMode = 1
+
+	// VMDialog View will mark handled all UI events
+	VMDialog ViewMode = 2
+
+	// VMPopup View will mark handled all UI events that happens when mouse is over view area
+	// and will close itself when any mouse click happens outside view's area
+	VMPopup ViewMode = 3
 )
 
 type View struct {
-	OnSize  func(fi *vk.FrameInstance) vdraw.Area
+	// OnSize function allows resizing view area
+	OnSize func(fi *vk.FrameInstance) vdraw.Area
+
+	// OnClose function is called from VMPopup windows when mouse is clicked outsize view area
 	OnClose func()
 
 	dev       *vk.Device
@@ -31,6 +42,7 @@ type View struct {
 	mode      ViewMode
 }
 
+// NewView will create new immediate mode UI. View can be added to vapp.ViewWindow
 func NewView(dev *vk.Device, mode ViewMode, th *Theme, painter func(fr *UIFrame)) *View {
 	f := &View{dev: dev, painter: painter, mx: &sync.Mutex{}, started: time.Now()}
 	f.c = vdraw.NewCanvas(dev)
@@ -40,6 +52,7 @@ func NewView(dev *vk.Device, mode ViewMode, th *Theme, painter func(fr *UIFrame)
 	return f
 }
 
+// HandleEvent is standard method in vapp.View interface
 func (v *View) HandleEvent(event vapp.Event) {
 	se, ok := event.(vapp.SourcedEvent)
 	if !ok {
@@ -72,6 +85,7 @@ func (v *View) HandleEvent(event vapp.Event) {
 	v.nextFrame.handleEvent(event)
 }
 
+// Reserve is standard method in vapp.View interface
 func (v *View) Reserve(fi *vk.FrameInstance) {
 	if v.nextFrame.TotalTime == 0 {
 		v.nextFrame.TotalTime, v.nextFrame.DeltaTime = time.Now().Sub(v.started).Seconds(), 0
@@ -82,10 +96,12 @@ func (v *View) Reserve(fi *vk.FrameInstance) {
 	v.c.Reserve(fi)
 }
 
+// PreRender is standard method in vapp.View interface
 func (v *View) PreRender(fi *vk.FrameInstance) (done vapp.Completed) {
 	return nil
 }
 
+// Render is standard method in vapp.View interface
 func (v *View) Render(fi *vk.FrameInstance, cmd *vk.Command, rp *vk.GeneralRenderPass) {
 	uif := v.beginDraw(fi)
 	if uif == nil {

@@ -59,6 +59,7 @@ func Tags(tags ...string) []string {
 	return tags
 }
 
+// NewTheme initializes Theme
 func NewTheme() *Theme {
 	return &Theme{
 		mx: &sync.Mutex{},
@@ -66,7 +67,8 @@ func NewTheme() *Theme {
 }
 
 // AddStyle adds new style to theme.
-// You should add all styles to Theme before using it. Adding new styles while Theme is used will have performance penalty
+// You should add all styles to Theme before using it.
+// This call is thread safe. However, adding new styles while Theme is used will have performance penalty
 func (t *Theme) AddStyle(st Style) *Theme {
 	t.mx.Lock()
 	t.cache = nil
@@ -76,7 +78,8 @@ func (t *Theme) AddStyle(st Style) *Theme {
 }
 
 // Add new style with given priority, tags and properties
-// You should add all styles to Theme before using it. Adding new styles while Theme is used will have performance penalty
+// You should add all styles to Theme before using it.
+// This call is thread safe. However, adding new styles while Theme is used will have performance penalty
 func (t *Theme) Add(priority float64, tags []string, properties ...interface{}) *Theme {
 	s := Style{Priority: priority, Tags: tags}
 	s.Set(properties...)

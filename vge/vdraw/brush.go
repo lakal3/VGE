@@ -27,6 +27,7 @@ func SolidColor(color mgl32.Vec4) Brush {
 	return Brush{Color: color}
 }
 
+// IsNil return true is brush is nil (=not set or fully transparent)
 func (br *Brush) IsNil() bool {
 	if br == nil {
 		return true

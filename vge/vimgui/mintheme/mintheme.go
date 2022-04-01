@@ -88,9 +88,8 @@ func BuildMinTheme() (err error) {
 	Theme.Add(10, vimgui.Tags("h2"),
 		vimgui.FontStyle{Font: PrimaryFont, Size: 24})
 
-	lr := materialicons.GetRunes("arrow_left", "arrow_right")
 	Theme.Add(1, vimgui.Tags("*increment"),
-		vimgui.IncrementIcons{Font: materialicons.Icons, Size: 20, Padding: 5, Decrement: lr[0], Increment: lr[1]})
+		vimgui.PrefixIcons{Font: materialicons.Icons, Size: 20, Padding: 5, Icons: materialicons.GetRunes("arrow_left", "arrow_right")})
 	return nil
 }
 

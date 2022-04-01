@@ -6,6 +6,7 @@ import (
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vdraw"
 	"github.com/lakal3/vge/vge/vk"
+	"image"
 )
 
 type UIEvent struct {
@@ -14,6 +15,7 @@ type UIEvent struct {
 	KeyDown     vapp.GLFWKeyCode
 	KeyUp       vapp.GLFWKeyCode
 	Char        rune
+	Scroll      image.Point
 }
 
 type UIFrame struct {
@@ -286,5 +288,9 @@ func (f *UIFrame) handleEvent(ev vapp.Event) {
 	if ok {
 		f.Ev.Char = kc.Char
 		f.Mods = kc.CurrentMods
+	}
+	sc, ok := ev.(*vapp.ScrollEvent)
+	if ok {
+		f.Ev.Scroll = f.Ev.Scroll.Add(sc.Range)
 	}
 }

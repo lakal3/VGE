@@ -2,19 +2,10 @@ package vimgui
 
 import (
 	"fmt"
-	"github.com/lakal3/vge/vge/vdraw"
 	"github.com/lakal3/vge/vge/vk"
 	"math"
 	"strconv"
 )
-
-type IncrementIcons struct {
-	Increment rune
-	Decrement rune
-	Padding   float32
-	Size      float32
-	Font      *vdraw.Font
-}
 
 func Increment(uf *UIFrame, id vk.Key, min, max int, describe func(val int) string, val *int) bool {
 	if uf.IsHidden() {
@@ -26,36 +17,36 @@ func Increment(uf *UIFrame, id vk.Key, min, max int, describe func(val int) stri
 	}
 	s := uf.GetStyles(styles...)
 	sd := uf.GetStyles(append(styles, ":disabled")...)
-	is := s.Get(IncrementIcons{}).(IncrementIcons)
+	pi := s.Get(PrefixIcons{}).(PrefixIcons)
 	fc := s.Get(ForeColor{}).(ForeColor)
 	fcd := sd.Get(ForeColor{}).(ForeColor)
 	inside := DrawBorder(uf, s)
 	uf.PushControlArea()
 	uf.ControlArea = inside
 	changed := false
-	if is.Font != nil {
+	if pi.Font != nil && len(pi.Icons) >= 2 {
 		uf.ControlArea.To[0] = uf.ControlArea.From[0]
-		uf.NewColumn(is.Size, 0)
+		uf.NewColumn(pi.Size, 0)
 		if *val > min {
 			if uf.MouseClick(1) {
 				*val--
 				changed = true
 			}
-			uf.Canvas().DrawText(is.Font, is.Size, uf.ControlArea.From, &fc.Brush, string(is.Decrement))
+			uf.Canvas().DrawText(pi.Font, pi.Size, uf.ControlArea.From, &fc.Brush, string(pi.Icons[0]))
 		} else {
-			uf.Canvas().DrawText(is.Font, is.Size, uf.ControlArea.From, &fcd.Brush, string(is.Decrement))
+			uf.Canvas().DrawText(pi.Font, pi.Size, uf.ControlArea.From, &fcd.Brush, string(pi.Icons[0]))
 		}
-		uf.NewColumn(is.Size, 0)
+		uf.NewColumn(pi.Size, 0)
 		if *val < max {
 			if uf.MouseClick(1) {
 				*val++
 				changed = true
 			}
-			uf.Canvas().DrawText(is.Font, is.Size, uf.ControlArea.From, &fc.Brush, string(is.Increment))
+			uf.Canvas().DrawText(pi.Font, pi.Size, uf.ControlArea.From, &fc.Brush, string(pi.Icons[1]))
 		} else {
-			uf.Canvas().DrawText(is.Font, is.Size, uf.ControlArea.From, &fcd.Brush, string(is.Increment))
+			uf.Canvas().DrawText(pi.Font, pi.Size, uf.ControlArea.From, &fcd.Brush, string(pi.Icons[1]))
 		}
-		uf.ControlArea.From[0] = uf.ControlArea.To[0] + is.Padding
+		uf.ControlArea.From[0] = uf.ControlArea.To[0] + pi.Padding
 		uf.ControlArea.To[0] = inside.To[0]
 		if *val > min && uf.MouseClick(2) {
 			*val--

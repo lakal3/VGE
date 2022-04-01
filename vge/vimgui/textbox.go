@@ -176,6 +176,9 @@ func (tb *textBox) draw(uf *UIFrame) {
 
 }
 
+// TextBox draws editable area. TextBox returns true if value of field was changed
+// TextBox will keep information like current selection in UI state. This will not work if control's id is not unique with
+// single view
 func TextBox(uf *UIFrame, id vk.Key, text *string) (changed bool) {
 	tb := textBox{id: id, t: *text}
 	var styles = []string{"*textbox"}
@@ -210,6 +213,10 @@ type ptState struct {
 	val string
 }
 
+// ParsedTextBox draws editable area. Format functions is used to retrieve field value when it does not have focus.
+// Parse functions is used to parse field values. If parse returns error, field is rendered with error Tag
+// TextBox will keep information like current selection in UI state. This will not work if control's id is not unique with
+// single view
 func ParsedTextBox(uf *UIFrame, id vk.Key, format func() string, parse func(val string) (err error)) {
 	ns := uf.GetState(id, ptState{}).(ptState)
 	if !uf.HasFocus(id) {

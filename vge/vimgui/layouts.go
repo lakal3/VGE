@@ -45,6 +45,12 @@ func ScrollArea(uf *UIFrame, size mgl32.Vec2, offset *mgl32.Vec2, content Painte
 	da := uf.DrawArea
 	ta := da
 	ta.To = ta.To.Sub(mgl32.Vec2{sbs.BarSize + sbs.Padding, sbs.BarSize + sbs.Padding})
+
+	if da.Contains(uf.MousePos) {
+		if uf.Ev.Scroll.Y != 0 {
+			offset[1] -= float32(uf.Ev.Scroll.Y) * ta.Height() / 4
+		}
+	}
 	uf.ControlArea.From = mgl32.Vec2{da.To[0] - sbs.BarSize, da.From[1]}
 	uf.ControlArea.To = mgl32.Vec2{da.To[0], da.To[1] - sbs.Padding - sbs.BarSize}
 	v := *offset

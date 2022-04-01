@@ -10,16 +10,29 @@ import (
 type Completed func() []vk.SubmitInfo
 
 type View interface {
+	// Reserve is called at start of frame. View must reserve all resources it needs to render a frame
 	Reserve(fi *vk.FrameInstance)
+
+	// PreRender is called after reservation. This allows view to prepare final assets that are need to render actual view output
+	// For example 3D views will use several passes to render final 3D image into a separate image. This image is bitblitted to main image on Render phase
+	// Done function, if not nil, will be called before final Render phase starts. Done functions can add one or more submit infos will be waited
+	// before final render phase is started
 	PreRender(fi *vk.FrameInstance) (done Completed)
+
+	// Render is final phase of view where is should copy views output to main image. RenderPass will contain one output (main image)
+	// Some views (like UI) can completed all rendering in this phase. Some more complex views must use PreRender to prepare final image
 	Render(fi *vk.FrameInstance, cmd *vk.Command, rp *vk.GeneralRenderPass)
 }
 
+// EventView is view that also handles mouse/keyboard events targeted to this window
 type EventView interface {
 	View
+
+	// HandleEvent is called to handle mouse/keyboard events targeted to this window
 	HandleEvent(event Event)
 }
 
+// ViewWindow is new rendering window that can contain several views
 type ViewWindow struct {
 	OnClose func()
 
@@ -33,10 +46,12 @@ type ViewWindow struct {
 	state      int
 }
 
+// SetTimedOutput sets funtion to time rendering of views
 func (w *ViewWindow) SetTimedOutput(output func(started time.Time, gpuTimes []float64)) {
 	w.timed = output
 }
 
+// NewViewWindow creates new view windows and displays it
 func NewViewWindow(title string, wp vk.WindowPos, views ...View) *ViewWindow {
 	w := &ViewWindow{sp: &vk.SpinLock{}}
 	w.win = appStatic.desktop.NewWindow(title, wp)
@@ -46,6 +61,7 @@ func NewViewWindow(title string, wp vk.WindowPos, views ...View) *ViewWindow {
 	return w
 }
 
+// Dispose ViewWindows
 func (w *ViewWindow) Dispose() {
 	if w.state == 1 {
 		w.state = 2
@@ -67,6 +83,7 @@ func (w *ViewWindow) Dispose() {
 	}
 }
 
+// Views retrieve list of active views. This method is thread safe
 func (w *ViewWindow) Views() []View {
 	w.sp.Lock()
 	defer w.sp.Unlock()
@@ -78,18 +95,21 @@ func (w *ViewWindow) Views() []View {
 	return views
 }
 
+// SetViews sets list of active views. This method is thread safe
 func (w *ViewWindow) SetViews(views ...View) {
 	w.sp.Lock()
 	w.views = views
 	w.sp.Unlock()
 }
 
+// AddView adds new topmost view to window. This method is thread safe
 func (w *ViewWindow) AddView(view View) {
 	w.sp.Lock()
 	w.views = append(w.views, view)
 	w.sp.Unlock()
 }
 
+// RemoveView removes one view from window. This method is thread safe
 func (w *ViewWindow) RemoveView(view View) {
 	w.sp.Lock()
 	defer w.sp.Unlock()

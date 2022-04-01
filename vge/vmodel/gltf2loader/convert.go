@@ -57,6 +57,18 @@ func (cc *GLTF2Loader) loadImage(tx *Texture) (vmodel.ImageIndex, error) {
 	if img.index != 0 {
 		return img.index, nil
 	}
+	if img.content == nil && img.BufferView != nil {
+		bv := cc.Model.BufferViews[*img.BufferView]
+		img.content = cc.Model.GetContent(bv)
+		switch img.MimeType {
+		case "image/png":
+			img.kind = "png"
+		case "image/jpeg":
+			img.kind = "jpeg"
+		default:
+			return 0, fmt.Errorf("Unknown mime type %s for image %d", img.MimeType, tx.Index)
+		}
+	}
 	if img.content == nil {
 		return 0, fmt.Errorf("No content for image %d", tx.Index)
 	}

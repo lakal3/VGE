@@ -436,7 +436,14 @@ func (fi *FrameInstance) commitImages() {
 				}
 				desc := img.image.Description
 				img.image.Dispose()
+				if img.neededSize == 0 {
+					img.views = nil
+					continue
+				}
 				img.image = fi.fc.ac.AllocImage(img.usage, desc)
+			}
+			if img.neededSize == 0 {
+				continue
 			}
 			img.views = make([]*AImageView, len(img.ranges))
 			img.image.Bind(m.mem, m.usedSize)

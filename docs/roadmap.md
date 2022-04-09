@@ -8,13 +8,14 @@ Planned VGE features (not in priority order)
 - [x] Shadows for directional lights (in version 0.20.1)
 - [x] Spot lights (with shadows) (in version 0.20.1)
 - [x] Deferred renderer (experimental version available in 0.20.1)
-- [ ] Improved decals in deferred shader
-- [ ] Basic dialogs like yes/no
-- [x] Vector drawing support
-- [ ] Less 'game' like UI using vector graphics and immediate mode UI principles
-  - Standard dialogs (file open, color picker)
-  - Clipboard handling
+- [x] Basic dialogs like yes/no (in dev branch)
+- [x] Vector drawing support (in dev branch)
+- [ ] 3D drawing support. Draw 3D like 2D without any scene
+  - Like immediate mode 3D
+- [x] Less 'game' like UI using vector graphics and immediate mode UI principles (in dev branch)
+  - Clipboard handling 
   - Better text editing
+- [ ] Standard dialogs (file open, color picker)
 - [ ] Support for multiple probes in a scene.
 - [ ] Forward+ render pass that supports post processing effects like the depth fog.
     - Some shaders like fire should also use postprocessing so that they could sample an already rendered scene
@@ -27,7 +28,6 @@ Planned VGE features (not in priority order)
 
 
 ### Complex, longer term goals
-- [ ] Use SDFs (signed distance fields) for shadow calculation (replaces shadow maps)
 - [ ] Example of a large open world scene (most likely a separate project)
 - [ ] Real time ray tracing using NVidia's Vulkan extensions (Standard extensions in Vulkan 1.2)
 

@@ -202,7 +202,8 @@ Probe will also generate spherical harmonics to approximate ambient lightning.  
 - (Experimental) Apply BVH animations to existing rigged models
 - Integrated glsl -> SPIR-V compiler
 - (New) [Vector drawing library](docs/vdraw.md)
-- (New,Exprimental) [Immediate mode UI](docs/vimgui.md)
+- (New) [Immediate mode UI](docs/vimgui.md)
+- (New) MultiView support (mix several UI/3D/Custom views in one window)
 
 
 

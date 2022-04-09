@@ -36,6 +36,7 @@ func main() {
 		log.Fatal("App init failed ", err)
 	}
 
+	// UI shapes are dynamically compiled. You must compile them before using vimgui
 	err = vdraw.CompileShapes(vapp.Dev)
 	if err != nil {
 		log.Fatal("Compile ", err)
@@ -105,6 +106,7 @@ func painter(fr *vimgui.UIFrame) {
 var kPage = vk.NewKeys(4)
 
 func menu(fr *vimgui.UIFrame) {
+	// Negative column width is width in percentage of available draw area. -95 = 95%
 	fr.NewLine(-95, 22, 0)
 	vimgui.TabButton(fr, kPage, "Base controls", 0, &page)
 	fr.NewLine(-95, 22, 2)

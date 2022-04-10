@@ -1,0 +1,9 @@
+{
+  "include": [".", "../std"],
+  "programs": {
+    "mix_color": {
+      "vertex": "mesh.vertex", "fragment": "mesh_color",
+      "flags": ["withdebug"]
+    }
+  }
+}

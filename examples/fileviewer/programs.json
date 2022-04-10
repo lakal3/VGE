@@ -1,0 +1,9 @@
+{
+  "include": [  "." ],
+  "programs": {
+    "imageview": {
+      "vertex": "quad.vertex",
+      "fragment": "image.fragment"
+    }
+  }
+}

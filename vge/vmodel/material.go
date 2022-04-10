@@ -14,6 +14,7 @@ const (
 	CEmissive           = Color + 2
 	CSpecular           = Color + 3
 	CIntensity          = Color + 10
+	CCustom1            = Color + 20
 	CUser               = Color + 0x10000
 	Texture             = Property(0x02000000)
 	TxAlbedo            = Texture + 1
@@ -21,6 +22,10 @@ const (
 	TxSpecular          = Texture + 3
 	TxBump              = Texture + 4
 	TxMetallicRoughness = Texture + 5
+	TxCustom1           = Texture + 10
+	TxCustom2           = Texture + 11
+	TxCustom3           = Texture + 12
+	TxCustom4           = Texture + 14
 	TxUser              = Texture + 0x10000
 	Factor              = Property(0x03000000)
 	FSpeculaPower       = Factor + 1
@@ -38,12 +43,13 @@ const (
 	FLightAttenuation2 = Factor + 12
 	FInnerAngle        = Factor + 13
 	FOuterAngle        = Factor + 14
-	FUser              = Factor + 0x10000
-	Uint               = Property(0x04000000)
-	UShadowMapSize     = Uint + 1
-	Special            = Property(0xFF000000)
-	SMaxIndex          = Special + 1
-	PropertyKind       = Property(0xFF000000)
+	// FTransparent if != 0 requires transparent rendering of material
+	FUser          = Factor + 0x10000
+	Uint           = Property(0x04000000)
+	UShadowMapSize = Uint + 1
+	Special        = Property(0xFF000000)
+	SMaxIndex      = Special + 1
+	PropertyKind   = Property(0xFF000000)
 )
 
 type MaterialProperties map[Property]interface{}

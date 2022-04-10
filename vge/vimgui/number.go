@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+// Increment controls has min and max values. User can change between values using Prefix icons (typically left and right arrow).
+// Describe function will convert current value to string displayed in control
 func Increment(uf *UIFrame, id vk.Key, min, max int, describe func(val int) string, val *int) bool {
 	if uf.IsHidden() {
 		return false
@@ -63,6 +65,8 @@ func Increment(uf *UIFrame, id vk.Key, min, max int, describe func(val int) stri
 	return changed
 }
 
+// Number is textbox that access floating point number with given precision.
+// Is user enter invalid value, value is not updates to val variable and invalid value is reverted to *val when control loses focus.
 func Number(uf *UIFrame, id vk.Key, precision int, val *float64) (changed bool) {
 	changed = false
 	ParsedTextBox(uf, id, func() string {
@@ -80,6 +84,7 @@ func Number(uf *UIFrame, id vk.Key, precision int, val *float64) (changed bool) 
 	return
 }
 
+// LimitNumber acts like Number but also limits value into given [min, max] range.
 func LimitNumber(uf *UIFrame, id vk.Key, precision int, min, max float64, val *float64) (changed bool) {
 	changed = false
 	ParsedTextBox(uf, id, func() string {

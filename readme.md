@@ -9,106 +9,148 @@ A simple example showing a simple user interface and a 3D model on screen.
 See full sample with imports in examples/basic/logo.go
 
 ```go
+var app struct {
+	model   *vmodel.Model
+	bgImage vmodel.ImageIndex
+	probe   vdraw3d.FrozenID
+	lights  bool
+}
+
 func main() {
-	// Set loader for assets (images, models). This assumes that the current directory is the same where hello.go is!
-	vasset.DefaultLoader = vasset.DirectoryLoader{Directory: "../../assets"}
 
-	// Initialize the application framework. Add validate options to check Vulkan calls and desktop to enable windowing.
-	vapp.Init("hello", vapp.Validate{}, vapp.Desktop{})
+	// Initialize application framework. Add validate options to check Vulkan calls and desktop to enable windowing.
+	// We must also add DynamicDescriptors and tell how many images we are going to use for one frame
+	vapp.Init("logo", vapp.Validate{}, vapp.Desktop{}, vapp.DynamicDescriptors{MaxDescriptors: 100})
 
-	// Create a new window. The window will have its own scene that will be rendered using forward renderer.
-	rw := vapp.NewRenderWindow("hello", forward.NewRenderer(true))
-
-	// Build scene
+	// Create a new window. Window will has it's own scene that will be rendered using ForwardRenderer.
+	// This first demo is only showing UI so we don't need depth buffer
+	rw := vapp.NewViewWindow("VGE Logo", vk.WindowPos{Left: -1, Top: -1, Height: 768, Width: 1024})
 	buildScene(rw)
-	// Wait until the application is shut down (event Queue is stopped)
+	// Build ui view
+	buildUi(rw)
+	// Wait until application is shut down (event Queue is stopped)
 	vapp.WaitForShutdown()
 }
 
-func buildScene(rw *vapp.RenderWindow) {
-	// Loads envhdr/studio.hdr and creates a background "skybox" from it. The VGE can create a whole 360 background
-	// from full 360 / 180 equirectangular image without needing 6 images for a full cube
-	// MustLoadAsset will handle loading the actual asset using vasset.DefaultLoader is set at the start of program
-	// MustLoadAsset will also handle ownership of asset (it will be disposed with the device)
-	eq := vapp.MustLoadAsset("envhdr/studio.hdr",
-		func(content []byte) (asset interface{}, err error) {
-			return env.NewEquiRectBGNode(vapp.Ctx, vapp.Dev, 100, "hdr", content), nil
-		}).(*env.EquiRectBGNode)
-	// Add a loaded background to scene
-	rw.Env.Children = append(rw.Env.Children, vscene.NewNode(eq))
-
-	// Load the actual model
-	model, err := vapp.LoadModel("gltf/logo/Logo.gltf")
+func buildScene(rw *vapp.ViewWindow) {
+	// Load envhdr/studio.hdr and create background "skybox" from it. VGE can create whole 360 background
+	// from full 360 / 180 equirectangular image without needing 6 images for full cube
+	studio, err := os.ReadFile("../../assets/envhdr/studio.hdr")
 	if err != nil {
-		log.Fatal("Failed to load gltf/logo/Logo.gltf")
+		log.Fatalln("Failed to load studio.hdr: ", err)
 	}
+	// Init model builder to build assets need for 3D rendering
+	b := &vmodel.ModelBuilder{}
+	// Add studio image to model. In Vulkan we must specify how we are going to use each image.
+	// In this case we copy content to image (vk.IMAGEUsageTransferDstBit) and then sample from it in shaders(vk.IMAGEUsageSampledBit)
+	app.bgImage = b.AddImage("hdr", studio, vk.IMAGEUsageSampledBit|vk.IMAGEUsageTransferDstBit)
+	// Initialize loader to load gltf image
+	gl := gltf2loader.GLTF2Loader{Builder: b, Loader: vasset.DirectoryLoader{Directory: "../../assets/gltf/logo"}}
+	err = gl.LoadGltf("logo.gltf")
+	if err != nil {
+		log.Fatalln("Failed to load logo.gltf: ", err)
+	}
+	// Convert first scene (the only one in this gltf) to ModelBuilder
+	err = gl.Convert(0)
+	err = gl.LoadGltf("logo.gltf")
+	if err != nil {
+		log.Fatalln("Failed to convert logo.gltf: ", err)
+	}
+	// Prepare and load model to GPU
+	app.model, err = b.ToModel(vapp.Dev)
+	if err != nil {
+		log.Fatalln("Failed to load logo.gltf: ", err)
+	}
+	// Register model for disposal when application terminates
+	vapp.AddChild(app.model)
 
-	// Again, registers the model ownership to a window
-	rw.AddChild(model)
-	// Creates new nodes from the model
-	rw.Model.Children = append(rw.Model.Children, vscene.NodeFromModel(model, 0, true))
-	// We will also need a probe to reflect the environment to the model. Probes reflect everything outside this node to the children of the node
-	// In this case we reflect only the background
-	p := env.NewProbe(vapp.Ctx, vapp.Dev)
-	rw.AddChild(p) // Remember to dispose probe
-	// Assigns a probe to root model
-	rw.Model.Ctrl = p
-
-	// Attaches a camera to the window (with a better location than the default one) and an orbital control to camera
+	v := vdraw3d.NewView(vapp.Dev, drawStatic, drawDynamic)
 	c := vscene.NewPerspectiveCamera(1000)
 	c.Position = mgl32.Vec3{1, 2, 10}
 	c.Target = mgl32.Vec3{5, 0, 0}
-	rw.Camera = c
-	// Adds the orbital controls to the camera. If priority > 0, panning and scrolling will work even if the mouse is on UI. UI default show priority is 0
-	vapp.OrbitControlFrom(-10, rw, c)
+	v.Camera = vapp.OrbitControlFrom(0, nil, c)
+	rw.AddView(v)
+}
 
-	// Finally create 2 lights before UI
-	// Create a custom node control to turn light on / off
-	visible := &nodeVisible{}
-	nLight := vscene.NewNode(visible)
-	rw.Env.Children = append(rw.Env.Children, nLight)
-	// First light will not cast a shadow, the second will
-	l1 := &vscene.PointLight{Intensity: mgl32.Vec3{1.4, 1.4, 1.4}, Attenuation: mgl32.Vec3{0, 0, 0.3}}
-	l2 := shadow.NewPointLight(vscene.PointLight{Intensity: mgl32.Vec3{0, 1.4, 1.4}, Attenuation: mgl32.Vec3{0, 0, 0.2}}, 512)
+func buildUi(rw *vapp.ViewWindow) {
 
-	// Add a shadow light to the scene on location 1,3,3 and 4,3,3
-	nLight.Children = append(nLight.Children,
-		vscene.NewNode(&vscene.TransformControl{Transform: mgl32.Translate3D(1, 3, 3)}, vscene.NewNode(l1)),
-		vscene.NewNode(&vscene.TransformControl{Transform: mgl32.Translate3D(6, 3, 3)}, vscene.NewNode(l2)))
-	// Create the UI. First we must create a theme.
-	// There is a builtin minimal theme we can use here. It will use OpenSans font on material icons font if none other given.
-	th := mintheme.NewTheme(vapp.Ctx, vapp.Dev, 15, nil, nil, nil)
-	// Add a theme to RenderWindow dispose list. In real app we might use the theme multiple times on multiple windows and should handle the disposal of it
-	// as a part of the process of disposing the device.
-	rw.AddChild(th)
-	var bQuit *vui.Button
-	ui := vui.NewUIView(th, image.Rect(100, 500, 500, 700), rw).
-		SetContent(vui.NewPanel(10, vui.NewVStack(5,
-			vui.NewLabel("Hello VGE!").SetClass("h2"),
-			vui.NewLabel("Use mouse with left button down to rotate view").SetClass("info"),
-			vui.NewLabel("Use mouse with right button down to pan view").SetClass("info"),
-			&vui.Extend{MinSize: image.Pt(10, 10)}, // Some spacing
-			vui.NewCheckbox("Lights", "").SetOnChanged(func(checked bool) {
-				visible.visible = checked
-			}).SetClass("dark"),
-			&vui.Extend{MinSize: image.Pt(10, 10)}, // Some spacing
-			vui.NewButton(120, "Quit").SetClass("warning").AssignTo(&bQuit),
-		)).SetClass(""))
-	bQuit.OnClick = func() {
-		// Terminate the application. We should run it like most UI events on a separate go routine. Otherwise we have a change to deadlock the engine
-		go vapp.Terminate()
+	// Create hello UI. First we must create a theme.
+	// There is builtin minimal theme we can use here. It will use OpenSans font on material icons font if none other given.
+	err := mintheme.BuildMinTheme()
+	if err != nil {
+		log.Fatalln("Error loading theme: ", err)
 	}
-	// Attaches UI to a scene and shows it. UI panels are by default invisible and must be shown explicitly
-	rw.Ui.Children = append(rw.Ui.Children, vscene.NewNode(ui))
-	ui.Show()
+	// We must compile all ui shapes. Shapes are not precompiled because you can add custom shape primitives before compiling them
+	err = vdraw.CompileShapes(vapp.Dev)
+	if err != nil {
+		log.Fatalln("Error compiling shapes: ", err)
+	}
+	// Add custom style info
+	mintheme.Theme.Add(20, vimgui.Tags("info"), vimgui.ForeColor{Brush: vdraw.SolidColor(mgl32.Vec4{0, 0.75, 1, 1})})
+	// Create new UI view
+	v := vimgui.NewView(vapp.Dev, vimgui.VMTransparent, mintheme.Theme, drawUi)
+	rw.AddView(v)
 }
 
-type nodeVisible struct {
-	visible bool
+func drawUi(fr *vimgui.UIFrame) {
+	// Draw panel with title and content
+	// First we need set control area directly
+	fr.ControlArea = vdraw.Area{From: mgl32.Vec2{100, fr.DrawArea.To[1] - 300}, To: mgl32.Vec2{500, fr.DrawArea.To[1] - 100}}
+	vimgui.Panel(fr, func(uf *vimgui.UIFrame) {
+		// We can set control area also using NewLine and NewColumn helpers
+		// Next control will have height of 30 and with of 100%. There will be 2 pixes padding to previous line (top)
+		uf.NewLine(-100, 30, 2)
+		// Set style for title
+		uf.WithTags("h2")
+		vimgui.Label(uf, "Hello VGE!")
+	}, func(uf *vimgui.UIFrame) {
+		uf.NewLine(-100, 20, 5)
+		uf.WithTags("info")
+		vimgui.Label(uf, "Use mouse with left button down to rotate view")
+		uf.NewLine(-100, 20, 5)
+		vimgui.Label(uf, "Use mouse with right button down to pan view")
+		// Add new line height 30 pixes and padded 3 pixels from previous line
+		uf.NewLine(120, 30, 3)
+		vimgui.CheckBox(uf.WithTags(), vk.NewHashKey("cbLights"), "Lights", &app.lights)
+		uf.NewLine(120, 30, 3)
+		// Add new column with width 120 pixes
+		uf.NewColumn(120, 0)
+		// Add button. Button function will return true when button is clicked
+		if vimgui.Button(uf.WithTags("primary"), vk.NewHashKey("bQuit"), "Quit") {
+			// Terminate application in go routine. Calling terminate must be done in go routine to prevent deadlock
+			go func() {
+				vapp.Terminate()
+			}()
+		}
+	})
 }
 
-func (n *nodeVisible) Process(pi *vscene.ProcessInfo) {
-	pi.Visible = n.visible
+var kShadow = vk.NewKey()
+var kProbe = vk.NewKey()
+
+func drawStatic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
+	// Draw background image
+	vdraw3d.DrawBackground(dl, app.model, app.bgImage)
+	app.probe = vdraw3d.DrawProbe(dl, kProbe, mgl32.Vec3{0, 0, 0})
+	// Don't draw anything but background to probe
+	dl.Exclude(app.probe, app.probe)
+
+	// Draw all nodes starting from root (node == 0)
+	vdraw3d.DrawNodes(dl, app.model, 0, mgl32.Ident4())
+}
+
+func drawDynamic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
+	// Don't draw anything but background to probe
+	dl.Exclude(app.probe, app.probe)
+	if app.lights {
+		// Set properties for point light
+		props := vmodel.NewMaterialProperties()
+		props.SetColor(vmodel.CIntensity, mgl32.Vec4{1.4, 1.4, 1.4, 1})
+		props.SetFactor(vmodel.FLightAttenuation2, 0.3)
+		vdraw3d.DrawPointLight(dl, 0, mgl32.Vec3{1, 3, 4}, props)
+		props.SetColor(vmodel.CIntensity, mgl32.Vec4{0, 0.4, 1.4, 1})
+		vdraw3d.DrawPointLight(dl, kShadow, mgl32.Vec3{5, 4, 4}, props)
+	}
 }
 ```
 
@@ -161,6 +203,7 @@ Perhaps the best approach for learning VGE is to browse through the examples inc
 These examples try to pinpoint most important aspects of VGE and it's features.
 
 - Basic - The most basic sample that you should be able to `go run` if everything is installed ok.
+- Basicn - The most basic sample that you should be able to `go run`. These are using new vimgui/vdraw3d modules
 - Cube - A simple cube using the lower level API to draw cube on screen
 - Model - Additional samples on how to load models and manipulate a scene.
 - WebView - Render images in the background and serve them to the web client
@@ -169,6 +212,9 @@ These examples try to pinpoint most important aspects of VGE and it's features.
 - Robomaze - A performance test tool / example that supports some advanced features like decals.
 - Animate (Experimental) - Support for reading animations from the BVH (Biovision Hierarchy) files and apply them on rigged models.
 - Gallery (New) - Demonstrates how to use vdraw drawing library and vimgui immediate mode user interface
+- Fileviewer (New) - First somewhat usable application that can browse file system and
+  view different kind of files like images (jpeg, png, hdr) and 3D models (obj, glTF)
+  - Fileviewer also implement custom View to render images for new ViewWindow 
 
 The VGE documentation does not go into the details of the Vulkan API.
 To lean the core Vulkan features, below I have listed some nice web articles about it.
@@ -204,6 +250,8 @@ Probe will also generate spherical harmonics to approximate ambient lightning.  
 - (New) [Vector drawing library](docs/vdraw.md)
 - (New) [Immediate mode UI](docs/vimgui.md)
 - (New) MultiView support (mix several UI/3D/Custom views in one window)
+- (New) [3D Drawing library](docs/vscene.md)
+- (New) Tool to compile several glsl fragments into shader packs [vgecompile](docs/vgecompile.md)
 
 
 

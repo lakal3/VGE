@@ -10,7 +10,10 @@
 - Integrated glsl -> SPIR-V compiler
   - Allows dynamic shader compilation while application is running
 - FrameCache that allows better management on resources needed to render one frame
-- MultiView window support splitting one real OS window to multiple areas to 
+- MultiView window support splitting one real OS window to multiple views to 
+  render for example same 3D image from different camera angles.
+- [VGECompile](docs/vgecompile.md) shader compiler tool
+- 3D (immediate mode) drawing module [vdraw3d](docs/vdraw3d.md)
 
 ### New minor features: 
 - Support for Push Constants in DrawList

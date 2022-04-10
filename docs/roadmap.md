@@ -10,7 +10,7 @@ Planned VGE features (not in priority order)
 - [x] Deferred renderer (experimental version available in 0.20.1)
 - [x] Basic dialogs like yes/no (in dev branch)
 - [x] Vector drawing support (in dev branch)
-- [ ] 3D drawing support. Draw 3D like 2D without any scene
+- [x] 3D drawing support. Draw 3D like 2D without any scene
   - Like immediate mode 3D
 - [x] Less 'game' like UI using vector graphics and immediate mode UI principles (in dev branch)
   - Clipboard handling 

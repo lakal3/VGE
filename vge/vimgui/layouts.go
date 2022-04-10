@@ -7,6 +7,9 @@ import (
 
 type Painter func(uf *UIFrame)
 
+// VerticalDivider splits DrawArea into to separate areas. User can adjust position of left panel within range from min to max value
+// pos is current size of left panel
+// VerticalDivider uses DrawArea, not ControlArea to size itself.
 func VerticalDivider(uf *UIFrame, minWidth, maxWidth float32, pos *float32, left, right Painter) bool {
 	changed := false
 	if *pos > maxWidth {
@@ -24,6 +27,8 @@ func VerticalDivider(uf *UIFrame, minWidth, maxWidth float32, pos *float32, left
 	uf.ControlArea = vdraw.Area{From: mgl32.Vec2{*pos - sbs.BarSize/2, da.From[1]}, To: mgl32.Vec2{*pos + sbs.BarSize/2, da.To[1]}}
 	DrawBorder(uf, uf.GetStyles("*divider", "vertical"))
 
+	// TODO: Move logic
+
 	uf.PushArea(vdraw.Area{From: da.From, To: mgl32.Vec2{*pos - sbs.Padding - sbs.BarSize/2, da.To[1]}}, true)
 	uf.ControlArea.From, uf.ControlArea.To = uf.DrawArea.From, uf.DrawArea.From
 	if left != nil {
@@ -39,6 +44,8 @@ func VerticalDivider(uf *UIFrame, minWidth, maxWidth float32, pos *float32, left
 	return changed
 }
 
+// ScrollArea scrolls contents inside itself. Scroll area content is drawn with content method
+// ScrollArea uses DrawArea, not ControlArea to size itself. Size is total size of content painted by content function
 func ScrollArea(uf *UIFrame, size mgl32.Vec2, offset *mgl32.Vec2, content Painter) {
 	ss := uf.GetStyles("*scrollarea")
 	sbs := ss.Get(ScrollBarSize{BarSize: 8, Padding: 3}).(ScrollBarSize)
@@ -69,6 +76,8 @@ func ScrollArea(uf *UIFrame, size mgl32.Vec2, offset *mgl32.Vec2, content Painte
 	}
 }
 
+// Panel draws panel with given title Painter and content Painter.
+// Panel adjust drawArea for title and content before calling painter
 func Panel(uf *UIFrame, title Painter, content Painter) {
 	ss := uf.GetStyles("*panel")
 	ps := ss.Get(PanelStyle{}).(PanelStyle)
@@ -95,18 +104,22 @@ func Panel(uf *UIFrame, title Painter, content Painter) {
 		drTitle := ps.Edges.Shrink(dr, 0)
 		drTitle.To[1] = drTitle.From[1] + th
 		uf.PushArea(drTitle, true)
+		uf.PushTags()
 		uf.ResetControlArea()
 		if title != nil {
 			title(uf)
 		}
 		uf.Pop()
+		uf.Pop()
 	}
 	drContent := ps.Edges.Shrink(dr, 0)
 	drContent.From[1] += th
 	uf.PushArea(drContent, true)
+	uf.PushTags()
 	uf.ResetControlArea()
 	if content != nil {
 		content(uf)
 	}
+	uf.Pop()
 	uf.Pop()
 }

@@ -334,11 +334,7 @@ func (mb *ModelBuilder) buildMaterials(dev *vk.Device, m *Model) (uint64, error)
 	mCounts := make(map[*vk.DescriptorLayout]int)
 	mPools := make(map[*vk.DescriptorLayout]*vk.DescriptorPool)
 	for idx, mt := range mb.Materials {
-		if !mt.Decal {
-			if mb.ShaderFactory == nil {
-
-				return 0, errors.New("Set ShaderFactory")
-			}
+		if !mt.Decal && mb.ShaderFactory != nil {
 			mt.mat, mt.layout, mt.ubf, mt.images = mb.ShaderFactory(dev, mt.Props)
 			if mt.mat != nil {
 				mCounts[mt.layout] = mCounts[mt.layout] + 1

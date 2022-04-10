@@ -7,8 +7,9 @@ These examples will use the vapp package to setup, for example, the Vulkan appli
 have to take care of the many details you would normally have to setup when creating a Vulkan application.
 
 To run the examples, just use go run. Ensure that you have either:
-- Built and installed vgelib.dll (.so) package
-- Copied this dll from {rootdir}/prebuild/{win/linux}/vgelib.dll
+- Built and installed vgelib.dll package
+  - Follow [Building vgelib.so](../../docs/build_vgelib.md) instructions
+- Copied this dll from {rootdir}/prebuild/win64_amd64/vgelib.dll (Windows only)
 
 ## Examples in this directory
 

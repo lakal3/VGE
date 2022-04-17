@@ -158,7 +158,7 @@ var sceneKeys = vk.NewKeys(3)
 func paintStatic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 	vdraw3d.DrawBackground(dl, app.model, app.images[0])
 	pl2 := vmodel.NewMaterialProperties()
-	pl2.SetColor(vmodel.CIntensity, mgl32.Vec4{10, 2.5, 0, 1})
+	pl2.SetColor(vmodel.CIntensity, mgl32.Vec4{2, 1, 0, 1})
 	vdraw3d.DrawProbe(dl, sceneKeys, mgl32.Vec3{0, 1, -1})
 	vdraw3d.DrawDirectionalLight(dl, mgl32.Vec3{0.1, -1, 0.1}, nil)
 	vdraw3d.DrawPointLight(dl, sceneKeys+1, mgl32.Vec3{0, 5, -1}, pl2)

@@ -95,7 +95,8 @@ func buildScene() {
 	app.mainWnd.Camera = pc
 
 	// Orbit camera should have b
-	oc := vapp.OrbitControlFrom(-100, app.mainWnd, pc)
+	oc := vapp.OrbitControlFrom(pc)
+	oc.RegisterHandler(100, app.mainWnd)
 
 	// Add clamp limits to camera, preventing it from running out of scene
 	oc.Clamp = checkLimits

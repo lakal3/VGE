@@ -74,11 +74,13 @@ func buildScene(rw *vapp.ViewWindow) {
 	// Register model for disposal when application terminates
 	vapp.AddChild(app.model)
 
+	// ps, _ := phongshader.LoadPack()
+	// v := vdraw3d.NewCustomView(vapp.Dev, ps, drawStatic, drawDynamic)
 	v := vdraw3d.NewView(vapp.Dev, drawStatic, drawDynamic)
 	c := vscene.NewPerspectiveCamera(1000)
 	c.Position = mgl32.Vec3{1, 2, 10}
 	c.Target = mgl32.Vec3{5, 0, 0}
-	v.Camera = vapp.OrbitControlFrom(0, nil, c)
+	v.Camera = vapp.OrbitControlFrom(c)
 	rw.AddView(v)
 }
 
@@ -147,17 +149,17 @@ func drawStatic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 
 func drawDynamic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 	dl.Exclude(app.probe, app.probe)
+	w := mgl32.Translate3D(4, 0, 0).Mul4(mgl32.HomogRotate3DY(float32(v.Elapsed / 2))).Mul4(mgl32.Translate3D(-4, 0, 0))
 	if app.lights {
 		// Set properties for point light
 		props := vmodel.NewMaterialProperties()
 		props.SetColor(vmodel.CIntensity, mgl32.Vec4{1.4, 1.4, 1.4, 1})
-		props.SetFactor(vmodel.FLightAttenuation2, 0.3)
-		vdraw3d.DrawPointLight(dl, 0, mgl32.Vec3{1, 2, 3}, props)
-		props.SetColor(vmodel.CIntensity, mgl32.Vec4{0, 0.4, 1.4, 1})
-		at := mgl32.Vec3{float32(4 + 2*math.Sin(v.Elapsed/1.73)), 3, 2}
-		vdraw3d.DrawPointLight(dl, kShadow, at, props)
+		props.SetFactor(vmodel.FLightAttenuation2, float32(1+math.Sin(v.Elapsed*3.2)*0.7))
+		vdraw3d.DrawPointLight(dl, 0, mgl32.Vec3{1, 3, 3}, props)
+		props.SetColor(vmodel.CIntensity, mgl32.Vec4{0, 3, 3, 1})
+		at := mgl32.Vec3{float32(4 + 2*math.Sin(v.Elapsed/1.73)), float32(2 + math.Sin(v.Elapsed/3.42)), 3}
+		vdraw3d.DrawPointLight(dl, kShadow, w.Mul4x1(at.Vec4(1)).Vec3(), props)
 	}
 	// Draw all nodes starting from root (node == 0)
-	w := mgl32.Translate3D(4, 0, 0).Mul4(mgl32.HomogRotate3DY(float32(v.Elapsed / 4))).Mul4(mgl32.Translate3D(-4, 0, 0))
 	vdraw3d.DrawNodes(dl, app.model, 0, w)
 }

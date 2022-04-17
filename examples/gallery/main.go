@@ -213,13 +213,13 @@ func page1(fr *vimgui.UIFrame) {
 	vimgui.Text(fr, longText)
 	fr.NewLine(120, 20, 2)
 	vimgui.Label(fr, "Sliders")
-	fr.Offset = mgl32.Vec2{20}
+	fr.Pad(vdraw.Edges{Left: 20})
 	fr.NewLine(-60, 10, 5)
 	pos := fr.ControlArea.From[1]
 	vimgui.HorizontalSlider(fr, kPage1+9, -100, 200, 10, &sl1)
 	fr.NewColumn(-35, 10)
 	vimgui.Label(fr, fmt.Sprintf("Value %.1f", sl1))
-	fr.Offset = mgl32.Vec2{0}
+	fr.Pad(vdraw.Edges{Left: -20})
 	fr.NewLine(0, 150, 0)
 	fr.PushControlArea()
 	fr.ControlArea.From = mgl32.Vec2{fr.ControlArea.From[0], pos}

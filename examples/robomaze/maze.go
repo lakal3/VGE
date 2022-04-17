@@ -151,7 +151,8 @@ func (m *maze) switchScene() {
 		app.mainWnd.Model.Children = []*vscene.Node{m.nRoot}
 		app.mainWnd.Camera = c
 		if app.orbitCamera {
-			vapp.OrbitControlFrom(-100, app.mainWnd, c)
+			oc := vapp.OrbitControlFrom(c)
+			oc.RegisterHandler(-100, app.mainWnd)
 		} else {
 			m.walkControl = vapp.WalkControlFrom(-100, app.mainWnd, c)
 			m.walkControl.Adjust = func(pc *vscene.PerspectiveCamera) {

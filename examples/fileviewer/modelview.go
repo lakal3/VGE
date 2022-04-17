@@ -219,7 +219,7 @@ func (mv *modelViewer) toHome() {
 		mv.pc.Far = 10
 	}
 	mv.pc.Near = mv.pc.Far / 10000.0
-	c := vapp.OrbitControlFrom(0, nil, mv.pc)
+	c := vapp.OrbitControlFrom(mv.pc)
 	c.ZoomTo(aabb.Center(), aabb.Len())
 	mv.view.Camera = c
 

@@ -21,5 +21,6 @@ struct LIGHT {
     float normalDHalf;
     float normalDLight;
     float lightDHalf;
+    float viewDHalf;
 } l;
 

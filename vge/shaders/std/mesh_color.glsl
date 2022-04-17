@@ -71,7 +71,7 @@ void main() {
     mat.roughness = instance.metalRoughness.y;
     mat.frozenId = float(instance.frozenId);
     calcNormal();
-    mat.reflectance  = vec3(0.04);
+    mat.f0  = vec3(0.04);
     if (instance.textures1.x > 0) {
         mat.albedo = texture(frameImages2D[int(instance.textures1.x)], i_uv0) * mat.albedo;
     }
@@ -86,9 +86,11 @@ void main() {
 #cinclude c_material_calc
     addDecals();
     // Apply decals etc to change mat
-    mat.diffuse = mat.albedo.rgb * (1 - mat.metalness);
-    mat.specular0 = mat.reflectance * mat.reflectance * (1 - mat.metalness) + mat.metalness * mat.albedo.rgb;
+    mat.diffuse = mat.albedo.rgb * (vec3(1) - mat.f0) * (1 - mat.metalness);
+    mat.specular = mix(mat.f0, mat.albedo.rgb, mat.metalness);
+    mat.reflectance = max(mat.specular.r, max(mat.specular.g, mat.specular.b));
     mat.directLight = vec3(0);
+    mat.indirectLight = vec3(0);
 #if probe
     mat.probe = 0;
     mat.viewDir = normalize(probeFrame.cameraPos.xyz - i_position);

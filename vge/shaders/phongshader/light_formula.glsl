@@ -1,6 +1,6 @@
 
 void lightFormula() {
-    float diffFactor = max(dot(mat.normal, l.lightDir), 0.0);
+    float diffFactor = max(l.normalDLight, 0.0);
     vec3 diffLight = l.radiance * mat.diffuse * vec3(diffFactor);
 
     #if !probe

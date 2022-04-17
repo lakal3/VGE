@@ -23,5 +23,5 @@ void addIndirect() {
     mat.indirectLight = spherical_harmonics(mat.normal) * mat.diffuse;
     vec3 specular90 = vec3(1);
     vec3 Lld = specularIBL();
-    mat.indirectLight += (mat.specular0 * dfg.x + specular90 * dfg.y) * Lld;
+    mat.indirectLight += (mat.specular * dfg.x + specular90 * dfg.y) * Lld;
 }

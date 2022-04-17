@@ -46,6 +46,7 @@ func VerticalDivider(uf *UIFrame, minWidth, maxWidth float32, pos *float32, left
 
 // ScrollArea scrolls contents inside itself. Scroll area content is drawn with content method
 // ScrollArea uses DrawArea, not ControlArea to size itself. Size is total size of content painted by content function
+// If size.X() == 0, scrollarea will only draw vertical scrollbar
 func ScrollArea(uf *UIFrame, size mgl32.Vec2, offset *mgl32.Vec2, content Painter) {
 	ss := uf.GetStyles("*scrollarea")
 	sbs := ss.Get(ScrollBarSize{BarSize: 8, Padding: 3}).(ScrollBarSize)
@@ -62,14 +63,20 @@ func ScrollArea(uf *UIFrame, size mgl32.Vec2, offset *mgl32.Vec2, content Painte
 	uf.ControlArea.To = mgl32.Vec2{da.To[0], da.To[1] - sbs.Padding - sbs.BarSize}
 	v := *offset
 	DrawSlider(uf, ss, false, 0, size[1], ta.Size()[1], &v[1])
-	uf.ControlArea.From = mgl32.Vec2{da.From[0], da.To[1] - sbs.BarSize}
-	uf.ControlArea.To = mgl32.Vec2{da.To[0] - sbs.BarSize - sbs.Padding, da.To[1]}
-	DrawSlider(uf, ss, true, 0, size[0], ta.Size()[0], &v[0])
+	if size[0] > 0 {
+		uf.ControlArea.From = mgl32.Vec2{da.From[0], da.To[1] - sbs.BarSize}
+		uf.ControlArea.To = mgl32.Vec2{da.To[0] - sbs.BarSize - sbs.Padding, da.To[1]}
+		DrawSlider(uf, ss, true, 0, size[0], ta.Size()[0], &v[0])
+	} else {
+		v[0] = 0
+		size[0] = da.Width()
+	}
 	uf.PushArea(ta, true)
 	defer uf.Pop()
+	uf.DrawArea.From = ta.From.Sub(v)
+	uf.DrawArea.To = uf.DrawArea.From.Add(size)
 	*offset = v
-	uf.Offset = v.Mul(-1)
-	uf.ControlArea.From = ta.From.Add(uf.Offset)
+	uf.ControlArea.From, uf.ControlArea.To = uf.DrawArea.From, uf.DrawArea.From
 	uf.ControlArea.To = uf.ControlArea.From
 	if content != nil {
 		content(uf)

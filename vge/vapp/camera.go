@@ -9,6 +9,7 @@ import (
 )
 
 type OrbitControl struct {
+	PC          *vscene.PerspectiveCamera
 	Yaw         float64
 	Pitch       float64
 	PanMode     Mods
@@ -18,16 +19,11 @@ type OrbitControl struct {
 	Sensitivity float64
 	Clamp       func(point mgl32.Vec3, target bool) mgl32.Vec3
 
-	target   mgl32.Vec3
-	position mgl32.Vec3
-
 	prevPoint image.Point
-	win       *RenderWindow
-	pc        *vscene.PerspectiveCamera
 }
 
 func (c *OrbitControl) CameraProjection(size image.Point) (projection, view mgl32.Mat4) {
-	return c.pc.CameraProjection(size)
+	return c.PC.CameraProjection(size)
 }
 
 func (c *OrbitControl) Handle(ev Event) {
@@ -42,19 +38,19 @@ func (c *OrbitControl) Handle(ev Event) {
 				c.Yaw += float64(mm.MousePos.X-c.prevPoint.X) * c.Sensitivity / 100
 				c.Pitch += float64(mm.MousePos.Y-c.prevPoint.Y) * c.Sensitivity / 100
 				c.Pitch = clamp(c.Pitch, -math.Pi/2+0.1, math.Pi/2-0.1)
-				l := c.target.Sub(c.position).Len()
-				c.position = c.target.Sub(c.GetDirection().Mul(-l))
-				c.apply()
+				l := c.PC.Target.Sub(c.PC.Position).Len()
+				position := c.PC.Target.Sub(c.GetDirection().Mul(-l))
+				c.apply(c.PC.Target, position)
 			}
 			c.prevPoint = mm.MousePos
 		} else if c.PanMode != 0 && mm.HasMods(c.PanMode) {
 			if c.prevPoint.X != 0 {
-				l := c.target.Sub(c.position).Len()
+				l := c.PC.Target.Sub(c.PC.Position).Len()
 				dy := l * float32(mm.MousePos.Y-c.prevPoint.Y) * float32(c.Sensitivity) / 100
 				dx := -float64(l) * float64(mm.MousePos.X-c.prevPoint.X) * c.Sensitivity / 100
-				c.target = c.target.Add(mgl32.Vec3{float32(math.Cos(-c.Yaw) * dx), dy, float32(math.Sin(-c.Yaw) * dx)})
-				c.position = c.target.Sub(c.GetDirection().Mul(-l))
-				c.apply()
+				target := c.PC.Target.Add(mgl32.Vec3{float32(math.Cos(-c.Yaw) * dx), dy, float32(math.Sin(-c.Yaw) * dx)})
+				position := c.PC.Target.Sub(c.GetDirection().Mul(-l))
+				c.apply(target, position)
 			}
 			c.prevPoint = mm.MousePos
 		} else {
@@ -63,26 +59,15 @@ func (c *OrbitControl) Handle(ev Event) {
 	}
 	ms, ok := ev.(*ScrollEvent)
 	if ok && ms.HasMods(c.ZoomMode) {
-		l := c.target.Sub(c.position).Len()
+		l := c.PC.Target.Sub(c.PC.Position).Len()
 		if ms.Range.Y < 0 {
 			l = l * 0.95
 		} else {
 			l = l / 0.95
 		}
-		c.position = c.target.Sub(c.GetDirection().Mul(-l))
-		c.apply()
+		position := c.PC.Target.Sub(c.GetDirection().Mul(-l))
+		c.apply(c.PC.Target, position)
 	}
-}
-
-func (c *OrbitControl) eventHandler(ev Event) (unregister bool) {
-	if c.win.Closed() {
-		return true
-	}
-	es, ok := ev.(SourcedEvent)
-	if ok && es.IsSource(c.win) {
-		c.Handle(ev)
-	}
-	return false
 }
 
 func clamp(a float64, min float64, max float64) float64 {
@@ -95,37 +80,47 @@ func clamp(a float64, min float64, max float64) float64 {
 	return a
 }
 
+func (oc *OrbitControl) RegisterHandler(priority float64, win *RenderWindow) {
+	RegisterHandler(priority, func(ev Event) (unregister bool) {
+		if win.Closed() {
+			return true
+		}
+		es, ok := ev.(SourcedEvent)
+		if ok && es.IsSource(win) {
+			oc.Handle(ev)
+		}
+		return false
+	})
+}
+
 func NewOrbitControl(priority float64, win *RenderWindow) *OrbitControl {
-	oc := &OrbitControl{win: win, RotateMode: MODMouseButton1, Yaw: 0.1, Pitch: 0.2, Sensitivity: 1,
+	oc := &OrbitControl{RotateMode: MODMouseButton1, Yaw: 0.1, Pitch: 0.2, Sensitivity: 1,
 		Active: true, PanMode: MODMouseButton2}
-	oc.pc = vscene.NewPerspectiveCamera(1000)
-	oc.position = oc.target.Sub(oc.GetDirection().Mul(-1))
+	oc.PC = vscene.NewPerspectiveCamera(1000)
+	position := oc.PC.Target.Sub(oc.GetDirection().Mul(-1))
 	if win != nil {
 		win.Camera = oc
-		RegisterHandler(priority, oc.eventHandler)
+
 	}
-	oc.apply()
+	oc.apply(oc.PC.Target, position)
 	return oc
 }
 
-func OrbitControlFrom(priority float64, win *RenderWindow, pc *vscene.PerspectiveCamera) *OrbitControl {
-	oc := &OrbitControl{win: win, RotateMode: MODMouseButton1, Sensitivity: 1,
+func OrbitControlFrom(pc *vscene.PerspectiveCamera) *OrbitControl {
+	oc := &OrbitControl{RotateMode: MODMouseButton1, Sensitivity: 1,
 		Active: true, PanMode: MODMouseButton2}
-	oc.pc = pc
-	oc.position, oc.target = pc.Position, pc.Target
-	dir := oc.position.Sub(oc.target).Normalize()
+	oc.PC = pc
+	position, target := pc.Position, pc.Target
+	dir := oc.PC.Position.Sub(target).Normalize()
 	oc.Yaw = math.Atan2(float64(dir.X()), float64(dir.Z()))
 	oc.Pitch = math.Asin(float64(dir.Y()))
-	if win != nil {
-		RegisterHandler(priority, oc.eventHandler)
-	}
-	oc.apply()
+	oc.apply(target, position)
 	return oc
 }
 
 func (oc *OrbitControl) Zoom(sc *vscene.Scene) {
 	bb := &vscene.BoudingBox{}
-	sc.Process(oc.win.GetSceneTime(), vscene.NullFrame{}, bb)
+	sc.Process(0, vscene.NullFrame{}, bb)
 	aabb, empty := bb.Get()
 	if empty {
 		oc.ZoomTo(mgl32.Vec3{}, 1)
@@ -135,9 +130,8 @@ func (oc *OrbitControl) Zoom(sc *vscene.Scene) {
 }
 
 func (oc *OrbitControl) ZoomTo(target mgl32.Vec3, distance float32) {
-	oc.target = target
-	oc.position = oc.target.Sub(oc.GetDirection().Mul(-distance))
-	oc.apply()
+	position := target.Sub(oc.GetDirection().Mul(-distance))
+	oc.apply(target, position)
 }
 
 func (oc *OrbitControl) GetDirection() mgl32.Vec3 {
@@ -146,13 +140,13 @@ func (oc *OrbitControl) GetDirection() mgl32.Vec3 {
 		float32(math.Cos(oc.Yaw) * math.Cos(oc.Pitch))}
 }
 
-func (c *OrbitControl) apply() {
+func (c *OrbitControl) apply(target mgl32.Vec3, position mgl32.Vec3) {
 	if c.Clamp != nil {
-		c.pc.Target = c.Clamp(c.target, true)
-		c.pc.Position = c.Clamp(c.position, false)
+		c.PC.Target = c.Clamp(target, true)
+		c.PC.Position = c.Clamp(position, false)
 		return
 	}
-	c.pc.Target, c.pc.Position = c.target, c.position
+	c.PC.Target, c.PC.Position = target, position
 }
 
 type WalkControl struct {

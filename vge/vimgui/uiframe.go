@@ -24,7 +24,6 @@ type UIFrame struct {
 	MousePos mgl32.Vec2
 	MDownPos mgl32.Vec2
 
-	Offset      mgl32.Vec2
 	DrawArea    vdraw.Area
 	ControlArea vdraw.Area
 	Tags        []string
@@ -98,7 +97,7 @@ func (f *UIFrame) ResetControlArea() {
 
 func (f *UIFrame) NewLine(colWidth float32, lineHeight float32, padding float32) {
 	pad := f.ToPixels(padding, 0, false)
-	f.ControlArea.From = mgl32.Vec2{f.DrawArea.From[0] + f.Offset[0], f.ControlArea.To[1] + pad}
+	f.ControlArea.From = mgl32.Vec2{f.DrawArea.From[0], f.ControlArea.To[1] + pad}
 	f.ControlArea.To = f.ControlArea.From.Add(mgl32.Vec2{f.ToPixels(colWidth, 0, true), f.ToPixels(lineHeight, pad, false)})
 }
 
@@ -293,4 +292,9 @@ func (f *UIFrame) handleEvent(ev vapp.Event) {
 	if ok {
 		f.Ev.Scroll = f.Ev.Scroll.Add(sc.Range)
 	}
+}
+
+func (f *UIFrame) Pad(edges vdraw.Edges) {
+	f.DrawArea.From = f.DrawArea.From.Add(mgl32.Vec2{edges.Left, edges.Top})
+	f.DrawArea.To = f.DrawArea.To.Sub(mgl32.Vec2{edges.Right, edges.Bottom})
 }

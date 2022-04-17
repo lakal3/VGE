@@ -87,7 +87,7 @@ func (ft *fileTree) draw(fr *vimgui.UIFrame) {
 		return
 	}
 	fr.DrawArea.From = fr.ControlArea.From
-	vimgui.ScrollArea(fr, mgl32.Vec2{fr.ControlArea.Width() - 10, 22 * float32(len(ft.files))}, &ft.offset, func(uf *vimgui.UIFrame) {
+	vimgui.ScrollArea(fr, mgl32.Vec2{0, 22 * float32(len(ft.files))}, &ft.offset, func(uf *vimgui.UIFrame) {
 		for idx, di := range ft.files {
 
 			uf.NewLine(0, 20, 2)

@@ -22,11 +22,11 @@ func (p PngSupport) InitOption() {
 }
 
 type MainImage struct {
-	Image  *vk.Image
-	Desc   vk.ImageDescription
-	Root   vscene.Scene
-	Camera vscene.Camera
-	pool   *vk.MemoryPool
+	Image *vk.Image
+	Desc  vk.ImageDescription
+	Root  vscene.Scene
+	// Camera vscene.Camera
+	pool *vk.MemoryPool
 }
 
 func (m *MainImage) Dispose() {

@@ -1,5 +1,5 @@
 
-const float shadowBias = 0.005;
+const float shadowBias = 0.010;
 
 void shadowFactorFormula() {
 #if probe

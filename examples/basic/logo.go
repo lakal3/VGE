@@ -1,4 +1,5 @@
-//+build examples
+//go:build examples
+// +build examples
 
 package main
 
@@ -39,7 +40,7 @@ func buildScene(rw *vapp.RenderWindow) {
 	// MustLoadAsset will also handle ownership of asset (if will be disposed with device)
 	eq := vapp.MustLoadAsset("envhdr/studio.hdr",
 		func(content []byte) (asset interface{}, err error) {
-			return env.NewEquiRectBGNode(vapp.Ctx, vapp.Dev, 100, "hdr", content), nil
+			return env.NewEquiRectBGNode(vapp.Dev, 100, "hdr", content), nil
 		}).(*env.EquiRectBGNode)
 	// Add loaded background to scene
 	rw.Env.Children = append(rw.Env.Children, vscene.NewNode(eq))
@@ -56,7 +57,7 @@ func buildScene(rw *vapp.RenderWindow) {
 	rw.Model.Children = append(rw.Model.Children, vscene.NodeFromModel(model, 0, true))
 	// We will also need a probe to reflect environment to model. Probes reflect everything outside this node inside children of this node.
 	// In this case we reflect only background
-	p := env.NewProbe(vapp.Ctx, vapp.Dev)
+	p := env.NewProbe(vapp.Dev)
 	rw.AddChild(p) // Remember to dispose probe
 	// Assign probe to root model
 	rw.Model.Ctrl = p
@@ -67,7 +68,8 @@ func buildScene(rw *vapp.RenderWindow) {
 	c.Target = mgl32.Vec3{5, 0, 0}
 	rw.Camera = c
 	// Add orbital controls to camera. If priority > 0 panning and scrolling will work event if mouse is on UI. UI default show priority is 0
-	vapp.OrbitControlFrom(-10, rw, c)
+	oc := vapp.OrbitControlFrom(c)
+	oc.RegisterHandler(-10, rw)
 
 	// Finally create 2 lights before UI
 	// Create custom node control to turn light on / off
@@ -84,7 +86,7 @@ func buildScene(rw *vapp.RenderWindow) {
 		vscene.NewNode(&vscene.TransformControl{Transform: mgl32.Translate3D(6, 3, 3)}, vscene.NewNode(l2)))
 	// Create UI. First we must create a theme.
 	// There is builtin minimal theme we can use here. It will use OpenSans font on material icons font if none other given.
-	th := mintheme.NewTheme(vapp.Ctx, vapp.Dev, 15, nil, nil, nil)
+	th := mintheme.NewTheme(vapp.Dev, 15, nil, nil, nil)
 	// Add theme to RenderWindow dispose list. In real app we might use theme multiple times on multiple windows and should handling disposing it
 	// as part of disposing device.
 	rw.AddChild(th)

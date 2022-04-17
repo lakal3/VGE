@@ -7,8 +7,9 @@ struct MATERIAL {
     float opacity;
     uint probe;
     float frozenId;
-    vec3 reflectance;
-    vec3 specular0;
+    vec3 f0;
+    float reflectance;
+    vec3 specular;
     vec3 diffuse;
     vec3 normal;
     vec3 viewDir;

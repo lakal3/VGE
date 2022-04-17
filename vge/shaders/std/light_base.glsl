@@ -26,14 +26,14 @@ void addLight(uint lightPos) {
         l.halfDir = normalize(mat.viewDir + l.lightDir);
         float lenToPos2 = max(0.01, l.attenuation.x + l.lenToPos * l.attenuation.y +
         l.lenToPos * l.lenToPos * l.attenuation.z);
-        l.radiance = l.intensity / lenToPos2;
+        l.radiance = l.intensity / vec3(lenToPos2);
 
         if (length(l.radiance) > 0.001) {
             /* Dots */
             l.normalDHalf = clamp(dot(mat.normal, l.halfDir), 0, 1);
-            l.normalDLight = clamp(dot(mat.normal, l.lightDir), 0, 1);
+            l.normalDLight = clamp(dot(mat.normal, l.lightDir), 0.001, 1);
             l.lightDHalf = clamp(dot(l.lightDir, l.halfDir), 0, 1);
-
+            l.viewDHalf = clamp(dot(mat.viewDir, l.halfDir), 0, 1);
             l.shadowFactor = 1.0;
             shadowFactorFormula();
 

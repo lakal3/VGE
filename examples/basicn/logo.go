@@ -77,7 +77,7 @@ func buildScene(rw *vapp.ViewWindow) {
 	c := vscene.NewPerspectiveCamera(1000)
 	c.Position = mgl32.Vec3{1, 2, 10}
 	c.Target = mgl32.Vec3{5, 0, 0}
-	v.Camera = vapp.OrbitControlFrom(0, nil, c)
+	v.Camera = c
 	rw.AddView(v)
 }
 
@@ -155,9 +155,9 @@ func drawDynamic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 		// Set properties for point light
 		props := vmodel.NewMaterialProperties()
 		props.SetColor(vmodel.CIntensity, mgl32.Vec4{1.4, 1.4, 1.4, 1})
-		props.SetFactor(vmodel.FLightAttenuation2, 0.3)
-		vdraw3d.DrawPointLight(dl, 0, mgl32.Vec3{1, 3, 4}, props)
-		props.SetColor(vmodel.CIntensity, mgl32.Vec4{0, 0.4, 1.4, 1})
-		vdraw3d.DrawPointLight(dl, kShadow, mgl32.Vec3{5, 4, 4}, props)
+		props.SetFactor(vmodel.FLightAttenuation2, 0.1)
+		vdraw3d.DrawPointLight(dl, 0, mgl32.Vec3{1, 3, 3}, props)
+		props.SetColor(vmodel.CIntensity, mgl32.Vec4{0, 1.4, 1.4, 1})
+		vdraw3d.DrawPointLight(dl, kShadow, mgl32.Vec3{2.8, 2, 3}, props)
 	}
 }

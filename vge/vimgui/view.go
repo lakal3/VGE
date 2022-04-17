@@ -130,7 +130,6 @@ func (f *View) beginDraw(fi *vk.FrameInstance) *UIFrame {
 	f.nextFrame.dev = f.dev
 	uif := f.nextFrame
 	f.nextFrame.Ev = UIEvent{}
-	uif.Offset = mgl32.Vec2{0, 0}
 	uif.DrawArea.From = mgl32.Vec2{0, 0}
 	uif.DrawArea.To = mgl32.Vec2{uif.winArea.Width(), uif.winArea.Height()}
 	return &uif

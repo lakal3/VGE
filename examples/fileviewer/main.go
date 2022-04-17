@@ -62,7 +62,7 @@ func main() {
 			log.Fatal("Load phong shaders failed: ", err)
 		}
 	}
-	err = vapp.Init("UItest", options...)
+	err = vapp.Init("File viewer", options...)
 	if err != nil {
 		log.Fatal("App init failed ", err)
 	}

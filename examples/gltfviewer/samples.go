@@ -141,7 +141,8 @@ func buildScene(sample *Sample, model *vscene.Node) {
 	if sample.Scene == 2 {
 		vc = vapp.WalkControlFrom(-100, app.rw, pc)
 	} else {
-		vapp.OrbitControlFrom(-100, app.rw, pc)
+		oc := vapp.OrbitControlFrom(pc)
+		oc.RegisterHandler(-100, app.rw)
 	}
 	nModelRool := vscene.NewNode(app.probe, model)
 	switch sample.Scene {

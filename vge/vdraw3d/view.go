@@ -18,6 +18,10 @@ import (
 
 type Camera interface {
 	CameraProjection(size image.Point) (projection, view mgl32.Mat4)
+}
+
+type ActiveCamera interface {
+	Camera
 	Handle(ev vapp.Event)
 }
 
@@ -202,7 +206,10 @@ func (v *View) HandleEvent(event vapp.Event) {
 	}
 	l := mgl32.Vec2{float32(se.Location().X), float32(se.Location().Y)}
 	if v.area.Contains(l) {
-		v.Camera.Handle(event)
+		ac, ok := v.Camera.(ActiveCamera)
+		if ok {
+			ac.Handle(event)
+		}
 	}
 }
 

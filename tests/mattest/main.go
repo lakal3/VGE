@@ -88,5 +88,6 @@ func initScene() {
 	app.cam = vscene.NewPerspectiveCamera(1000)
 	app.cam.Position = mgl32.Vec3{0.5, 1, 2.5}
 	app.rw.Camera = app.cam
-	vapp.OrbitControlFrom(-100, app.rw, app.cam)
+	oc := vapp.OrbitControlFrom(app.cam)
+	oc.RegisterHandler(-100, app.rw)
 }

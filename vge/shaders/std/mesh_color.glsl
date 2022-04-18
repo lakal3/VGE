@@ -18,7 +18,7 @@ layout(location = 0) in vec3 i_position;
 layout(location = 1) in vec2 i_uv0;
 layout(location = 2) in vec3 i_normal;
 // Vertex color is not used by standard fragment shader
-layout(location = 3) in vec3 i_color;
+layout(location = 3) in vec4 i_color;
 #if normalMap
 layout(location = 4) in mat3 i_normalSpace;
 #endif

@@ -40,6 +40,9 @@ func (iv *imageViewer) PreRender(fi *vk.FrameInstance) (done vapp.Completed) {
 	return nil
 }
 
+func (iv *imageViewer) PostRender(fi *vk.FrameInstance) {
+}
+
 var kImageFrameView = vk.NewKey()
 
 func (iv *imageViewer) Render(fi *vk.FrameInstance, cmd *vk.Command, rp *vk.GeneralRenderPass) {

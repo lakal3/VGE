@@ -14,12 +14,10 @@ void main() {
     if (i_position.y < 0) {
         discard;
     }
-        #if DYNAMIC_DESCRIPTORS
-    if (instance.alphaCutoff > 0 && instance.tx_albedo > 0) {
-        float a = texture(frameImages2D[int(inst.tx_albedo)], i_uv0).a;
-        if (a < inst.alphaCutoff) {
+    if (instance.alphaCutoff > 0 && instance.textures1.x > 0) {
+        float a = texture(frameImages2D[int(instance.textures1.x)], i_uv0).a;
+        if (a < instance.alphaCutoff) {
             discard;
         }
     }
-        #endif
 }

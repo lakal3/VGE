@@ -13,14 +13,17 @@ layout (location = #r jointInput + 1#) in uvec4 i_joints0;
 #endif
 
 // Outputs
-#if !depth_only
+#if !depth_only & !pick
 layout (location = 0) out vec3 o_position;
 layout (location = 1) out vec2 o_uv0;
 layout (location = 2) out vec3 o_normal;
-layout (location = 3) out vec3 o_color;
+layout (location = 3) out vec4 o_color;
     #if normalMap
     layout (location = 4) out mat3 o_normalSpace;
     #endif
+#endif
+#if pick
+layout (location = 0) out vec4 o_color;
 #endif
 
 #if skinSet
@@ -68,11 +71,14 @@ void main() {
     gl_Position = frame.projection * frame.view * vPos ;
 #endif
 #if !depth_only
+    o_color = i_color;
+#if !pick
     o_uv0 = i_uv0;
     o_normal = normalize(vec3(world * vec4(i_normal,0)));
     #if normalMap
         o_normalSpace = calcNormalSpace(world);
     #endif
     o_position = vec3(vPos);
+#endif
 #endif
 }

@@ -61,6 +61,9 @@ func (mv *modelViewer) Render(fi *vk.FrameInstance, cmd *vk.Command, rp *vk.Gene
 	}
 }
 
+func (mv *modelViewer) PostRender(fi *vk.FrameInstance) {
+}
+
 type closeModelView struct {
 	md *vmodel.Model
 }

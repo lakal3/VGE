@@ -118,6 +118,9 @@ func (v *View) Render(fi *vk.FrameInstance, cmd *vk.Command, rp *vk.GeneralRende
 	cmd.Draw(dl)
 }
 
+func (v *View) PostRender(fi *vk.FrameInstance) {
+}
+
 func (f *View) beginDraw(fi *vk.FrameInstance) *UIFrame {
 	f.mx.Lock()
 	defer f.mx.Unlock()

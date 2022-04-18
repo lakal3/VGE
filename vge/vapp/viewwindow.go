@@ -22,6 +22,9 @@ type View interface {
 	// Render is final phase of view where is should copy views output to main image. RenderPass will contain one output (main image)
 	// Some views (like UI) can completed all rendering in this phase. Some more complex views must use PreRender to prepare final image
 	Render(fi *vk.FrameInstance, cmd *vk.Command, rp *vk.GeneralRenderPass)
+
+	// PostRender is called after rendering is completed (in GPU side)
+	PostRender(fi *vk.FrameInstance)
 }
 
 // EventView is view that also handles mouse/keyboard events targeted to this window

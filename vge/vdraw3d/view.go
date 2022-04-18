@@ -31,15 +31,17 @@ type View struct {
 	Elapsed float64
 	Camera  Camera
 
+	lock     *vk.SpinLock
 	debug    uint32
 	prevDraw time.Time
 	dev      *vk.Device
 	// 0 - output image, 1 - depth buffer, 2 - frame buffer, 3 - command, 4 - blend render pass
-	key          vk.Key
-	shaders      *shaders.Pack
-	nextRings    []vk.Key
-	ambient      mgl32.Vec4
-	ambienty     mgl32.Vec4
+	key       vk.Key
+	shaders   *shaders.Pack
+	nextRings []vk.Key
+	ambient   mgl32.Vec4
+	ambienty  mgl32.Vec4
+
 	staticScene  func(v *View, dl *FreezeList)
 	dynamicScene func(v *View, dl *FreezeList)
 	staticList   *FreezeList
@@ -78,18 +80,22 @@ func NewView(dev *vk.Device, staticScene func(v *View, dl *FreezeList), dynamicS
 
 func NewCustomView(dev *vk.Device, sp *shaders.Pack, staticScene func(v *View, dl *FreezeList), dynamicScene func(v *View, dl *FreezeList)) *View {
 	v := &View{dev: dev, staticScene: staticScene, dynamicScene: dynamicScene, shaders: sp,
-		ambient: mgl32.Vec4{0.4, 0.4, 0.4}, ambienty: mgl32.Vec4{0.2, 0.2, 0.2}}
+		ambient: mgl32.Vec4{0.4, 0.4, 0.4}, ambienty: mgl32.Vec4{0.2, 0.2, 0.2}, lock: &vk.SpinLock{}}
 	v.Camera = vapp.NewOrbitControl(0, nil)
 	v.key = vk.NewKeys(7)
 	return v
 }
 
 func (v *View) SetDebug(debugMode uint32) {
+	v.lock.Lock()
 	v.debug = debugMode
+	v.lock.Unlock()
 }
 
 func (v *View) SetAmbient(ambient mgl32.Vec4, ambienty mgl32.Vec4) {
+	v.lock.Lock()
 	v.ambient, v.ambienty = ambient, ambienty
+	v.lock.Unlock()
 }
 
 func (v *View) Reserve(fi *vk.FrameInstance) {
@@ -191,6 +197,9 @@ func (v *View) Render(fi *vk.FrameInstance, cmd *vk.Command, rp *vk.GeneralRende
 	dl := &vk.DrawList{}
 	dl.Draw(pl, 0, 6).AddDescriptor(0, cv.dsFrame)
 	cmd.Draw(dl)
+}
+
+func (v *View) PostRender(fi *vk.FrameInstance) {
 }
 
 func (v *View) HandleEvent(event vapp.Event) {

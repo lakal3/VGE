@@ -383,7 +383,7 @@ func (st *ShaderTool) eval(sc *scanner.Scanner, flags Flags) (val string, err er
 			})
 		case '|':
 			val = st.boolOp(val, val2, func(v1, v2 bool) bool {
-				return v1 && v2
+				return v1 || v2
 			})
 		default:
 			return val, fmt.Errorf("unknwon token %s", tt)
@@ -400,7 +400,7 @@ func (st *ShaderTool) evalAtom(sc *scanner.Scanner, flags Flags) (string, error)
 		return st.eval(sc, flags)
 	}
 	if token == '!' {
-		val, err := st.eval(sc, flags)
+		val, err := st.evalAtom(sc, flags)
 		if err != nil {
 			return "", err
 		}

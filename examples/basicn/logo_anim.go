@@ -158,7 +158,8 @@ func drawDynamic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 		vdraw3d.DrawPointLight(dl, 0, mgl32.Vec3{1, 3, 3}, props)
 		props.SetColor(vmodel.CIntensity, mgl32.Vec4{0, 3, 3, 1})
 		at := mgl32.Vec3{float32(4 + 2*math.Sin(v.Elapsed/1.73)), float32(2 + math.Sin(v.Elapsed/3.42)), 3}
-		vdraw3d.DrawPointLight(dl, kShadow, w.Mul4x1(at.Vec4(1)).Vec3(), props)
+		// vdraw3d.DrawPointLight(dl, kShadow, w.Mul4x1(at.Vec4(1)).Vec3(), props)
+		vdraw3d.DrawPointLight(dl, kShadow, at, props)
 	}
 	// Draw all nodes starting from root (node == 0)
 	vdraw3d.DrawNodes(dl, app.model, 0, w)

@@ -332,30 +332,20 @@ func (fm *FrozenMesh) fillProps(mesh vmodel.Mesh, props vmodel.MaterialPropertie
 }
 
 func (fm *FrozenMesh) fillShaders(mesh vmodel.Mesh, props vmodel.MaterialProperties) {
-	if fm.transparent {
-		fm.colorShader = "tr_mesh_color"
-		if mesh.Kind == vmodel.MESHKindSkinned {
-			fm.colorShader = "tr_mesh_color_skinned"
-		}
-		if fm.mat.textures1[3] != 0 {
-			fm.colorShader += "_normap"
-		}
-	} else {
-		fm.colorShader = "mesh_color"
-		if mesh.Kind == vmodel.MESHKindSkinned {
-			fm.colorShader = "mesh_color_skinned"
-		}
-		if fm.mat.textures1[3] != 0 {
-			fm.colorShader += "_normap"
-		}
+
+	fm.colorShader = "mesh_color"
+	if mesh.Kind == vmodel.MESHKindSkinned {
+		fm.colorShader = "mesh_color_skinned"
 	}
+	if fm.mat.textures1[3] != 0 {
+		fm.colorShader += "_normap"
+	}
+
 	fm.shadowShader = "shadow_mesh"
 	if mesh.Kind == vmodel.MESHKindSkinned {
 		fm.shadowShader = "shadow_mesh_skinned"
 	}
-	if fm.transparent {
-		return
-	}
+
 	fm.depthShader = "mesh_depth"
 	if mesh.Kind == vmodel.MESHKindSkinned {
 		fm.depthShader = "mesh_depth_skinned"
@@ -365,19 +355,14 @@ func (fm *FrozenMesh) fillShaders(mesh vmodel.Mesh, props vmodel.MaterialPropert
 		fm.probeShader = "probe_mesh_skinned"
 	}
 }
+
 func (am *AnimatedMesh) fillShaders(mesh vmodel.Mesh, props vmodel.MaterialProperties) {
-	if am.transparent {
-		panic("Transparent animated not yes supported")
-	} else {
-		am.colorShader = "mesh_color_animated"
-		if am.mat.textures1[3] != 0 {
-			am.colorShader += "_normap"
-		}
+
+	am.colorShader = "mesh_color_animated"
+	if am.mat.textures1[3] != 0 {
+		am.colorShader += "_normap"
 	}
 
-	if am.transparent {
-		return
-	}
 	am.shadowShader = "shadow_mesh_animated"
 	am.depthShader = "mesh_depth_animated"
 	am.probeShader = "probe_mesh_skinned"
@@ -409,6 +394,8 @@ type Transparent struct {
 
 func (t Transparent) apply(fm *FrozenMesh) {
 	fm.transparent = true
+	fm.colorShader = "tr_" + fm.colorShader
+	fm.depthShader, fm.shadowShader, fm.probeShader = "", "", ""
 }
 
 func (t Transparent) applyAnimated(am *AnimatedMesh) {

@@ -18,6 +18,7 @@ type FrozenMesh struct {
 	depthShader  string
 	shadowShader string
 	probeShader  string
+	pickShader   string
 
 	views   [8]vk.VImageView
 	sampler [8]*vk.Sampler
@@ -62,6 +63,11 @@ func (f *FrozenMesh) Support(fi *vk.FrameInstance, phase Phase) bool {
 	if ok {
 		return len(f.shadowShader) > 0
 	}
+	_, ok = phase.(RenderPick)
+	if ok {
+		return len(f.pickShader) > 0
+	}
+
 	return ok
 }
 
@@ -133,6 +139,20 @@ func (f *FrozenMesh) Render(fi *vk.FrameInstance, phase Phase) {
 		dl.DrawIndexed(pl, f.mesh.From, f.mesh.Count).AddInputs(f.mesh.Model.VertexBuffers(f.mesh.Kind)...).
 			AddDescriptors(rs.DSFrame, rs.DSShadowFrame).AddPushConstants(uint32(unsafe.Sizeof(material{})), offset)
 	}
+	rPick, ok := phase.(RenderPick)
+	if ok {
+		if len(f.pickShader) == 0 {
+			return
+		}
+		pl := rPick.Pass.Get(vk.NewHashKey(f.pickShader), func() interface{} {
+			return f.buildPickPass(fi, rPick.Pass, f.pickShader, false, rPick.Shaders)
+		}).(*vk.GraphicsPipeline)
+		dl := rPick.DL
+		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(material{})))
+		*(*material)(ptr) = f.mat
+		dl.DrawIndexed(pl, f.mesh.From, f.mesh.Count).AddInputs(f.mesh.Model.VertexBuffers(f.mesh.Kind)...).
+			AddDescriptors(rPick.DSFrame, rPick.DSPick).AddPushConstants(uint32(unsafe.Sizeof(material{})), offset)
+	}
 	rp, ok := phase.(RenderProbe)
 	if ok {
 		if len(f.probeShader) > 0 {
@@ -196,6 +216,20 @@ func (am *AnimatedMesh) Render(fi *vk.FrameInstance, phase Phase) {
 		*(*material)(ptr) = am.mat
 		dl.DrawIndexed(pl, am.mesh.From, am.mesh.Count).AddInputs(am.mesh.Model.VertexBuffers(am.mesh.Kind)...).
 			AddDescriptors(rd.DSFrame, am.dsJoints).AddPushConstants(uint32(unsafe.Sizeof(material{})), offset)
+	}
+	rPick, ok := phase.(RenderPick)
+	if ok {
+		if len(am.pickShader) == 0 {
+			return
+		}
+		pl := rPick.Pass.Get(vk.NewHashKey(am.pickShader), func() interface{} {
+			return am.buildPickPass(fi, rPick.Pass, am.pickShader, true, rPick.Shaders)
+		}).(*vk.GraphicsPipeline)
+		dl := rPick.DL
+		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(material{})))
+		*(*material)(ptr) = am.mat
+		dl.DrawIndexed(pl, am.mesh.From, am.mesh.Count).AddInputs(am.mesh.Model.VertexBuffers(am.mesh.Kind)...).
+			AddDescriptors(rPick.DSFrame, rPick.DSPick, am.dsJoints).AddPushConstants(uint32(unsafe.Sizeof(material{})), offset)
 	}
 	rs, ok := phase.(RenderShadow)
 	if ok {
@@ -284,6 +318,25 @@ func (f *FrozenMesh) buildShadowPass(fi *vk.FrameInstance, pass *vk.GeneralRende
 	return pl
 }
 
+func (f *FrozenMesh) buildPickPass(fi *vk.FrameInstance, pass *vk.GeneralRenderPass, name string, animated bool, sp *shaders.Pack) interface{} {
+	dev := fi.Device()
+	pl := vk.NewGraphicsPipeline(dev)
+	pl.AddPushConstants(vk.SHADERStageAll, uint32(unsafe.Sizeof(material{})))
+	pl.AddLayout(GetFrameLayout(dev))
+	pl.AddLayout(GetPickFrameLayout(dev))
+	if animated {
+		pl.AddLayout(GetJointsLayout(dev))
+	}
+	pl.AddDepth(false, false)
+	vmodel.AddInput(pl, f.mesh.Kind)
+	code := sp.MustGet(dev, name)
+	pl.AddShader(vk.SHADERStageVertexBit, code.Vertex)
+	pl.AddShader(vk.SHADERStageFragmentBit, code.Fragment)
+	pl.Create(pass)
+	return pl
+
+}
+
 func (f *FrozenMesh) buildProbePass(fi *vk.FrameInstance, pass *vk.GeneralRenderPass, name string, animated bool, sp *shaders.Pack) *vk.GraphicsPipeline {
 	dev := fi.Device()
 	pl := vk.NewGraphicsPipeline(dev)
@@ -307,6 +360,7 @@ func (fm *FrozenMesh) fillProps(mesh vmodel.Mesh, props vmodel.MaterialPropertie
 	fm.mat.albedo = props.GetColor(vmodel.CAlbedo, mgl32.Vec4{0, 0, 0, 1})
 	fm.mat.emissive = props.GetColor(vmodel.CEmissive, mgl32.Vec4{0, 0, 0, 0})
 	fm.mat.metalRoughess = mgl32.Vec4{props.GetFactor(vmodel.FMetalness, 0), props.GetFactor(vmodel.FRoughness, 1)}
+	fm.mat.meshID = props.GetUInt(vmodel.UMeshID, 0)
 	txIdx := props.GetImage(vmodel.TxAlbedo)
 	if txIdx != 0 {
 		fm.views[0], fm.sampler[0] = mesh.Model.GetImageView(txIdx)
@@ -354,6 +408,10 @@ func (fm *FrozenMesh) fillShaders(mesh vmodel.Mesh, props vmodel.MaterialPropert
 	if mesh.Kind == vmodel.MESHKindSkinned {
 		fm.probeShader = "probe_mesh_skinned"
 	}
+	fm.pickShader = "pick_mesh"
+	if mesh.Kind == vmodel.MESHKindSkinned {
+		fm.pickShader = "pick_mesh_skinned"
+	}
 }
 
 func (am *AnimatedMesh) fillShaders(mesh vmodel.Mesh, props vmodel.MaterialProperties) {
@@ -365,8 +423,8 @@ func (am *AnimatedMesh) fillShaders(mesh vmodel.Mesh, props vmodel.MaterialPrope
 
 	am.shadowShader = "shadow_mesh_animated"
 	am.depthShader = "mesh_depth_animated"
-	am.probeShader = "probe_mesh_skinned"
-
+	am.probeShader = "probe_mesh_animated"
+	am.pickShader = "pick_mesh_animated"
 }
 
 func (f *FrozenMesh) renderTransparent(dl *vk.DrawList, pass *vk.GeneralRenderPass, fi *vk.FrameInstance,
@@ -423,7 +481,6 @@ func DrawMesh(fl *FreezeList, mesh vmodel.Mesh, world mgl32.Mat4, props vmodel.M
 		o.apply(fm)
 	}
 	id := fl.Add(fm)
-	fm.mat.frozenID = uint32(id)
 	return id
 }
 
@@ -450,7 +507,6 @@ func DrawAnimated(fl *FreezeList, mesh vmodel.Mesh, sk *vmodel.Skin, animation v
 		o.applyAnimated(am)
 	}
 	id := fl.Add(am)
-	am.mat.frozenID = uint32(id)
 	return id
 }
 

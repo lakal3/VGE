@@ -9,7 +9,8 @@ var MaxImages uint32 = 1024
 
 var kFrameLayout = vk.NewKeys(3)
 var kShadowFrameLayout = vk.NewKey()
-var kRenderPasses = vk.NewKeys(4)
+var kPickFrameLayout = vk.NewKey()
+var kRenderPasses = vk.NewKeys(5)
 var kJointsLayout = vk.NewKey()
 
 func GetFrameLayout(dev *vk.Device) *vk.DescriptorLayout {
@@ -29,6 +30,12 @@ func GetFrameLayout(dev *vk.Device) *vk.DescriptorLayout {
 func GetShadowFrameLayout(dev *vk.Device) *vk.DescriptorLayout {
 	return dev.Get(kShadowFrameLayout, func() interface{} {
 		return vk.NewDescriptorLayout(dev, vk.DESCRIPTORTypeUniformBuffer, vk.SHADERStageAll, 1)
+	}).(*vk.DescriptorLayout)
+}
+
+func GetPickFrameLayout(dev *vk.Device) *vk.DescriptorLayout {
+	return dev.Get(kPickFrameLayout, func() interface{} {
+		return vk.NewDescriptorLayout(dev, vk.DESCRIPTORTypeStorageBuffer, vk.SHADERStageFragmentBit, 1)
 	}).(*vk.DescriptorLayout)
 }
 
@@ -80,6 +87,12 @@ func getProbeRenderPass(dev *vk.Device) *vk.GeneralRenderPass {
 	}).(*vk.GeneralRenderPass)
 }
 
+func getPickRenderPass(dev *vk.Device) *vk.GeneralRenderPass {
+	return dev.Get(kRenderPasses+4, func() interface{} {
+		return vk.NewGeneralRenderPass(dev, false, []vk.AttachmentInfo{})
+	}).(*vk.GeneralRenderPass)
+}
+
 type frame struct {
 	projection   mgl32.Mat4
 	view         mgl32.Mat4
@@ -120,5 +133,5 @@ type material struct {
 	ctextures     mgl32.Vec4 // Custom textures
 	alphaCutoff   float32
 	probe         uint32
-	frozenID      uint32
+	meshID        uint32
 }

@@ -225,6 +225,7 @@ func (mv *modelViewer) toHome() {
 	c := vapp.OrbitControlFrom(mv.pc)
 	c.ZoomTo(aabb.Center(), aabb.Len())
 	mv.view.Camera = c
+	mv.view.OnEvent = c.Handle
 
 }
 

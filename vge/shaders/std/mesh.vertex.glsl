@@ -24,6 +24,7 @@ layout (location = 3) out vec4 o_color;
 #endif
 #if pick
 layout (location = 0) out vec4 o_color;
+layout (location = 1) out flat uvec2 o_ids;
 #endif
 
 #if skinSet
@@ -79,6 +80,9 @@ void main() {
         o_normalSpace = calcNormalSpace(world);
     #endif
     o_position = vec3(vPos);
+#endif
+#if pick
+    o_ids = uvec2(instance.meshID, gl_VertexIndex);
 #endif
 #endif
 }

@@ -215,6 +215,10 @@ func (w *ViewWindow) renderLoop() {
 		}
 		cmd.Submit(submits...)
 		cmd.Wait()
+		for _, v := range views {
+			v.PostRender(fi)
+		}
+
 		if tp != nil {
 			tp(start, timer.Get())
 		}

@@ -122,6 +122,13 @@ type RenderDepth struct {
 	Pass *vk.GeneralRenderPass
 }
 
+type RenderPick struct {
+	Render
+	DL     *vk.DrawList
+	Pass   *vk.GeneralRenderPass
+	DSPick *vk.DescriptorSet
+}
+
 type RenderColor struct {
 	Render
 	DL                *vk.DrawList

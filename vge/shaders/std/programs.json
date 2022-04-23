@@ -103,6 +103,18 @@
     },
     "probe_spherical": {
       "compute": "probe_spherical.compute"
+    },
+    "pick_mesh": {
+      "vertex": "mesh.vertex", "fragment": "pick",
+      "flags": ["pick","withdebug"]
+    },
+    "pick_mesh_skinned": {
+      "vertex": "mesh.vertex", "fragment": "pick",
+      "flags": ["pick", "jointInput=5","withdebug"]
+    },
+    "pick_mesh_animated": {
+      "vertex": "mesh.vertex", "fragment": "pick",
+      "flags": ["pick","jointInput=5","withdebug","skinSet=2", "noJoints=256"]
     }
   }
 }

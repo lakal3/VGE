@@ -13,8 +13,8 @@ type FrozenDecal struct {
 	albedo    mgl32.Vec4
 	emissive  mgl32.Vec4
 	textures1 mgl32.Vec4
-	from      FrozenID
-	to        FrozenID
+	from      uint32
+	to        uint32
 
 	views      [4]*vk.ImageView
 	sampler    [4]*vk.Sampler
@@ -89,8 +89,12 @@ func (fd *FrozenDecal) fillProps(props vmodel.MaterialProperties) {
 
 }
 
-func DrawDecal(fl *FreezeList, model *vmodel.Model, world mgl32.Mat4, from, to FrozenID, props vmodel.MaterialProperties) FrozenID {
-	fd := &FrozenDecal{model: model, from: from, to: to}
+func DrawDecal(fl *FreezeList, model *vmodel.Model, world mgl32.Mat4, props vmodel.MaterialProperties) FrozenID {
+	return DrawDecalOn(fl, model, world, 0, 0, props)
+}
+
+func DrawDecalOn(fl *FreezeList, model *vmodel.Model, world mgl32.Mat4, fromID, toID uint32, props vmodel.MaterialProperties) FrozenID {
+	fd := &FrozenDecal{model: model, from: fromID, to: toID}
 	fd.world = world
 	fd.toDecal = world.Inv()
 	fd.fillProps(props)

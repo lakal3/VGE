@@ -69,7 +69,7 @@ void main() {
     mat.emissive = instance.emissive;
     mat.metalness = instance.metalRoughness.x;
     mat.roughness = instance.metalRoughness.y;
-    mat.frozenId = float(instance.frozenId);
+    mat.meshID = instance.meshID;
     calcNormal();
     mat.f0  = vec3(0.04);
     if (instance.textures1.x > 0) {

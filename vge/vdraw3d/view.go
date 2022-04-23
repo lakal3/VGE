@@ -20,11 +20,6 @@ type Camera interface {
 	CameraProjection(size image.Point) (projection, view mgl32.Mat4)
 }
 
-type ActiveCamera interface {
-	Camera
-	Handle(ev vapp.Event)
-}
-
 type View struct {
 	OnSize  func(fi *vk.FrameInstance) vdraw.Area
 	OnEvent func(ev vapp.Event)
@@ -42,6 +37,9 @@ type View struct {
 	ambient   mgl32.Vec4
 	ambienty  mgl32.Vec4
 
+	picked    func([]PickInfo)
+	pickFrame *pickFrame
+
 	staticScene  func(v *View, dl *FreezeList)
 	dynamicScene func(v *View, dl *FreezeList)
 	staticList   *FreezeList
@@ -58,6 +56,7 @@ const (
 	vkColorFrame1            = 4
 	vkColorFrame2            = 5
 	vkBlendPipeline          = 6
+	vkPickFrame              = 7
 	storageSize              = 16 * 4
 )
 
@@ -82,7 +81,7 @@ func NewCustomView(dev *vk.Device, sp *shaders.Pack, staticScene func(v *View, d
 	v := &View{dev: dev, staticScene: staticScene, dynamicScene: dynamicScene, shaders: sp,
 		ambient: mgl32.Vec4{0.4, 0.4, 0.4}, ambienty: mgl32.Vec4{0.2, 0.2, 0.2}, lock: &vk.SpinLock{}}
 	v.Camera = vapp.NewOrbitControl(0, nil)
-	v.key = vk.NewKeys(7)
+	v.key = vk.NewKeys(10)
 	return v
 }
 
@@ -127,6 +126,10 @@ func (v *View) Reserve(fi *vk.FrameInstance) {
 			cv.area.To = mgl32.Vec2{float32(desc.Width), float32(desc.Height)}
 		}
 		cv.views = make(map[vk.VImageView]uint32)
+		v.lock.Lock()
+		cv.picked, cv.pickFrame = v.picked, v.pickFrame
+		v.picked, v.pickFrame = nil, nil
+		v.lock.Unlock()
 		return cv
 	}).(*currentView)
 	v.area = cv.area
@@ -155,7 +158,11 @@ func (v *View) Reserve(fi *vk.FrameInstance) {
 	cv.size = image.Pt(int(desc.Width), int(desc.Height))
 	fi.ReserveSlice(vk.BUFFERUsageStorageBufferBit, uint64(offset)*storageSize)
 	fi.ReserveSlice(vk.BUFFERUsageUniformBufferBit, uint64(unsafe.Sizeof(frame{})))
-
+	if cv.picked != nil {
+		cv.pickFrame.pickArea = cv.pickFrame.pickArea.Sub(mgl32.Vec4{cv.area.From[0], cv.area.From[1], cv.area.From[0], cv.area.From[1]})
+		fi.ReserveSlice(vk.BUFFERUsageStorageBufferBit, uint64(unsafe.Sizeof(PickInfo{}))*uint64(cv.pickFrame.max)+uint64(unsafe.Sizeof(pickFrame{})))
+		fi.ReserveDescriptor(GetPickFrameLayout(fi.Device()))
+	}
 }
 
 func (v *View) PreRender(fi *vk.FrameInstance) (done vapp.Completed) {
@@ -200,26 +207,37 @@ func (v *View) Render(fi *vk.FrameInstance, cmd *vk.Command, rp *vk.GeneralRende
 }
 
 func (v *View) PostRender(fi *vk.FrameInstance) {
+	cv := fi.Get(v.key, func() interface{} {
+		fi.Device().FatalError(errors.New("No view instance"))
+		return nil
+	}).(*currentView)
+	if cv.picked != nil {
+		pf := *(*pickFrame)(unsafe.Pointer(&cv.slPick.Bytes()[0]))
+		c := pf.count
+		if c > cv.pickFrame.max {
+			c = cv.pickFrame.max
+		}
+		sl := unsafe.Slice((*PickInfo)(unsafe.Pointer(&cv.slPick.Bytes()[unsafe.Sizeof(pickFrame{})])), c)
+		slGo := make([]PickInfo, c)
+		copy(slGo, sl)
+		go cv.picked(slGo)
+	}
 }
 
 func (v *View) HandleEvent(event vapp.Event) {
-	if v.OnEvent != nil {
-		v.OnEvent(event)
-		if event.Handled() {
-			return
-		}
-	}
-	se, ok := event.(vapp.SourcedEvent)
-	if !ok {
+	if v.OnEvent == nil {
 		return
 	}
-	l := mgl32.Vec2{float32(se.Location().X), float32(se.Location().Y)}
-	if v.area.Contains(l) {
-		ac, ok := v.Camera.(ActiveCamera)
-		if ok {
-			ac.Handle(event)
+	se, ok := event.(vapp.SourcedEvent)
+	if ok {
+		l := mgl32.Vec2{float32(se.Location().X), float32(se.Location().Y)}
+		if v.area.Contains(l) {
+			v.OnEvent(event)
 		}
+	} else {
+		v.OnEvent(event)
 	}
+
 }
 
 func (v *View) updateFrame(fi *vk.FrameInstance, cv *currentView) []float32 {
@@ -259,6 +277,7 @@ func (v *View) renderImage(fi *vk.FrameInstance, cv *currentView) {
 	rpDepth := getDepthRenderPass(fi.Device())
 	rp := getDrawRenderPass1(fi.Device())
 	rp2 := getDrawRenderPass2(fi.Device())
+
 	_, vOut := fi.AllocImage(v.key)
 	_, vOut2 := fi.AllocImage(v.key + vkiImage2)
 	_, vDepth := fi.AllocImage(v.key + vkiDepth)
@@ -268,6 +287,7 @@ func (v *View) renderImage(fi *vk.FrameInstance, cv *currentView) {
 		return vk.NewFramebuffer2(rpDepth, vDepth[0])
 	}).(*vk.Framebuffer)
 	cmd := cv.cmd
+	v.renderPick(fi, cv, cmd)
 	cmd.BeginRenderPass(rpDepth, fpDepth)
 	renderCommon := Render{DSFrame: cv.dsFrame, Target: Main, Shaders: v.shaders}
 	rd := RenderDepth{DL: &vk.DrawList{}, Pass: rpDepth, Render: renderCommon}
@@ -311,6 +331,27 @@ func (v *View) renderImage(fi *vk.FrameInstance, cv *currentView) {
 	cmd.EndRenderPass()
 }
 
+func (v *View) renderPick(fi *vk.FrameInstance, cv *currentView, cmd *vk.Command) {
+	if cv.picked == nil {
+		return
+	}
+	rpPick := getPickRenderPass(fi.Device())
+	fpPick := fi.Get(v.key+vkPickFrame, func() interface{} {
+		return vk.NewNullFramebuffer(rpPick, uint32(cv.area.Width()), uint32(cv.area.Height()))
+	}).(*vk.Framebuffer)
+	cv.slPick = fi.AllocSlice(vk.BUFFERUsageStorageBufferBit,
+		uint64(unsafe.Sizeof(PickInfo{}))*uint64(cv.pickFrame.max)+uint64(unsafe.Sizeof(pickFrame{})))
+	dsPick := fi.AllocDescriptor(GetPickFrameLayout(fi.Device()))
+	*(*pickFrame)(unsafe.Pointer(&cv.slPick.Bytes()[0])) = *cv.pickFrame
+	dsPick.WriteSlice(0, 0, cv.slPick)
+	cmd.BeginRenderPass(rpPick, fpPick)
+	rp := RenderPick{Render: Render{DSFrame: cv.dsFrame, Target: Main, Shaders: v.shaders}, DL: &vk.DrawList{}, Pass: rpPick, DSPick: dsPick}
+	v.staticList.RenderAll(fi, rp)
+	cv.fl.RenderAll(fi, rp)
+	cmd.Draw(rp.DL)
+	cmd.EndRenderPass()
+}
+
 func (v *View) getBlendPipeline(dev *vk.Device, rp *vk.GeneralRenderPass) *vk.GraphicsPipeline {
 	return rp.Get(v.key+vkBlendPipeline, func() interface{} {
 		pl := vk.NewGraphicsPipeline(dev)
@@ -340,6 +381,10 @@ type currentView struct {
 	usedStorage uint32
 	size        image.Point
 	view        mgl32.Mat4
+
+	pickFrame *pickFrame
+	picked    func([]PickInfo)
+	slPick    *vk.ASlice
 }
 
 type buildFrame struct {

@@ -9,6 +9,6 @@ layout(push_constant) uniform INSTANCE {
     vec4 cTextures1; // Custom texture indexes. Not used by standard shader
     float alphaCutoff;
     uint probe;
-    uint frozenId;
+    uint meshID;
     float dummy3;
 } instance;

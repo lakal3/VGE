@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/shaders/mixshader"
 	"github.com/lakal3/vge/vge/vapp"
@@ -8,10 +9,12 @@ import (
 	"github.com/lakal3/vge/vge/vdraw"
 	"github.com/lakal3/vge/vge/vdraw3d"
 	"github.com/lakal3/vge/vge/vimgui"
+	"github.com/lakal3/vge/vge/vimgui/dialog"
 	"github.com/lakal3/vge/vge/vimgui/mintheme"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
 	"github.com/lakal3/vge/vge/vmodel/gltf2loader"
+	"image"
 	"log"
 	"math"
 	"os"
@@ -76,6 +79,14 @@ func buildScene() error {
 	c := vapp.NewOrbitControl(0, nil)
 	c.ZoomTo(mgl32.Vec3{0, 0, 0}, 10)
 	sv.Camera = c
+	sv.OnEvent = func(ev vapp.Event) {
+		mc, ok := ev.(*vapp.MouseDownEvent)
+		if ok && mc.Button == 1 {
+			sv.Pick(1000, areaAt(mc.MousePos), pickOne)
+		}
+		c.Handle(ev)
+		moveMonkey(ev)
+	}
 
 	app.nv = sv
 	app.rw.AddView(sv)
@@ -88,6 +99,28 @@ func buildScene() error {
 	app.rw.AddView(nf)
 
 	return nil
+}
+
+func pickOne(picks []vdraw3d.PickInfo) {
+	text := "No hit"
+	if len(picks) > 0 {
+		text = ""
+		idDepth := make(map[uint32]float32)
+		for _, p := range picks {
+			f, ok := idDepth[p.MeshID]
+			if !ok && f < p.Depth {
+				idDepth[p.MeshID] = p.Depth
+			}
+		}
+		for k, v := range idDepth {
+			text += fmt.Sprintf("Hit ID %d depth %f, ", k, v)
+		}
+	}
+	dialog.Alert(app.rw, mintheme.Theme, "Pick", text, nil)
+}
+
+func areaAt(pos image.Point) mgl32.Vec4 {
+	return mgl32.Vec4{float32(pos.X) - 2, float32(pos.Y) - 2, float32(pos.X) + 2, float32(pos.Y) + 2}
 }
 
 func buildModel() (err error) {
@@ -134,6 +167,10 @@ func loadModel(subpath string, modelName string, imagePaths ...string) (*vmodel.
 		} else {
 			app.images[idx] = mb.AddImage("png", imageBytes, vk.IMAGEUsageTransferDstBit|vk.IMAGEUsageSampledBit)
 		}
+	}
+	idx := mb.FindMaterial("Material.004")
+	if idx >= 0 {
+		mb.Materials[idx].Props.SetUInt(vmodel.UMeshID, 10)
 	}
 	return mb.ToModel(vapp.Dev)
 }
@@ -271,8 +308,9 @@ func paintScene(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 	dp.SetColor(vmodel.CAlbedo, mgl32.Vec4{1, 1, 1, 1})
 	dp.SetImage(vmodel.TxAlbedo, app.images[1])
 	dp.SetImage(vmodel.TxBump, app.images[2])
-	vdraw3d.DrawDecal(dl, app.model, mgl32.Scale3D(2, 2, 2), 0, 0, dp)
-	f := app.nodes["Solid1.003_1"]
-	vdraw3d.DrawDecal(dl, app.model, mgl32.Scale3D(2, 4, 2).Mul4(mgl32.Translate3D(-2, 0, 1)),
-		f, f+1, dp)
+	dp.SetFactor(vmodel.FMetalness, 0)
+	vdraw3d.DrawDecal(dl, app.model, mgl32.Translate3D(2, 1, 0).Mul4(mgl32.Scale3D(3, 3, 3)), dp)
+	// f := app.nodes["Solid1.003_1"]
+	vdraw3d.DrawDecalOn(dl, app.model, mgl32.Translate3D(-3, 1, 2).Mul4(mgl32.Scale3D(3, 3, 3)),
+		10, 11, dp)
 }

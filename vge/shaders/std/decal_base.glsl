@@ -1,10 +1,4 @@
-vec3 lerp3(vec3 base, vec3 target, float factor) {
-    return base * (1 - factor) + target * factor;
-}
 
-float lerp1(float base, float target, float factor) {
-    return base * (1 - factor) + target * factor;
-}
 
 mat3 caclNormatRotation(vec3 axis, float c)
 {
@@ -18,7 +12,7 @@ mat3 caclNormatRotation(vec3 axis, float c)
 
 void addDecal(uint pos) {
     vec2 limits = extrava.va[pos + 2].v1.yz;
-    if (limits.y > limits.x && (mat.frozenId < limits.x || mat.frozenId >= limits.y)) {
+    if (limits.y > limits.x && (mat.meshID < limits.x || mat.meshID >= limits.y)) {
         return;
     }
     mat4 toDecalSpace = extrama.ma[pos];
@@ -28,7 +22,7 @@ void addDecal(uint pos) {
     }
     vec2 samplePoint = dp.xz * vec2(0.5) + vec2(0.5);
     vec3 aNormal = vec3(0, 1, 0);
-    vec3 dNormal = vec3(toDecalSpace * vec4(mat.normal, 0));
+    vec3 dNormal = normalize(vec3(toDecalSpace * vec4(mat.normal, 0)));
     float normalAttenuation = extrava.va[pos + 1].v4.z;
     float attn = dot(aNormal, dNormal) * normalAttenuation  + (1 - normalAttenuation);
     vec4 eBase = extrava.va[pos + 1].v2;
@@ -38,7 +32,7 @@ void addDecal(uint pos) {
     }
     float eFactor = attn * eBase.a;
     if (eFactor > 0.001) {
-        mat.emissive += vec4(lerp3(vec3(0), vec3(eBase), eFactor),0);
+        mat.emissive += vec4(mix(vec3(0), vec3(eBase), eFactor),0);
         mat.emissive.w = 1.0;
     }
     vec4 aBase = extrava.va[pos + 1].v1;
@@ -49,7 +43,7 @@ void addDecal(uint pos) {
 
     float factor = attn * aBase.a;
     if (factor > 0.01) {
-        mat.albedo = vec4(lerp3(mat.albedo.rgb, vec3(aBase), factor), mat.albedo.a);
+        mat.albedo = vec4(mix(mat.albedo.rgb, vec3(aBase), factor), mat.albedo.a);
     }
 
     float aMetallic = extrava.va[pos + 1].v4.x;
@@ -60,8 +54,8 @@ void addDecal(uint pos) {
         aMetallic = mrColor.b * aMetallic;
         aRoughness = mrColor.g * aRoughness;
     }
-    mat.metalness = lerp1(mat.metalness,aMetallic,factor);
-    mat.roughness = lerp1(mat.roughness,aRoughness,factor);
+    mat.metalness = mix(mat.metalness,aMetallic,factor);
+    mat.roughness = mix(mat.roughness,aRoughness,factor);
 
     // adjust normal if decal has bump map
     uint tx_normal = uint(extrava.va[pos + 1].v3.w);

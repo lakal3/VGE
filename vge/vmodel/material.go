@@ -47,6 +47,7 @@ const (
 	FUser          = Factor + 0x10000
 	Uint           = Property(0x04000000)
 	UShadowMapSize = Uint + 1
+	UMeshID        = Uint + 2
 	Special        = Property(0xFF000000)
 	SMaxIndex      = Special + 1
 	PropertyKind   = Property(0xFF000000)
@@ -56,6 +57,14 @@ type MaterialProperties map[Property]interface{}
 
 func NewMaterialProperties() MaterialProperties {
 	return make(MaterialProperties)
+}
+
+func (mp MaterialProperties) Clone() MaterialProperties {
+	mpNew := make(MaterialProperties, len(mp))
+	for k, v := range mp {
+		mpNew[k] = v
+	}
+	return mpNew
 }
 
 func (mp MaterialProperties) SetColor(prop Property, val mgl32.Vec4) MaterialProperties {

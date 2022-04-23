@@ -1,28 +1,6 @@
 {
   "include": [".", "../std"],
   "programs": {
-    "blend": {
-      "vertex": "quad.vertex", "fragment": "blend.fragment"
-    },
-    "background": {
-      "vertex": "tetra.vertex", "fragment": "bg.fragment"
-    },
-    "probe_background": {
-      "vertex": "tetra.vertex", "geometry": "probe.geometry", "fragment": "bg.fragment",
-      "flags": ["probe","background"]
-    },
-    "mesh_depth": {
-      "vertex": "mesh.vertex", "fragment": "mesh_depth",
-      "flags": ["depth_only"]
-    },
-    "mesh_depth_skinned": {
-      "vertex": "mesh.vertex", "fragment": "mesh_depth",
-      "flags": ["depth_only", "jointInput=5"]
-    },
-    "mesh_depth_animated": {
-      "vertex": "mesh.vertex", "fragment": "mesh_depth",
-      "flags": ["depth_only", "jointInput=5", "skinSet=1", "noJoints=256"]
-    },
     "tr_mesh_color": {
       "vertex": "mesh.vertex", "fragment": "mesh_color",
       "flags": ["transparent", "withdebug"]
@@ -70,39 +48,6 @@
     "mesh_color_animaten_normap": {
       "vertex": "mesh.vertex", "fragment": "mesh_color",
       "flags": ["normalMap", "withdebug", "jointInput=5", "skinSet=1", "noJoints=256"]
-    },
-    "shadow_mesh": {
-      "vertex": "mesh_shadow.vertex", "fragment": "shadow",
-      "flags": ["withdebug"]
-    },
-    "shadow_mesh_skinned": {
-      "vertex": "mesh_shadow.vertex", "fragment": "shadow",
-      "flags": ["jointInput=5","withdebug"]
-    },
-    "shadow_mesh_animated": {
-      "vertex": "mesh_shadow.vertex", "fragment": "shadow",
-      "flags": ["jointInput=5","withdebug","skinSet=2", "noJoints=256"]
-    },
-    "probe_mesh": {
-      "vertex": "mesh.vertex", "fragment": "mesh_color",
-      "geometry": "probe.geometry",
-      "flags": ["probe","withdebug"]
-    },
-    "probe_mesh_skinned": {
-      "vertex": "mesh.vertex", "fragment": "mesh_color",
-      "geometry": "probe.geometry",
-      "flags": ["probe","jointInput=5","withdebug"]
-    },
-    "probe_mesh_animated": {
-      "vertex": "mesh.vertex", "fragment": "mesh_color",
-      "geometry": "probe.geometry",
-      "flags": ["probe","jointInput=5","withdebug","skinSet=2", "noJoints=256"]
-    },
-    "probe_mips": {
-      "compute": "probe_mips.compute"
-    },
-    "probe_spherical": {
-      "compute": "probe_spherical.compute"
     }
   }
 }

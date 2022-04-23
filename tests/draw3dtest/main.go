@@ -1,9 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/shaders/mixshader"
+	"github.com/lakal3/vge/vge/shaders/phongshader"
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vasset"
 	"github.com/lakal3/vge/vge/vdraw"
@@ -31,7 +33,13 @@ var app struct {
 	nodes  map[string]vdraw3d.FrozenID
 }
 
+var config struct {
+	phongshader bool
+}
+
 func main() {
+	flag.BoolVar(&config.phongshader, "phong", false, "Light calculation using simpler phong shading model")
+	flag.Parse()
 	// Initialize application framework. Add validate options to check Vulkan calls and desktop to enable windowing.
 	err := vapp.Init("UItest", vapp.Validate{}, vapp.Desktop{}, vapp.DynamicDescriptors{MaxDescriptors: 1024})
 	// err := vapp.Init("UItest", vapp.Desktop{}, vapp.DynamicDescriptors{MaxDescriptors: 1024})
@@ -69,6 +77,12 @@ func buildScene() error {
 	sp, err := mixshader.LoadPack()
 	if err != nil {
 		return err
+	}
+	if config.phongshader {
+		err = phongshader.AddPack(sp)
+		if err != nil {
+			return err
+		}
 	}
 	sv := vdraw3d.NewCustomView(vapp.Dev, sp, paintStatic, paintScene)
 	sv.OnSize = func(fi *vk.FrameInstance) vdraw.Area {

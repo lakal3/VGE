@@ -5,10 +5,10 @@ void lightFormula() {
 
     #if !probe
     float specFactor = pow(max(dot(mat.normal, l.halfDir), 0.0), 25);
-    vec3 specLight = l.radiance * mat.specular0 * vec3(specFactor);
+    vec3 specLight = l.radiance * mat.specular * vec3(specFactor);
     #endif
     #if probe
-    vec3 specLight = l.radiance * mat.specular0 * vec3(diffFactor);
+    vec3 specLight = l.radiance * mat.specular * vec3(diffFactor);
     #endif
 
     mat.directLight = mat.directLight + (diffLight + specLight) * l.shadowFactor;

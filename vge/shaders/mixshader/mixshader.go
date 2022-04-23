@@ -12,8 +12,11 @@ func LoadPack() (*shaders.Pack, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = sp.Load(bytes.NewReader(mixshader_bin))
-	return sp, err
+	return sp, AddPack(sp)
+}
+
+func AddPack(base *shaders.Pack) error {
+	return base.Load(bytes.NewReader(mixshader_bin))
 }
 
 //go:embed mixshader.bin

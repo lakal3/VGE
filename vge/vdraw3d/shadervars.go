@@ -102,8 +102,6 @@ type frame struct {
 	viewPosition mgl32.Vec4
 	lightPos     uint32
 	lights       uint32
-	decalPos     uint32
-	decals       uint32
 	debug        uint32
 	temp2        float32
 }
@@ -123,7 +121,7 @@ type probeFrame struct {
 	cameraPos  mgl32.Vec4
 }
 
-type material struct {
+type instance struct {
 	world         mgl32.Mat4
 	albedo        mgl32.Vec4
 	emissive      mgl32.Vec4
@@ -133,5 +131,6 @@ type material struct {
 	ctextures     mgl32.Vec4 // Custom textures
 	alphaCutoff   float32
 	probe         uint32
-	meshID        uint32
+	materialID    uint32
+	decalPos      uint32
 }

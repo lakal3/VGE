@@ -207,6 +207,13 @@ func painter(fr *vimgui.UIFrame) {
 var sceneKeys = vk.NewKeys(3)
 
 func paintStatic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
+	dp := vmodel.NewMaterialProperties()
+	dp.SetColor(vmodel.CAlbedo, mgl32.Vec4{1, 1, 1, 1})
+	dp.SetImage(vmodel.TxAlbedo, app.images[1])
+	dp.SetImage(vmodel.TxBump, app.images[2])
+	dp.SetFactor(vmodel.FMetalness, 0)
+	vdraw3d.DrawDecal(dl, app.model, mgl32.Translate3D(2, 1, 0).Mul4(mgl32.Scale3D(3, 3, 3)), dp)
+	// f := app.nodes["Solid1.003_1"]
 	paintBg(dl)
 	vdraw3d.DrawProbe(dl, sceneKeys, mgl32.Vec3{0, 1, -1}, paintBg)
 	vdraw3d.DrawDirectionalLight(dl, mgl32.Vec3{0.1, -1, 0.1}, nil)
@@ -221,7 +228,14 @@ func paintStatic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 			if n.Name == "Ground_1" {
 				paintGround(dl, n, local)
 			} else {
+				var pop func(fl *vdraw3d.FreezeList)
+				if n.Name == "Solid1.003_1" {
+					pop, _ = vdraw3d.DrawDecal(dl, app.model, mgl32.Translate3D(-3, 1, 2).Mul4(mgl32.Scale3D(3, 3, 3)), dp)
+				}
 				vdraw3d.DrawMesh(dl, app.model2.GetMesh(n.Mesh), local, app.model2.GetMaterial(n.Material).Props)
+				if pop != nil {
+					pop(dl)
+				}
 			}
 		}
 	})
@@ -322,13 +336,5 @@ func paintScene(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 		}
 
 	}
-	dp := vmodel.NewMaterialProperties()
-	dp.SetColor(vmodel.CAlbedo, mgl32.Vec4{1, 1, 1, 1})
-	dp.SetImage(vmodel.TxAlbedo, app.images[1])
-	dp.SetImage(vmodel.TxBump, app.images[2])
-	dp.SetFactor(vmodel.FMetalness, 0)
-	vdraw3d.DrawDecal(dl, app.model, mgl32.Translate3D(2, 1, 0).Mul4(mgl32.Scale3D(3, 3, 3)), dp)
-	// f := app.nodes["Solid1.003_1"]
-	vdraw3d.DrawDecalOn(dl, app.model, mgl32.Translate3D(-3, 1, 2).Mul4(mgl32.Scale3D(3, 3, 3)),
-		10, 11, dp)
+
 }

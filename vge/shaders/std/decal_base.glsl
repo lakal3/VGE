@@ -12,7 +12,7 @@ mat3 caclNormatRotation(vec3 axis, float c)
 
 void addDecal(uint pos) {
     vec2 limits = extrava.va[pos + 2].v1.yz;
-    if (limits.y > limits.x && (mat.meshID < limits.x || mat.meshID >= limits.y)) {
+    if (limits.y > limits.x && (mat.materialID < limits.x || mat.materialID >= limits.y)) {
         return;
     }
     mat4 toDecalSpace = extrama.ma[pos];
@@ -75,9 +75,8 @@ void addDecal(uint pos) {
 }
 
 void addDecals() {
-    uint decalPos = frame.decalPos;
-    uint decals = frame.decals;
-    while (decals-- > 0) {
+    uint decalPos = instance.decalPos;
+    while (decalPos != 0) {
         addDecal(decalPos);
         decalPos =  uint(extrava.va[decalPos + 2].v1.x);
     }

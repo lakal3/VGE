@@ -19,7 +19,7 @@ type FrozenDecal struct {
 	views      [4]*vk.ImageView
 	sampler    [4]*vk.Sampler
 	storage    uint32
-	prev       float32
+	prev       uint32
 	metalness  float32
 	roughness  float32
 	normalAttn float32
@@ -39,6 +39,7 @@ func (fd *FrozenDecal) Support(fi *vk.FrameInstance, phase Phase) bool {
 }
 
 func (fd *FrozenDecal) Clone() Frozen {
+	fd.prev, fd.storage = 0, 0
 	return fd
 }
 
@@ -50,13 +51,18 @@ func (fd *FrozenDecal) Render(fi *vk.FrameInstance, phase Phase) {
 				fd.textures1[idx] = ri.AddView(fd.views[idx], fd.sampler[idx])
 			}
 		}
-		prev := ri.AddDecal(fd.storage)
+		fd.prev = ri.AddDecal(fd.storage)
 		ri.UpdateStorage(fd.storage, 0, fd.toDecal[:]...)
 		ri.UpdateStorage(fd.storage+1, 0, fd.albedo[:]...)
 		ri.UpdateStorage(fd.storage+1, 4, fd.emissive[:]...)
 		ri.UpdateStorage(fd.storage+1, 8, fd.textures1[:]...)
 		ri.UpdateStorage(fd.storage+1, 12, fd.metalness, fd.roughness, fd.normalAttn)
-		ri.UpdateStorage(fd.storage+2, 0, prev, float32(fd.from), float32(fd.to))
+		ri.UpdateStorage(fd.storage+2, 0, float32(fd.prev), float32(fd.from), float32(fd.to))
+	}
+	rc, ok := phase.(RenderColor)
+	if ok && fd.storage != 0 {
+		fd.prev = *rc.Decal
+		*rc.Decal = fd.storage
 	}
 }
 
@@ -89,15 +95,49 @@ func (fd *FrozenDecal) fillProps(props vmodel.MaterialProperties) {
 
 }
 
-func DrawDecal(fl *FreezeList, model *vmodel.Model, world mgl32.Mat4, props vmodel.MaterialProperties) FrozenID {
+type popDecal struct {
+	fd *FrozenDecal
+}
+
+func (p popDecal) Reserve(fi *vk.FrameInstance, storageOffset uint32) (newOffset uint32) {
+	return storageOffset
+}
+
+func (p popDecal) Support(fi *vk.FrameInstance, phase Phase) bool {
+	_, ok := phase.(RenderColor)
+	return ok
+}
+
+func (p popDecal) Render(fi *vk.FrameInstance, phase Phase) {
+	ri, ok := phase.(UpdateFrame)
+	if ok {
+		ri.PopDecal(p.fd.prev)
+		return
+	}
+	rc, ok := phase.(RenderColor)
+	if ok {
+		*rc.Decal = p.fd.prev
+		p.fd.storage = 0
+	}
+}
+
+func (p popDecal) Clone() Frozen {
+	return p
+}
+
+func (fd *FrozenDecal) pop(fl *FreezeList) {
+	fl.Add(popDecal{fd: fd})
+}
+
+func DrawDecal(fl *FreezeList, model *vmodel.Model, world mgl32.Mat4, props vmodel.MaterialProperties) (pop func(fl *FreezeList), id FrozenID) {
 	return DrawDecalOn(fl, model, world, 0, 0, props)
 }
 
-func DrawDecalOn(fl *FreezeList, model *vmodel.Model, world mgl32.Mat4, fromID, toID uint32, props vmodel.MaterialProperties) FrozenID {
-	fd := &FrozenDecal{model: model, from: fromID, to: toID}
+func DrawDecalOn(fl *FreezeList, model *vmodel.Model, world mgl32.Mat4, fromMaterialID, toMaterialID uint32, props vmodel.MaterialProperties) (pop func(fl *FreezeList), id FrozenID) {
+	fd := &FrozenDecal{model: model, from: fromMaterialID, to: toMaterialID}
 	fd.world = world
 	fd.toDecal = world.Inv()
 	fd.fillProps(props)
-	return fl.Add(fd)
+	return fd.pop, fl.Add(fd)
 
 }

@@ -6,7 +6,7 @@ struct MATERIAL {
     float roughness;
     float opacity;
     uint probe;
-    uint meshID;
+    uint materialID;
     vec3 f0;
     float reflectance;
     vec3 specular;

@@ -82,7 +82,7 @@ void main() {
     o_position = vec3(vPos);
 #endif
 #if pick
-    o_ids = uvec2(instance.meshID, gl_VertexIndex);
+    o_ids = uvec2(instance.materialID, gl_VertexIndex);
 #endif
 #endif
 }

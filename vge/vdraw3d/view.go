@@ -260,7 +260,6 @@ func (v *View) updateFrame(fi *vk.FrameInstance, cv *currentView) []float32 {
 	cv.fl.RenderAll(fi, bf)
 	fr.lights = cv.lights
 	fr.lightPos = cv.lightPos
-	fr.decals, fr.decalPos = cv.decals, cv.decalPos
 	fr.debug = v.debug
 	ubBuf := fi.AllocSlice(vk.BUFFERUsageUniformBufferBit, uint64(unsafe.Sizeof(frame{})))
 	*(*frame)(unsafe.Pointer(&ubBuf.Bytes()[0])) = fr
@@ -302,8 +301,9 @@ func (v *View) renderImage(fi *vk.FrameInstance, cv *currentView) {
 
 	cmd.BeginRenderPass(rp, fpColor1)
 	var probe uint32
+	var decal uint32
 	var transparents []trList
-	rc := RenderColor{DL: &vk.DrawList{}, Pass: rp, Render: renderCommon, Probe: &probe, ViewTransform: cv.view}
+	rc := RenderColor{DL: &vk.DrawList{}, Pass: rp, Render: renderCommon, Probe: &probe, Decal: &decal, ViewTransform: cv.view}
 	rc.Name = "COLOR"
 	rc.RenderTransparent = func(priority float32, render func(dl *vk.DrawList, pass *vk.GeneralRenderPass)) {
 		transparents = append(transparents, trList{priority: priority, render: render})
@@ -373,7 +373,6 @@ type currentView struct {
 	lightPos    uint32
 	lights      uint32
 	decalPos    uint32
-	decals      uint32
 	views       map[vk.VImageView]uint32
 	dsFrame     *vk.DescriptorSet
 	outputView  *vk.AImageView
@@ -398,6 +397,10 @@ type buildFrame struct {
 	isStatic bool
 }
 
+func (bf buildFrame) PopDecal(oldPos uint32) {
+	bf.cv.decalPos = oldPos
+}
+
 func (bf buildFrame) PhaseName() string {
 	return "BuildFrame"
 }
@@ -416,9 +419,8 @@ func (bf buildFrame) AddLight(storagePosition uint32) (prev float32) {
 	return
 }
 
-func (bf buildFrame) AddDecal(storagePosition uint32) (prev float32) {
-	bf.cv.decals++
-	prev, bf.cv.decalPos = float32(bf.cv.decalPos), storagePosition
+func (bf buildFrame) AddDecal(storagePosition uint32) (prev uint32) {
+	prev, bf.cv.decalPos = bf.cv.decalPos, storagePosition
 	return
 }
 

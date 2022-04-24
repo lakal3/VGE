@@ -8,8 +8,6 @@ layout(set=0, binding=0) uniform FRAME {
     vec4 viewPosition; // left, top, right, bottom
     uint lightPos;
     uint lights;
-    uint decalPos;
-    uint decals;
     uint debug;
     float dummy3;
 } frame;

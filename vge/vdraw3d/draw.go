@@ -12,7 +12,7 @@ import (
 
 type FrozenMesh struct {
 	mesh         vmodel.Mesh
-	mat          material
+	mat          instance
 	transparent  bool
 	colorShader  string
 	depthShader  string
@@ -90,6 +90,10 @@ func (f *FrozenMesh) Render(fi *vk.FrameInstance, phase Phase) {
 	}
 	rc, ok := phase.(RenderColor)
 	if ok {
+		if len(f.colorShader) == 0 {
+			return
+		}
+		f.mat.probe, f.mat.decalPos = *rc.Probe, *rc.Decal
 		if f.transparent {
 			center := rc.ViewTransform.Mul4(f.mat.world).Mul4x1(mgl32.Vec4{0, 0, 0, 1})
 			rc.RenderTransparent(center[2], func(dl *vk.DrawList, pass *vk.GeneralRenderPass) {
@@ -98,18 +102,15 @@ func (f *FrozenMesh) Render(fi *vk.FrameInstance, phase Phase) {
 			return
 		}
 
-		if len(f.colorShader) == 0 {
-			return
-		}
 		pl := rc.Pass.Get(vk.NewHashKey(f.colorShader), func() interface{} {
 			return f.buildPass(fi, rc.Pass, f.colorShader, false, false, rc.Shaders)
 		}).(*vk.GraphicsPipeline)
 		dl := rc.DL
-		f.mat.probe = *rc.Probe
-		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(material{})))
-		*(*material)(ptr) = f.mat
+
+		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(instance{})))
+		*(*instance)(ptr) = f.mat
 		dl.DrawIndexed(pl, f.mesh.From, f.mesh.Count).AddInputs(f.mesh.Model.VertexBuffers(f.mesh.Kind)...).
-			AddDescriptors(rc.DSFrame).AddPushConstants(uint32(unsafe.Sizeof(material{})), offset)
+			AddDescriptors(rc.DSFrame).AddPushConstants(uint32(unsafe.Sizeof(instance{})), offset)
 	}
 	rd, ok := phase.(RenderDepth)
 	if ok {
@@ -120,10 +121,10 @@ func (f *FrozenMesh) Render(fi *vk.FrameInstance, phase Phase) {
 			return f.buildDepthPass(fi, rd.Pass, f.depthShader, false, rd.Shaders)
 		}).(*vk.GraphicsPipeline)
 		dl := rd.DL
-		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(material{})))
-		*(*material)(ptr) = f.mat
+		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(instance{})))
+		*(*instance)(ptr) = f.mat
 		dl.DrawIndexed(pl, f.mesh.From, f.mesh.Count).AddInputs(f.mesh.Model.VertexBuffers(f.mesh.Kind)...).
-			AddDescriptors(rd.DSFrame).AddPushConstants(uint32(unsafe.Sizeof(material{})), offset)
+			AddDescriptors(rd.DSFrame).AddPushConstants(uint32(unsafe.Sizeof(instance{})), offset)
 	}
 	rs, ok := phase.(RenderShadow)
 	if ok {
@@ -134,10 +135,10 @@ func (f *FrozenMesh) Render(fi *vk.FrameInstance, phase Phase) {
 			return f.buildShadowPass(fi, rs.Pass, f.shadowShader, false, rs.Shaders)
 		}).(*vk.GraphicsPipeline)
 		dl := rs.DL
-		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(material{})))
-		*(*material)(ptr) = f.mat
+		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(instance{})))
+		*(*instance)(ptr) = f.mat
 		dl.DrawIndexed(pl, f.mesh.From, f.mesh.Count).AddInputs(f.mesh.Model.VertexBuffers(f.mesh.Kind)...).
-			AddDescriptors(rs.DSFrame, rs.DSShadowFrame).AddPushConstants(uint32(unsafe.Sizeof(material{})), offset)
+			AddDescriptors(rs.DSFrame, rs.DSShadowFrame).AddPushConstants(uint32(unsafe.Sizeof(instance{})), offset)
 	}
 	rPick, ok := phase.(RenderPick)
 	if ok {
@@ -148,10 +149,10 @@ func (f *FrozenMesh) Render(fi *vk.FrameInstance, phase Phase) {
 			return f.buildPickPass(fi, rPick.Pass, f.pickShader, false, rPick.Shaders)
 		}).(*vk.GraphicsPipeline)
 		dl := rPick.DL
-		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(material{})))
-		*(*material)(ptr) = f.mat
+		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(instance{})))
+		*(*instance)(ptr) = f.mat
 		dl.DrawIndexed(pl, f.mesh.From, f.mesh.Count).AddInputs(f.mesh.Model.VertexBuffers(f.mesh.Kind)...).
-			AddDescriptors(rPick.DSFrame, rPick.DSPick).AddPushConstants(uint32(unsafe.Sizeof(material{})), offset)
+			AddDescriptors(rPick.DSFrame, rPick.DSPick).AddPushConstants(uint32(unsafe.Sizeof(instance{})), offset)
 	}
 	rp, ok := phase.(RenderProbe)
 	if ok {
@@ -162,10 +163,10 @@ func (f *FrozenMesh) Render(fi *vk.FrameInstance, phase Phase) {
 			return f.buildProbePass(fi, rp.Pass, f.probeShader, false, rp.Shaders)
 		}).(*vk.GraphicsPipeline)
 		dl := rp.DL
-		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(material{})))
-		*(*material)(ptr) = f.mat
+		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(instance{})))
+		*(*instance)(ptr) = f.mat
 		dl.DrawIndexed(pl, f.mesh.From, f.mesh.Count).AddInputs(f.mesh.Model.VertexBuffers(f.mesh.Kind)...).
-			AddDescriptors(rp.DSFrame, rp.DSProbeFrame).AddPushConstants(uint32(unsafe.Sizeof(material{})), offset)
+			AddDescriptors(rp.DSFrame, rp.DSProbeFrame).AddPushConstants(uint32(unsafe.Sizeof(instance{})), offset)
 	}
 }
 
@@ -193,15 +194,15 @@ func (am *AnimatedMesh) Render(fi *vk.FrameInstance, phase Phase) {
 		if len(am.colorShader) == 0 {
 			return
 		}
+		am.mat.probe, am.mat.decalPos = *rc.Probe, *rc.Decal
 		pl := rc.Pass.Get(vk.NewHashKey(am.colorShader), func() interface{} {
 			return am.buildPass(fi, rc.Pass, am.colorShader, true, false, rc.Shaders)
 		}).(*vk.GraphicsPipeline)
 		dl := rc.DL
-		am.mat.probe = *rc.Probe
-		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(material{})))
-		*(*material)(ptr) = am.mat
+		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(instance{})))
+		*(*instance)(ptr) = am.mat
 		dl.DrawIndexed(pl, am.mesh.From, am.mesh.Count).AddInputs(am.mesh.Model.VertexBuffers(am.mesh.Kind)...).
-			AddDescriptors(rc.DSFrame, am.dsJoints).AddPushConstants(uint32(unsafe.Sizeof(material{})), offset)
+			AddDescriptors(rc.DSFrame, am.dsJoints).AddPushConstants(uint32(unsafe.Sizeof(instance{})), offset)
 	}
 	rd, ok := phase.(RenderDepth)
 	if ok {
@@ -212,10 +213,10 @@ func (am *AnimatedMesh) Render(fi *vk.FrameInstance, phase Phase) {
 			return am.buildDepthPass(fi, rd.Pass, am.depthShader, true, rd.Shaders)
 		}).(*vk.GraphicsPipeline)
 		dl := rd.DL
-		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(material{})))
-		*(*material)(ptr) = am.mat
+		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(instance{})))
+		*(*instance)(ptr) = am.mat
 		dl.DrawIndexed(pl, am.mesh.From, am.mesh.Count).AddInputs(am.mesh.Model.VertexBuffers(am.mesh.Kind)...).
-			AddDescriptors(rd.DSFrame, am.dsJoints).AddPushConstants(uint32(unsafe.Sizeof(material{})), offset)
+			AddDescriptors(rd.DSFrame, am.dsJoints).AddPushConstants(uint32(unsafe.Sizeof(instance{})), offset)
 	}
 	rPick, ok := phase.(RenderPick)
 	if ok {
@@ -226,10 +227,10 @@ func (am *AnimatedMesh) Render(fi *vk.FrameInstance, phase Phase) {
 			return am.buildPickPass(fi, rPick.Pass, am.pickShader, true, rPick.Shaders)
 		}).(*vk.GraphicsPipeline)
 		dl := rPick.DL
-		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(material{})))
-		*(*material)(ptr) = am.mat
+		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(instance{})))
+		*(*instance)(ptr) = am.mat
 		dl.DrawIndexed(pl, am.mesh.From, am.mesh.Count).AddInputs(am.mesh.Model.VertexBuffers(am.mesh.Kind)...).
-			AddDescriptors(rPick.DSFrame, rPick.DSPick, am.dsJoints).AddPushConstants(uint32(unsafe.Sizeof(material{})), offset)
+			AddDescriptors(rPick.DSFrame, rPick.DSPick, am.dsJoints).AddPushConstants(uint32(unsafe.Sizeof(instance{})), offset)
 	}
 	rs, ok := phase.(RenderShadow)
 	if ok {
@@ -240,10 +241,10 @@ func (am *AnimatedMesh) Render(fi *vk.FrameInstance, phase Phase) {
 			return am.buildShadowPass(fi, rs.Pass, am.shadowShader, true, rs.Shaders)
 		}).(*vk.GraphicsPipeline)
 		dl := rs.DL
-		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(material{})))
-		*(*material)(ptr) = am.mat
+		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(instance{})))
+		*(*instance)(ptr) = am.mat
 		dl.DrawIndexed(pl, am.mesh.From, am.mesh.Count).AddInputs(am.mesh.Model.VertexBuffers(am.mesh.Kind)...).
-			AddDescriptors(rs.DSFrame, rs.DSShadowFrame, am.dsJoints).AddPushConstants(uint32(unsafe.Sizeof(material{})), offset)
+			AddDescriptors(rs.DSFrame, rs.DSShadowFrame, am.dsJoints).AddPushConstants(uint32(unsafe.Sizeof(instance{})), offset)
 	}
 	rp, ok := phase.(RenderProbe)
 	if ok {
@@ -254,17 +255,17 @@ func (am *AnimatedMesh) Render(fi *vk.FrameInstance, phase Phase) {
 			return am.buildProbePass(fi, rp.Pass, am.probeShader, true, rp.Shaders)
 		}).(*vk.GraphicsPipeline)
 		dl := rp.DL
-		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(material{})))
-		*(*material)(ptr) = am.mat
+		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(instance{})))
+		*(*instance)(ptr) = am.mat
 		dl.DrawIndexed(pl, am.mesh.From, am.mesh.Count).AddInputs(am.mesh.Model.VertexBuffers(am.mesh.Kind)...).
-			AddDescriptors(rp.DSFrame, rp.DSProbeFrame, am.dsJoints).AddPushConstants(uint32(unsafe.Sizeof(material{})), offset)
+			AddDescriptors(rp.DSFrame, rp.DSProbeFrame, am.dsJoints).AddPushConstants(uint32(unsafe.Sizeof(instance{})), offset)
 	}
 }
 
 func (f *FrozenMesh) buildPass(fi *vk.FrameInstance, pass *vk.GeneralRenderPass, name string, animated bool, transparent bool, sp *shaders.Pack) *vk.GraphicsPipeline {
 	dev := fi.Device()
 	pl := vk.NewGraphicsPipeline(dev)
-	pl.AddPushConstants(vk.SHADERStageAll, uint32(unsafe.Sizeof(material{})))
+	pl.AddPushConstants(vk.SHADERStageAll, uint32(unsafe.Sizeof(instance{})))
 	pl.AddLayout(GetFrameLayout(dev))
 	if animated {
 		pl.AddLayout(GetJointsLayout(dev))
@@ -286,7 +287,7 @@ func (f *FrozenMesh) buildPass(fi *vk.FrameInstance, pass *vk.GeneralRenderPass,
 func (f *FrozenMesh) buildDepthPass(fi *vk.FrameInstance, pass *vk.GeneralRenderPass, name string, animated bool, sp *shaders.Pack) *vk.GraphicsPipeline {
 	dev := fi.Device()
 	pl := vk.NewGraphicsPipeline(dev)
-	pl.AddPushConstants(vk.SHADERStageAll, uint32(unsafe.Sizeof(material{})))
+	pl.AddPushConstants(vk.SHADERStageAll, uint32(unsafe.Sizeof(instance{})))
 	pl.AddLayout(GetFrameLayout(dev))
 	if animated {
 		pl.AddLayout(GetJointsLayout(dev))
@@ -303,7 +304,7 @@ func (f *FrozenMesh) buildDepthPass(fi *vk.FrameInstance, pass *vk.GeneralRender
 func (f *FrozenMesh) buildShadowPass(fi *vk.FrameInstance, pass *vk.GeneralRenderPass, name string, animated bool, sp *shaders.Pack) *vk.GraphicsPipeline {
 	dev := fi.Device()
 	pl := vk.NewGraphicsPipeline(dev)
-	pl.AddPushConstants(vk.SHADERStageAll, uint32(unsafe.Sizeof(material{})))
+	pl.AddPushConstants(vk.SHADERStageAll, uint32(unsafe.Sizeof(instance{})))
 	pl.AddLayout(GetFrameLayout(dev))
 	pl.AddLayout(GetShadowFrameLayout(dev))
 	if animated {
@@ -321,7 +322,7 @@ func (f *FrozenMesh) buildShadowPass(fi *vk.FrameInstance, pass *vk.GeneralRende
 func (f *FrozenMesh) buildPickPass(fi *vk.FrameInstance, pass *vk.GeneralRenderPass, name string, animated bool, sp *shaders.Pack) interface{} {
 	dev := fi.Device()
 	pl := vk.NewGraphicsPipeline(dev)
-	pl.AddPushConstants(vk.SHADERStageAll, uint32(unsafe.Sizeof(material{})))
+	pl.AddPushConstants(vk.SHADERStageAll, uint32(unsafe.Sizeof(instance{})))
 	pl.AddLayout(GetFrameLayout(dev))
 	pl.AddLayout(GetPickFrameLayout(dev))
 	if animated {
@@ -340,7 +341,7 @@ func (f *FrozenMesh) buildPickPass(fi *vk.FrameInstance, pass *vk.GeneralRenderP
 func (f *FrozenMesh) buildProbePass(fi *vk.FrameInstance, pass *vk.GeneralRenderPass, name string, animated bool, sp *shaders.Pack) *vk.GraphicsPipeline {
 	dev := fi.Device()
 	pl := vk.NewGraphicsPipeline(dev)
-	pl.AddPushConstants(vk.SHADERStageAll, uint32(unsafe.Sizeof(material{})))
+	pl.AddPushConstants(vk.SHADERStageAll, uint32(unsafe.Sizeof(instance{})))
 	pl.AddLayout(GetFrameLayout(dev))
 	pl.AddLayout(GetShadowFrameLayout(dev))
 	if animated {
@@ -360,7 +361,7 @@ func (fm *FrozenMesh) fillProps(mesh vmodel.Mesh, props vmodel.MaterialPropertie
 	fm.mat.albedo = props.GetColor(vmodel.CAlbedo, mgl32.Vec4{0, 0, 0, 1})
 	fm.mat.emissive = props.GetColor(vmodel.CEmissive, mgl32.Vec4{0, 0, 0, 0})
 	fm.mat.metalRoughess = mgl32.Vec4{props.GetFactor(vmodel.FMetalness, 0), props.GetFactor(vmodel.FRoughness, 1)}
-	fm.mat.meshID = props.GetUInt(vmodel.UMaterialID, 0)
+	fm.mat.materialID = props.GetUInt(vmodel.UMaterialID, 0)
 	txIdx := props.GetImage(vmodel.TxAlbedo)
 	if txIdx != 0 {
 		fm.views[0], fm.sampler[0] = mesh.Model.GetImageView(txIdx)
@@ -436,10 +437,10 @@ func (f *FrozenMesh) renderTransparent(dl *vk.DrawList, pass *vk.GeneralRenderPa
 		return f.buildPass(fi, pass, f.colorShader, false, true, shaders)
 	}).(*vk.GraphicsPipeline)
 	f.mat.probe = probe
-	ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(material{})))
-	*(*material)(ptr) = f.mat
+	ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(instance{})))
+	*(*instance)(ptr) = f.mat
 	dl.DrawIndexed(pl, f.mesh.From, f.mesh.Count).AddInputs(f.mesh.Model.VertexBuffers(f.mesh.Kind)...).
-		AddDescriptors(dsFrame).AddPushConstants(uint32(unsafe.Sizeof(material{})), offset)
+		AddDescriptors(dsFrame).AddPushConstants(uint32(unsafe.Sizeof(instance{})), offset)
 }
 
 type DrawOption interface {

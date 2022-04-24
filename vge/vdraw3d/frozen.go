@@ -74,6 +74,7 @@ type RenderColor struct {
 	DL                *vk.DrawList
 	Pass              *vk.GeneralRenderPass
 	Probe             *uint32
+	Decal             *uint32
 	ViewTransform     mgl32.Mat4
 	RenderTransparent func(priority float32, render func(dl *vk.DrawList, pass *vk.GeneralRenderPass))
 }
@@ -105,6 +106,7 @@ type UpdateFrame interface {
 	IsStatic() bool
 	AddView(view vk.VImageView, sampler *vk.Sampler) float32
 	AddLight(storagePosition uint32) (prev float32)
-	AddDecal(storagePosition uint32) (prev float32)
+	AddDecal(storagePosition uint32) (prev uint32)
+	PopDecal(oldPos uint32)
 	UpdateStorage(storagePosition uint32, index uint32, values ...float32)
 }

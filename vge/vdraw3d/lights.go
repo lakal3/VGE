@@ -134,7 +134,7 @@ func (f *fLight) renderShadowMap(fi *vk.FrameInstance, rm RenderMaps) {
 		fi.AddChild(fb)
 		cmd.BeginRenderPass(rp, fb)
 		dl := &vk.DrawList{}
-		rs := RenderShadow{Render: Render{Target: f.id, DSFrame: rm.DSFrame, Shaders: rm.Shaders},
+		rs := RenderShadow{Render: Render{Name: "SHADOW", DSFrame: rm.DSFrame, Shaders: rm.Shaders},
 			DL: dl, DSShadowFrame: ds, Pass: rp}
 		rm.Static.RenderAll(fi, rs)
 		rm.Dynamic.RenderAll(fi, rs)

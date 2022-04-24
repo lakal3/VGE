@@ -19,6 +19,8 @@ type probe struct {
 	// When recording
 	viewIndex  float32
 	storage    uint32
+	freezeList *FreezeList
+	drawView   func(*FreezeList)
 	depthImage *vk.AImage
 	depthViews []*vk.AImageView
 	la         *vk.DescriptorLayout
@@ -101,6 +103,9 @@ func (p *probe) Render(fi *vk.FrameInstance, phase Phase) {
 		}).(*probeMapRes)
 		if recording {
 			pm.image, pm.views = fiStatic.AllocImage(p.key)
+			p.freezeList = &FreezeList{BaseID: ProbeBase}
+			p.drawView(p.freezeList)
+			p.freezeList.RenderAll(fi, uf)
 		} else {
 			p.copySph(func(storagePosition uint32, index uint32, values ...float32) {
 				uf.UpdateStorage(storagePosition, index, values...)
@@ -147,7 +152,7 @@ func (p *probe) renderProbe(fi *vk.FrameInstance, fiStatic *vk.FrameInstance, rm
 	fb := vk.NewFramebuffer2(rp, pm.views[1], p.depthViews[0])
 	cmd.BeginRenderPass(rp, fb)
 	dl := &vk.DrawList{}
-	rm.Static.RenderAll(fi, RenderProbe{Render: Render{Target: p.id, DSFrame: rm.DSFrame, Shaders: rm.Shaders},
+	p.freezeList.RenderAll(fi, RenderProbe{Render: Render{Name: "PROBE", DSFrame: rm.DSFrame, Shaders: rm.Shaders},
 		DL: dl, DSProbeFrame: ds, Pass: rp})
 	cmd.Draw(dl)
 	cmd.EndRenderPass()
@@ -236,9 +241,10 @@ func getProbeSPHPipeline(dev *vk.Device, st *shaders.Pack) *vk.ComputePipeline {
 
 }
 
-func DrawProbe(fl *FreezeList, key vk.Key, at mgl32.Vec3) FrozenID {
+func DrawProbe(fl *FreezeList, key vk.Key, at mgl32.Vec3, drawView func(fl *FreezeList)) FrozenID {
 	pr := &probe{key: key, at: at}
 	pr.desc = vk.ImageDescription{Layers: 6, Width: 512, Height: 512, Depth: 1, MipLevels: 6, Format: vk.FORMATB10g11r11UfloatPack32}
+	pr.drawView = drawView
 	pr.id = fl.Add(pr)
 	return pr.id
 }

@@ -184,7 +184,7 @@ func loadModel(subpath string, modelName string, imagePaths ...string) (*vmodel.
 	}
 	idx := mb.FindMaterial("Material.004")
 	if idx >= 0 {
-		mb.Materials[idx].Props.SetUInt(vmodel.UMeshID, 10)
+		mb.Materials[idx].Props.SetUInt(vmodel.UMaterialID, 10)
 	}
 	return mb.ToModel(vapp.Dev)
 }
@@ -207,11 +207,11 @@ func painter(fr *vimgui.UIFrame) {
 var sceneKeys = vk.NewKeys(3)
 
 func paintStatic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
-	vdraw3d.DrawBackground(dl, app.model, app.images[0])
+	paintBg(dl)
+	vdraw3d.DrawProbe(dl, sceneKeys, mgl32.Vec3{0, 1, -1}, paintBg)
+	vdraw3d.DrawDirectionalLight(dl, mgl32.Vec3{0.1, -1, 0.1}, nil)
 	pl2 := vmodel.NewMaterialProperties()
 	pl2.SetColor(vmodel.CIntensity, mgl32.Vec4{2, 1, 0, 1})
-	vdraw3d.DrawProbe(dl, sceneKeys, mgl32.Vec3{0, 1, -1})
-	vdraw3d.DrawDirectionalLight(dl, mgl32.Vec3{0.1, -1, 0.1}, nil)
 	vdraw3d.DrawPointLight(dl, sceneKeys+1, mgl32.Vec3{0, 5, -1}, pl2)
 	app.model2.GetNode(0).Enum(mgl32.Ident4(), func(local mgl32.Mat4, n vmodel.Node) {
 		if n.Name == "Cube_Grass_1" || n.Name == "Cube_Rock_1" {
@@ -226,6 +226,10 @@ func paintStatic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 		}
 	})
 
+}
+
+func paintBg(fl *vdraw3d.FreezeList) {
+	vdraw3d.DrawBackground(fl, app.model, app.images[0])
 }
 
 func paintGround(dl *vdraw3d.FreezeList, n vmodel.Node, local mgl32.Mat4) {

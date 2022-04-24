@@ -142,13 +142,17 @@ var kProbe = vk.NewKey()
 
 func drawStatic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 	// Draw background image
+	drawBg(dl)
+	app.probe = vdraw3d.DrawProbe(dl, kProbe, mgl32.Vec3{0, 0, 0}, drawBg)
+
+}
+
+func drawBg(dl *vdraw3d.FreezeList) {
 	vdraw3d.DrawBackground(dl, app.model, app.bgImage)
-	app.probe = vdraw3d.DrawProbe(dl, kProbe, mgl32.Vec3{0, 0, 0})
 
 }
 
 func drawDynamic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
-	dl.Exclude(app.probe, app.probe)
 	w := mgl32.Translate3D(4, 0, 0).Mul4(mgl32.HomogRotate3DY(float32(v.Elapsed / 2))).Mul4(mgl32.Translate3D(-4, 0, 0))
 	if app.lights {
 		// Set properties for point light

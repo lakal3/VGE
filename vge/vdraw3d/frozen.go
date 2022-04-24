@@ -6,14 +6,10 @@ import (
 	"github.com/lakal3/vge/vge/vk"
 )
 
-type FrozenID int
-
-const (
-	Main FrozenID = -1
-)
+type FrozenID uint32
 
 type Phase interface {
-	TargetID() FrozenID
+	PhaseName() string
 }
 
 type Frozen interface {
@@ -21,12 +17,6 @@ type Frozen interface {
 	Support(fi *vk.FrameInstance, phase Phase) bool
 	Render(fi *vk.FrameInstance, phase Phase)
 	Clone() Frozen
-}
-
-type Excluder interface {
-	Frozen
-	// -1 include, 0 no change, 1 exclude
-	Exclude(phase Phase) int
 }
 
 type FreezeList struct {
@@ -45,20 +35,8 @@ func (fl *FreezeList) Add(fr Frozen) FrozenID {
 }
 
 func (fl *FreezeList) RenderAll(fi *vk.FrameInstance, phase Phase) {
-	exclude := false
 	for _, item := range fl.items {
-		el, ok := item.(Excluder)
-		if ok {
-			switch el.Exclude(phase) {
-			case -1:
-				exclude = false
-			case 1:
-				exclude = true
-			}
-		}
-		if !exclude && item.Support(fi, phase) {
-			item.Render(fi, phase)
-		}
+		item.Render(fi, phase)
 	}
 }
 
@@ -68,52 +46,14 @@ func (fl *FreezeList) Clone() {
 	}
 }
 
-type excluder struct {
-	from   FrozenID
-	to     FrozenID
-	method int
-}
-
-func (e excluder) Reserve(fi *vk.FrameInstance, storageOffset uint32) (newOffset uint32) {
-	return storageOffset
-}
-
-func (e excluder) Support(fi *vk.FrameInstance, phase Phase) bool {
-	return false
-}
-
-func (e excluder) Render(fi *vk.FrameInstance, phase Phase) {
-
-}
-
-func (e excluder) Clone() Frozen {
-	return e
-}
-
-func (e excluder) Exclude(phase Phase) int {
-	tid := phase.TargetID()
-	if tid >= e.from && tid <= e.to {
-		return e.method
-	}
-	return 0
-}
-
-func (fl *FreezeList) Exclude(from FrozenID, to FrozenID) {
-	fl.Add(excluder{from: from, to: to, method: 1})
-}
-
-func (fl *FreezeList) Include(from FrozenID, to FrozenID) {
-	fl.Add(excluder{from: from, to: to, method: -1})
-}
-
 type Render struct {
-	Target  FrozenID
+	Name    string
 	Shaders *shaders.Pack
 	DSFrame *vk.DescriptorSet
 }
 
-func (r Render) TargetID() FrozenID {
-	return r.Target
+func (r Render) PhaseName() string {
+	return r.Name
 }
 
 type RenderDepth struct {

@@ -140,17 +140,15 @@ var kProbe = vk.NewKey()
 func drawStatic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 	// Draw background image
 	vdraw3d.DrawBackground(dl, app.model, app.bgImage)
-	app.probe = vdraw3d.DrawProbe(dl, kProbe, mgl32.Vec3{0, 0, 0})
-	// Don't draw anything but background to probe
-	dl.Exclude(app.probe, app.probe)
+	app.probe = vdraw3d.DrawProbe(dl, kProbe, mgl32.Vec3{0, 0, 0}, func(fl *vdraw3d.FreezeList) {
+		vdraw3d.DrawBackground(fl, app.model, app.bgImage)
+	})
 
 	// Draw all nodes starting from root (node == 0)
 	vdraw3d.DrawNodes(dl, app.model, 0, mgl32.Ident4())
 }
 
 func drawDynamic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
-	// Don't draw anything but background to probe
-	dl.Exclude(app.probe, app.probe)
 	if app.lights {
 		// Set properties for point light
 		props := vmodel.NewMaterialProperties()

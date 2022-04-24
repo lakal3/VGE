@@ -50,6 +50,7 @@ var StaticRing = vk.NewKey()
 
 const (
 	StaticBase      FrozenID = 1_000_000
+	ProbeBase       FrozenID = 2_000_000
 	vkiImage2                = 1
 	vkiDepth                 = 2
 	vkDepthFrame             = 2
@@ -172,7 +173,7 @@ func (v *View) PreRender(fi *vk.FrameInstance) (done vapp.Completed) {
 	}).(*currentView)
 	cv.dsFrame = fi.AllocDescriptor(GetFrameLayout(fi.Device()))
 	fStorage := v.updateFrame(fi, cv)
-	rm := RenderMaps{Render: Render{Target: Main, Shaders: v.shaders, DSFrame: cv.dsFrame},
+	rm := RenderMaps{Render: Render{Name: "MAPS", Shaders: v.shaders, DSFrame: cv.dsFrame},
 		Static: v.staticList, Dynamic: cv.fl}
 	var preSubmit []vk.SubmitInfo
 	rm.AtEnd = func(end func() []vk.SubmitInfo) {
@@ -289,7 +290,7 @@ func (v *View) renderImage(fi *vk.FrameInstance, cv *currentView) {
 	cmd := cv.cmd
 	v.renderPick(fi, cv, cmd)
 	cmd.BeginRenderPass(rpDepth, fpDepth)
-	renderCommon := Render{DSFrame: cv.dsFrame, Target: Main, Shaders: v.shaders}
+	renderCommon := Render{DSFrame: cv.dsFrame, Name: "DEPTH", Shaders: v.shaders}
 	rd := RenderDepth{DL: &vk.DrawList{}, Pass: rpDepth, Render: renderCommon}
 	v.staticList.RenderAll(fi, rd)
 	cv.fl.RenderAll(fi, rd)
@@ -303,6 +304,7 @@ func (v *View) renderImage(fi *vk.FrameInstance, cv *currentView) {
 	var probe uint32
 	var transparents []trList
 	rc := RenderColor{DL: &vk.DrawList{}, Pass: rp, Render: renderCommon, Probe: &probe, ViewTransform: cv.view}
+	rc.Name = "COLOR"
 	rc.RenderTransparent = func(priority float32, render func(dl *vk.DrawList, pass *vk.GeneralRenderPass)) {
 		transparents = append(transparents, trList{priority: priority, render: render})
 	}
@@ -345,7 +347,7 @@ func (v *View) renderPick(fi *vk.FrameInstance, cv *currentView, cmd *vk.Command
 	*(*pickFrame)(unsafe.Pointer(&cv.slPick.Bytes()[0])) = *cv.pickFrame
 	dsPick.WriteSlice(0, 0, cv.slPick)
 	cmd.BeginRenderPass(rpPick, fpPick)
-	rp := RenderPick{Render: Render{DSFrame: cv.dsFrame, Target: Main, Shaders: v.shaders}, DL: &vk.DrawList{}, Pass: rpPick, DSPick: dsPick}
+	rp := RenderPick{Render: Render{DSFrame: cv.dsFrame, Name: "PICK", Shaders: v.shaders}, DL: &vk.DrawList{}, Pass: rpPick, DSPick: dsPick}
 	v.staticList.RenderAll(fi, rp)
 	cv.fl.RenderAll(fi, rp)
 	cmd.Draw(rp.DL)
@@ -394,6 +396,10 @@ type buildFrame struct {
 	stBuf    *vk.ASlice
 	fBuf     []float32
 	isStatic bool
+}
+
+func (bf buildFrame) PhaseName() string {
+	return "BuildFrame"
 }
 
 func (bf buildFrame) IsStatic() bool {

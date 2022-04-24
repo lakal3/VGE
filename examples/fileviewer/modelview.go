@@ -183,11 +183,8 @@ func (mv *modelViewer) drawStatic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 	p.SetColor(vmodel.CIntensity, mgl32.Vec4{0.7, 0.7, 0.7, 1})
 	vdraw3d.DrawDirectionalLight(dl, mgl32.Vec3{0, -1, 0.1}.Normalize(), p)
 	if mv.mbImage != 0 {
-		dl.Exclude(vdraw3d.Main, vdraw3d.Main)
-		vdraw3d.DrawBackground(dl, mv.md, mv.mbImage)
-		dl.Include(vdraw3d.Main, vdraw3d.Main)
-		mv.probe = vdraw3d.DrawProbe(dl, probeKey, mv.pc.Target)
-		dl.Exclude(mv.probe, mv.probe)
+		mv.drawBg(dl)
+		mv.probe = vdraw3d.DrawProbe(dl, probeKey, mv.pc.Target, mv.drawBg)
 	}
 	n := mv.md.GetNode(0)
 	n.Enum(mgl32.Ident4(), func(local mgl32.Mat4, n vmodel.Node) {
@@ -200,9 +197,7 @@ func (mv *modelViewer) drawStatic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 }
 
 func (mv *modelViewer) drawDynamic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
-	if mv.probe != 0 {
-		dl.Exclude(mv.probe, mv.probe)
-	}
+
 	n := mv.md.GetNode(0)
 	n.Enum(mgl32.Ident4(), func(local mgl32.Mat4, n vmodel.Node) {
 		if n.Mesh >= 0 {
@@ -227,6 +222,10 @@ func (mv *modelViewer) toHome() {
 	mv.view.Camera = c
 	mv.view.OnEvent = c.Handle
 
+}
+
+func (mv *modelViewer) drawBg(dl *vdraw3d.FreezeList) {
+	vdraw3d.DrawBackground(dl, mv.md, mv.mbImage)
 }
 
 func newModelViewer(path string, info os.FileInfo, content []byte) (isModel bool) {

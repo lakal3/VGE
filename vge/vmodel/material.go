@@ -47,7 +47,7 @@ const (
 	FUser          = Factor + 0x10000
 	Uint           = Property(0x04000000)
 	UShadowMapSize = Uint + 1
-	UMeshID        = Uint + 2
+	UMaterialID    = Uint + 2
 	Special        = Property(0xFF000000)
 	SMaxIndex      = Special + 1
 	PropertyKind   = Property(0xFF000000)

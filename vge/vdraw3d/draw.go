@@ -360,7 +360,7 @@ func (fm *FrozenMesh) fillProps(mesh vmodel.Mesh, props vmodel.MaterialPropertie
 	fm.mat.albedo = props.GetColor(vmodel.CAlbedo, mgl32.Vec4{0, 0, 0, 1})
 	fm.mat.emissive = props.GetColor(vmodel.CEmissive, mgl32.Vec4{0, 0, 0, 0})
 	fm.mat.metalRoughess = mgl32.Vec4{props.GetFactor(vmodel.FMetalness, 0), props.GetFactor(vmodel.FRoughness, 1)}
-	fm.mat.meshID = props.GetUInt(vmodel.UMeshID, 0)
+	fm.mat.meshID = props.GetUInt(vmodel.UMaterialID, 0)
 	txIdx := props.GetImage(vmodel.TxAlbedo)
 	if txIdx != 0 {
 		fm.views[0], fm.sampler[0] = mesh.Model.GetImageView(txIdx)

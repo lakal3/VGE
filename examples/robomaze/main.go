@@ -83,14 +83,17 @@ func main() {
 		rd = rdf
 	}
 
-	vapp.Init("robomaze", vapp.Desktop{})
+	err := vapp.Init("robomaze", vapp.Desktop{})
+	if err != nil {
+		log.Fatal("Failed to init application ", err)
+	}
 	if app.video {
 		app.mainWnd = vapp.NewRenderWindowAt("Robo maze", vk.WindowPos{Left: -1, Top: -1, Width: 1246, Height: 730}, rd)
 	} else {
 		app.mainWnd = vapp.NewRenderWindow("Robo maze", rd)
 	}
 
-	err := loadModels1()
+	err = loadModels1()
 	if err != nil {
 		log.Fatal("Failed to load models, ", err)
 	}

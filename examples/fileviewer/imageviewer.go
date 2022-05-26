@@ -57,7 +57,7 @@ func (iv *imageViewer) Render(fi *vk.FrameInstance, cmd *vk.Command, rp *vk.Gene
 	ds := fi.AllocDescriptor(iv.getLayout())
 	sl := fi.AllocSlice(vk.BUFFERUsageUniformBufferBit, 256)
 	fr := (*imageframe)(unsafe.Pointer(&sl.Bytes()[0]))
-	desc := fi.Output.Describe()
+	desc := fi.MainDesc
 	fr.area = mgl32.Vec4{-0.5, (StatHeight+1)/float32(desc.Height)*2 - 1, 1, 1}
 	iv.area.From = mgl32.Vec2{float32(desc.Width / 4), StatHeight}
 	iv.area.To = mgl32.Vec2{float32(desc.Width), float32(desc.Height)}
@@ -203,8 +203,6 @@ func (iv *imageViewer) Close() {
 }
 
 var kImageView = vk.NewKeys(10)
-
-var layerView *vimgui.View
 
 func (iv *imageViewer) Stat(fr *vimgui.UIFrame) {
 	if iv.err != nil {

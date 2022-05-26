@@ -27,8 +27,9 @@ const (
 )
 
 type View struct {
-	// OnSize function allows resizing view area
-	OnSize func(fi *vk.FrameInstance) vdraw.Area
+	// OnSize function allows resizing view area.
+	// FullArea is area size on output image (current window if rendering to window)
+	OnSize func(fullArea vdraw.Area) vdraw.Area
 
 	// OnClose function is called from VMPopup windows when mouse is clicked outsize view area
 	OnClose func()
@@ -108,8 +109,12 @@ func (v *View) Render(fi *vk.FrameInstance, cmd *vk.Command, rp *vk.GeneralRende
 		return
 	}
 	dl := &vk.DrawList{}
-	outDesc := fi.Output.Describe()
-	cp := v.c.BeginDraw(fi, rp, dl, v.c.Projection(uif.winArea.From, mgl32.Vec2{float32(outDesc.Width), float32(outDesc.Height)}))
+	outDesc := fi.MainDesc
+	p := v.c.Projection(uif.winArea.From.Mul(float32(fi.AntiAlias)), mgl32.Vec2{float32(outDesc.Width), float32(outDesc.Height)})
+	if fi.AntiAlias != 1 {
+		p = p.Mul4(mgl32.Scale3D(float32(fi.AntiAlias), float32(fi.AntiAlias), 1))
+	}
+	cp := v.c.BeginDraw(fi, rp, dl, p)
 	defer v.endDraw(uif)
 	cp.Clip = uif.DrawArea
 	uif.cp = cp
@@ -124,11 +129,10 @@ func (v *View) PostRender(fi *vk.FrameInstance) {
 func (f *View) beginDraw(fi *vk.FrameInstance) *UIFrame {
 	f.mx.Lock()
 	defer f.mx.Unlock()
-	oDesc := fi.Output.Describe()
+	oDesc := fi.MainDesc
+	f.nextFrame.winArea = vdraw.Area{To: mgl32.Vec2{float32(oDesc.Width) / float32(fi.AntiAlias), float32(oDesc.Height) / float32(fi.AntiAlias)}}
 	if f.OnSize != nil {
-		f.nextFrame.winArea = f.OnSize(fi)
-	} else {
-		f.nextFrame.winArea = vdraw.Area{To: mgl32.Vec2{float32(oDesc.Width), float32(oDesc.Height)}}
+		f.nextFrame.winArea = f.OnSize(f.nextFrame.winArea)
 	}
 	f.nextFrame.dev = f.dev
 	uif := f.nextFrame

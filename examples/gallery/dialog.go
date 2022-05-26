@@ -10,14 +10,12 @@ import (
 )
 
 var vDialog *vimgui.View
-var vPopup *vimgui.View
 
 func newDialog() {
 	vDialog = vimgui.NewView(vapp.Dev, vimgui.VMDialog, mintheme.Theme, paintDialog)
-	vDialog.OnSize = func(fi *vk.FrameInstance) vdraw.Area {
-		oDesc := fi.Output.Describe()
+	vDialog.OnSize = func(fullArea vdraw.Area) vdraw.Area {
 		var a vdraw.Area
-		a.From = mgl32.Vec2{float32(oDesc.Width/2) - 250, 200}
+		a.From = mgl32.Vec2{fullArea.Width()/2 - 250, 200}
 		a.To = mgl32.Vec2{a.From[0] + 500, a.From[1] + 200}
 		return a
 	}

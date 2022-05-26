@@ -252,7 +252,7 @@ func newModelViewer(path string, info os.FileInfo, content []byte) (isModel bool
 		mv.view = vdraw3d.NewView(mv.dev, mv.drawStatic, mv.drawDynamic)
 	}
 	mv.view.OnSize = func(fi *vk.FrameInstance) vdraw.Area {
-		desc := fi.Output.Describe()
+		desc := fi.MainDesc
 		return vdraw.Area{From: mgl32.Vec2{float32(desc.Width)/4 + 1, StatHeight + 1}, To: mgl32.Vec2{float32(desc.Width), float32(desc.Height)}}
 	}
 	mv.toHome()

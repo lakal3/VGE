@@ -35,10 +35,12 @@ var app struct {
 
 var config struct {
 	phongshader bool
+	antialias   bool
 }
 
 func main() {
 	flag.BoolVar(&config.phongshader, "phong", false, "Light calculation using simpler phong shading model")
+	flag.BoolVar(&config.antialias, "aa", false, "Anti alias on")
 	flag.Parse()
 	// Initialize application framework. Add validate options to check Vulkan calls and desktop to enable windowing.
 	err := vapp.Init("UItest", vapp.Validate{}, vapp.Desktop{}, vapp.DynamicDescriptors{MaxDescriptors: 1024})
@@ -55,6 +57,9 @@ func main() {
 	// Create a new window. Window will has it's own scene that will be rendered using ForwardRenderer.
 	// This first demo is only showing UI so we don't need depth buffer
 	app.rw = vapp.NewViewWindow("UITest", vk.WindowPos{Left: -1, Top: -1, Width: 1024, Height: 768})
+	if config.antialias {
+		app.rw.AntiAlias = true
+	}
 	// Build scene
 	err = buildScene()
 	if err != nil {
@@ -86,7 +91,7 @@ func buildScene() error {
 	}
 	sv := vdraw3d.NewCustomView(vapp.Dev, sp, paintStatic, paintScene)
 	sv.OnSize = func(fi *vk.FrameInstance) vdraw.Area {
-		desc := fi.Output.Describe()
+		desc := fi.MainDesc
 		return vdraw.Area{From: mgl32.Vec2{float32(desc.Width) / 3, 0}, To: mgl32.Vec2{float32(desc.Width), float32(desc.Height)}}
 	}
 	sv.OnEvent = moveMonkey
@@ -105,9 +110,8 @@ func buildScene() error {
 	app.nv = sv
 	app.rw.AddView(sv)
 	nf := vimgui.NewView(vapp.Dev, vimgui.VMNormal, mintheme.Theme, painter)
-	nf.OnSize = func(fi *vk.FrameInstance) vdraw.Area {
-		desc := fi.Output.Describe()
-		return vdraw.Area{From: mgl32.Vec2{0, 0}, To: mgl32.Vec2{float32(desc.Width) / 3, float32(desc.Height)}}
+	nf.OnSize = func(fullArea vdraw.Area) vdraw.Area {
+		return vdraw.Area{From: mgl32.Vec2{0, 0}, To: mgl32.Vec2{fullArea.Width() / 3, fullArea.Height()}}
 
 	}
 	app.rw.AddView(nf)

@@ -21,11 +21,10 @@ type Dialog struct {
 func NewDialog(win *vapp.ViewWindow, th *vimgui.Theme, title string, painter func(dlg *Dialog, uf *vimgui.UIFrame)) *Dialog {
 	d := &Dialog{win: win, RelativeWidth: 50, Height: 100, Title: title, painter: painter, Kind: "info"}
 	d.view = vimgui.NewView(vapp.Dev, vimgui.VMDialog, th, d.paint)
-	d.view.OnSize = func(fi *vk.FrameInstance) vdraw.Area {
-		desc := fi.Output.Describe()
-		w := float32(desc.Width) * d.RelativeWidth / 100
-		left := (float32(desc.Width) - w) / 2
-		top := (float32(desc.Height) - d.Height) / 2.0
+	d.view.OnSize = func(fullArea vdraw.Area) vdraw.Area {
+		w := fullArea.Width() * d.RelativeWidth / 100
+		left := (fullArea.Width() - w) / 2
+		top := (fullArea.Height() - d.Height) / 2.0
 		if top < 0 {
 			top = 0
 		}

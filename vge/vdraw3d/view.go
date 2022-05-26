@@ -116,13 +116,13 @@ func (v *View) Reserve(fi *vk.FrameInstance) {
 	}
 	dl := &FreezeList{}
 	v.dynamicScene(v, dl)
-	desc := fi.Output.Describe()
+	desc := fi.MainDesc
 	cv := fi.Get(v.key, func() interface{} {
 		cv := &currentView{fl: dl, imageIndex: 2}
 		if v.OnSize != nil {
 			cv.area = v.OnSize(fi)
 			desc.Width = uint32(cv.area.Size()[0])
-			desc.Height = uint32(cv.area.Size()[0])
+			desc.Height = uint32(cv.area.Size()[1])
 		} else {
 			cv.area.To = mgl32.Vec2{float32(desc.Width), float32(desc.Height)}
 		}
@@ -247,7 +247,7 @@ func (v *View) updateFrame(fi *vk.FrameInstance, cv *currentView) []float32 {
 	cv.view = fr.view
 	fr.cameraPos = fr.view.Inv().Col(3)
 	fr.ambient, fr.ambienty = v.ambient, v.ambienty
-	desc := fi.Output.Describe()
+	desc := fi.MainDesc
 	fr.viewPosition[0] = (cv.area.From[0]/float32(desc.Width))*2 - 1
 	fr.viewPosition[1] = (cv.area.From[1]/float32(desc.Height))*2 - 1
 	fr.viewPosition[2] = (cv.area.To[0]/float32(desc.Width))*2 - 1

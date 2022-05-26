@@ -39,6 +39,8 @@ type EventView interface {
 type ViewWindow struct {
 	OnClose func()
 
+	AntiAlias bool
+
 	eventState UIState
 	fc         *vk.FrameCache
 	views      []View
@@ -47,6 +49,7 @@ type ViewWindow struct {
 	wg         *sync.WaitGroup
 	timed      func(started time.Time, gpuTimes []float64)
 	state      int
+	k          vk.Key
 }
 
 // SetTimedOutput sets funtion to time rendering of views
@@ -56,7 +59,7 @@ func (w *ViewWindow) SetTimedOutput(output func(started time.Time, gpuTimes []fl
 
 // NewViewWindow creates new view windows and displays it
 func NewViewWindow(title string, wp vk.WindowPos, views ...View) *ViewWindow {
-	w := &ViewWindow{sp: &vk.SpinLock{}}
+	w := &ViewWindow{sp: &vk.SpinLock{}, k: vk.NewKey()}
 	w.win = appStatic.desktop.NewWindow(title, wp)
 	RegisterHandler(PRIWindow, w.eventHandler)
 	winCount++
@@ -169,15 +172,21 @@ func (w *ViewWindow) renderLoop() {
 			w.fc = vk.NewFrameCache(Dev, w.win.GetImageCount())
 		}
 		tp := w.timed
+		aa := w.AntiAlias
 		fi := w.fc.Instances[imageIndex]
-		fi.Output = im
+		fi.MainDesc = im.Describe()
+		fi.AntiAlias = 1
 		fi.BeginFrame()
+		if aa {
+			w.reserveAntiAlias(fi)
+		}
 		views := w.Views()
 		submits := []vk.SubmitInfo{submitInfo}
 		var completed []Completed
 		for _, v := range views {
 			v.Reserve(fi)
 		}
+
 		fi.Commit()
 		var timer *vk.TimerPool
 		if tp != nil {
@@ -195,7 +204,16 @@ func (w *ViewWindow) renderLoop() {
 				completed = append(completed, c)
 			}
 		}
-		rp, fb := w.getRenderPass(fi, im.DefaultView())
+		var alViews []*vk.AImageView
+		var rp *vk.GeneralRenderPass
+		var fb *vk.Framebuffer
+		if aa {
+			_, alViews = fi.AllocImage(w.k)
+			rp, fb = w.getAaRenderPass(fi, alViews[0])
+		} else {
+			rp, fb = w.getRenderPass(fi, im.DefaultView())
+		}
+
 		cmd := w.newCommand(fi)
 		cmd.Begin()
 		if tp != nil {
@@ -208,6 +226,9 @@ func (w *ViewWindow) renderLoop() {
 		cmd.EndRenderPass()
 		for _, c := range completed {
 			submits = append(submits, c()...)
+		}
+		if aa {
+			w.doAntiAlias(fi, cmd, im.DefaultView(), alViews[0])
 		}
 		fi.Freeze()
 		if tp != nil {
@@ -227,12 +248,16 @@ func (w *ViewWindow) renderLoop() {
 }
 
 var kRenderPass = vk.NewKey()
+var kAaRenderPass = vk.NewKey()
 var kFrameBuffer = vk.NewKey()
+var kAaFrameBuffer = vk.NewKey()
 var kCommand = vk.NewKey()
+var kAaDescriptor = vk.NewKey()
+var kCopyPass = vk.NewKey()
 
 func (w *ViewWindow) getRenderPass(fi *vk.FrameInstance, imView vk.VImageView) (rp *vk.GeneralRenderPass, fb *vk.Framebuffer) {
 	rp = fi.GetShared(kRenderPass, func() interface{} {
-		desc := fi.Output.Describe()
+		desc := imView.VImage().Describe()
 		return vk.NewGeneralRenderPass(Dev, false, []vk.AttachmentInfo{{Format: desc.Format,
 			InitialLayout: vk.IMAGELayoutUndefined, FinalLayout: vk.IMAGELayoutPresentSrcKhr,
 			ClearColor: mgl32.Vec4{0.2, 0.2, 0.2, 1},
@@ -242,6 +267,31 @@ func (w *ViewWindow) getRenderPass(fi *vk.FrameInstance, imView vk.VImageView) (
 		return vk.NewFramebuffer2(rp, imView)
 	}).(*vk.Framebuffer)
 	return
+}
+
+func (w *ViewWindow) getAaRenderPass(fi *vk.FrameInstance, imView vk.VImageView) (rp *vk.GeneralRenderPass, fb *vk.Framebuffer) {
+	rp = fi.GetShared(kAaRenderPass, func() interface{} {
+		desc := imView.VImage().Describe()
+		return vk.NewGeneralRenderPass(Dev, false, []vk.AttachmentInfo{{Format: desc.Format,
+			InitialLayout: vk.IMAGELayoutUndefined, FinalLayout: vk.IMAGELayoutShaderReadOnlyOptimal,
+			ClearColor: mgl32.Vec4{0.2, 0.2, 0.2, 1},
+		}})
+	}).(*vk.GeneralRenderPass)
+	fb = fi.Get(kAaFrameBuffer, func() interface{} {
+		return vk.NewFramebuffer2(rp, imView)
+	}).(*vk.Framebuffer)
+	return
+}
+
+func (w *ViewWindow) getCopyPass(dev *vk.Device, rp *vk.GeneralRenderPass) *vk.GraphicsPipeline {
+	return rp.Get(kCopyPass, func() interface{} {
+		pl := vk.NewGraphicsPipeline(dev)
+		pl.AddLayout(w.getAaDescriptor(dev))
+		pl.AddShader(vk.SHADERStageVertexBit, tri_vert_spv)
+		pl.AddShader(vk.SHADERStageFragmentBit, copy_frag_spv)
+		pl.Create(rp)
+		return pl
+	}).(*vk.GraphicsPipeline)
 }
 
 func (w *ViewWindow) newCommand(fi *vk.FrameInstance) *vk.Command {
@@ -265,4 +315,36 @@ func (w *ViewWindow) handleMyEvent(ev Event) {
 			ve.HandleEvent(ev)
 		}
 	}
+}
+
+func (w *ViewWindow) reserveAntiAlias(fi *vk.FrameInstance) {
+	main := fi.MainDesc
+	img := vk.ImageDescription{Format: vk.FORMATR8g8b8a8Unorm, Width: main.Width * 2, Height: main.Height * 2,
+		Depth: 1, Layers: 1, MipLevels: 1}
+	ir := vk.ImageRange{LayerCount: 1, LevelCount: 1}
+	fi.ReserveImage(w.k, vk.IMAGEUsageColorAttachmentBit|vk.IMAGEUsageSampledBit, img, ir)
+	fi.MainDesc = img
+	fi.AntiAlias = 2
+	fi.ReserveDescriptors(w.getAaDescriptor(fi.Device()), 1)
+}
+
+func (w *ViewWindow) doAntiAlias(fi *vk.FrameInstance, cmd *vk.Command, dst vk.VImageView, src vk.VImageView) {
+	rp, fb := w.getRenderPass(fi, dst)
+	ds := fi.AllocDescriptor(w.getAaDescriptor(fi.Device()))
+	ds.WriteView(0, 0, src, vk.IMAGELayoutShaderReadOnlyOptimal, nil)
+	var tl vk.TransferList
+	tl.Transfer(src.VImage(), vk.IMAGELayoutShaderReadOnlyOptimal, vk.IMAGELayoutShaderReadOnlyOptimal, 0, 0)
+	cmd.Transfer(tl)
+	cmd.BeginRenderPass(rp, fb)
+	cp := w.getCopyPass(fi.Device(), rp)
+	var dl vk.DrawList
+	dl.Draw(cp, 0, 3).AddDescriptor(0, ds)
+	cmd.Draw(&dl)
+	cmd.EndRenderPass()
+}
+
+func (w *ViewWindow) getAaDescriptor(dev *vk.Device) *vk.DescriptorLayout {
+	return dev.Get(kAaDescriptor, func() interface{} {
+		return vk.NewDescriptorLayout(dev, vk.DESCRIPTORTypeSampledImage, vk.SHADERStageFragmentBit, 1)
+	}).(*vk.DescriptorLayout)
 }

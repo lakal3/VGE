@@ -5,7 +5,6 @@ import (
 	"github.com/lakal3/vge/vge/vapp"
 	"github.com/lakal3/vge/vge/vdraw"
 	"github.com/lakal3/vge/vge/vimgui"
-	"github.com/lakal3/vge/vge/vk"
 )
 
 type Popup struct {
@@ -23,7 +22,7 @@ func NewPopup(win *vapp.ViewWindow, th *vimgui.Theme, at mgl32.Vec2, width float
 	d := &Popup{win: win, At: at, Width: width, Height: 100, painter: painter, Kind: "info"}
 	d.view = vimgui.NewView(vapp.Dev, vimgui.VMPopup, th, d.paint)
 
-	d.view.OnSize = func(fi *vk.FrameInstance) vdraw.Area {
+	d.view.OnSize = func(fullArea vdraw.Area) vdraw.Area {
 		return vdraw.Area{From: d.At, To: d.At.Add(mgl32.Vec2{d.Width, d.Height})}
 	}
 	d.view.OnClose = func() {

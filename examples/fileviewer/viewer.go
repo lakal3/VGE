@@ -56,9 +56,8 @@ const StatHeight = 100
 
 func addStatView() {
 	sv := vimgui.NewView(vapp.Dev, vimgui.VMNormal, mintheme.Theme, drawStat)
-	sv.OnSize = func(fi *vk.FrameInstance) vdraw.Area {
-		desc := fi.Output.Describe()
-		return vdraw.Area{From: mgl32.Vec2{float32(desc.Width)/4 + 1}, To: mgl32.Vec2{float32(desc.Width), StatHeight}}
+	sv.OnSize = func(fullArea vdraw.Area) vdraw.Area {
+		return vdraw.Area{From: mgl32.Vec2{fullArea.Width()/4 + 1}, To: mgl32.Vec2{fullArea.Width(), StatHeight}}
 	}
 	app.rw.AddView(sv)
 }

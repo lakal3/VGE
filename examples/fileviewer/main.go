@@ -15,9 +15,11 @@ import (
 )
 
 var settings struct {
-	validate bool
-	phong    bool
-	bgImage  string
+	validate  bool
+	phong     bool
+	bgImage   string
+	noAa      bool
+	glyphFont bool
 }
 
 var app struct {
@@ -29,6 +31,8 @@ var app struct {
 func main() {
 	flag.BoolVar(&settings.validate, "validate", false, "Add Vulkan validation layers")
 	flag.BoolVar(&settings.phong, "phong", false, "Use phong shader")
+	flag.BoolVar(&settings.noAa, "noaa", false, "No anti aliasing")
+	flag.BoolVar(&settings.glyphFont, "glyphfont", false, "Use glyphed font")
 	flag.StringVar(&settings.bgImage, "bg", "", "Background image for 3D models")
 	flag.Parse()
 	// Initialize application framework. Add validate options to check Vulkan calls and desktop to enable windowing.
@@ -77,6 +81,9 @@ func main() {
 	// Create a new window. Window will has it's own scene that will be rendered using ForwardRenderer.
 	// This first demo is only showing UI so we don't need depth buffer
 	app.rw = vapp.NewViewWindow("File viewer (alpha)", vk.WindowPos{Left: -1, Top: -1, Width: 1024, Height: 768})
+	if !settings.noAa {
+		app.rw.AntiAlias = true
+	}
 	// Add file tree
 	err = addFileTree(dir)
 	if err != nil {

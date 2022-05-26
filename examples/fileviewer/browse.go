@@ -21,22 +21,23 @@ func addFileTree(dir string) error {
 	if err != nil {
 		return err
 	}
-	vapp.Dev.Get(kGlyphs, func() interface{} {
-		gs := &vdraw.GlyphSet{}
-		err = gs.AddRunes(mintheme.PrimaryFont, 33, 255)
-		if err != nil {
-			return nil
-		}
-		gs.Build(vapp.Dev, image.Pt(32, 32))
-		return gs
-	})
-
+	if settings.glyphFont {
+		vapp.Dev.Get(kGlyphs, func() interface{} {
+			gs := &vdraw.GlyphSet{}
+			// Convert characters from range 33 to 255 into glyph font
+			err = gs.AddRunes(mintheme.PrimaryFont, 33, 255)
+			if err != nil {
+				return nil
+			}
+			gs.Build(vapp.Dev, image.Pt(32, 32))
+			return gs
+		})
+	}
 	tf := &fileTree{update: make(chan currentDir, 10)}
 	tf.fillFiles(dir)
 	fv := vimgui.NewView(vapp.Dev, vimgui.VMNormal, mintheme.Theme, tf.draw)
-	fv.OnSize = func(fi *vk.FrameInstance) vdraw.Area {
-		desc := fi.Output.Describe()
-		return vdraw.Area{To: mgl32.Vec2{float32(desc.Width)/4 - 10, float32(desc.Height)}}
+	fv.OnSize = func(fullArea vdraw.Area) vdraw.Area {
+		return vdraw.Area{To: mgl32.Vec2{fullArea.Width()/4 - 10, fullArea.Height()}}
 	}
 	app.rw.AddView(fv)
 	return nil

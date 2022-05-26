@@ -65,7 +65,13 @@ type fImage struct {
 }
 
 type FrameInstance struct {
-	Output VImage
+	// MainDesc is rendering output image description
+	MainDesc ImageDescription
+
+	// AntiAlias is anti aliasing performed to Main image. Currently valid values are
+	// 1 = No antialiasing
+	// 2 = Anti alias from 2 * 2 image
+	AntiAlias int
 
 	index       int
 	perFrame    Owner

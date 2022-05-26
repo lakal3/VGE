@@ -8,7 +8,6 @@ import (
 	"github.com/lakal3/vge/vge/vdraw"
 	"github.com/lakal3/vge/vge/vimgui"
 	"github.com/lakal3/vge/vge/vimgui/mintheme"
-	"github.com/lakal3/vge/vge/vk"
 	"os"
 	"strings"
 	"unicode/utf8"
@@ -86,9 +85,8 @@ func parseText(path string, info os.FileInfo, content []byte) (isBinary bool) {
 		tv.lines = append(tv.lines, sb.String())
 	}
 	tv.view = vimgui.NewView(vapp.Dev, vimgui.VMNormal, mintheme.Theme, tv.draw)
-	tv.view.OnSize = func(fi *vk.FrameInstance) vdraw.Area {
-		desc := fi.Output.Describe()
-		return vdraw.Area{From: mgl32.Vec2{float32(desc.Width)/4 + 1, StatHeight + 1}, To: mgl32.Vec2{float32(desc.Width), float32(desc.Height)}}
+	tv.view.OnSize = func(fullArea vdraw.Area) vdraw.Area {
+		return vdraw.Area{From: mgl32.Vec2{fullArea.Width()/4 + 1, StatHeight + 1}, To: fullArea.To}
 	}
 	tv.size[1] = float32(len(tv.lines)) * (1 + fs.Size)
 	tv.rm = SetViewer(tv, tv.view)

@@ -8,6 +8,8 @@ struct LIGHT {
     float outerAngle;
     float minDistance;
     float maxDistance;
+    vec4 plane;
+    
     uint kind;
     uint tx_shadowmap;
     vec3 lightToPos; // vector from light source to current position

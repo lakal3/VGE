@@ -49,6 +49,7 @@ void main() {
     #endif
     o_uv0 = i_uv0;
     vec4 worldPos = world * vec4(i_position,1);
+#if paraboloid
     vec3 samplePos = worldPos.xyz - shadowFrame.lightPos.xyz;
     if (shadowFrame.yFactor != 0) {
         o_position = samplePos * vec3(1, shadowFrame.yFactor, 1);
@@ -67,5 +68,12 @@ void main() {
     // his z to get the texture coords
     float n = max(0.01,pos.y + 1);
     pos = vec3(pos.x / n, pos.z / n, (fLength - shadowFrame.minShadow) / (shadowFrame.maxShadow - shadowFrame.minShadow));
+#endif
+#if !paraboloid
+    vec3 samplePos = worldPos.xyz - frame.cameraPos.xyz;
+    o_position = qtransform(shadowFrame.plane, samplePos);
+    vec3 pos = o_position;
+    pos = pos * vec3(1 / shadowFrame.maxShadow) * vec3(1,1,0.5) + vec3(0,0,0.5);
+#endif
     gl_Position = vec4(pos, 1);
 }

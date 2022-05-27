@@ -133,7 +133,8 @@ func (v *View) Reserve(fi *vk.FrameInstance) {
 		v.lock.Unlock()
 		return cv
 	}).(*currentView)
-	v.area = cv.area
+	aa := 1 / float32(fi.AntiAlias)
+	v.area = vdraw.Area{From: cv.area.From.Mul(aa), To: cv.area.To.Mul(aa)}
 	desc.Depth, desc.MipLevels, desc.Layers = 1, 1, 1
 	desc.Format = vk.FORMATR8g8b8a8Unorm
 	dDepth := desc

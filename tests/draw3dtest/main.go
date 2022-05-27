@@ -24,13 +24,14 @@ import (
 )
 
 var app struct {
-	rw     *vapp.ViewWindow
-	nv     *vdraw3d.View
-	model  *vmodel.Model
-	model2 *vmodel.Model
-	model3 *vmodel.Model
-	images [3]vmodel.ImageIndex
-	nodes  map[string]vdraw3d.FrozenID
+	rw         *vapp.ViewWindow
+	nv         *vdraw3d.View
+	drawShadow bool
+	model      *vmodel.Model
+	model2     *vmodel.Model
+	model3     *vmodel.Model
+	images     [3]vmodel.ImageIndex
+	nodes      map[string]vdraw3d.FrozenID
 }
 
 var config struct {
@@ -203,12 +204,14 @@ func painter(fr *vimgui.UIFrame) {
 	fr.NewLine(-100, 25, 2)
 	vimgui.RadioButton(fr, uiKeys+1, "Robot", 1, &modelType)
 	fr.NewLine(120, 30, 5)
-	if vimgui.Button(fr, uiKeys+2, "Debug settings") {
+	vimgui.CheckBox(fr, uiKeys+2, "Add shadow", &app.drawShadow)
+	fr.NewLine(120, 30, 5)
+	if vimgui.Button(fr, uiKeys+3, "Debug settings") {
 		showDebug()
 	}
 }
 
-var sceneKeys = vk.NewKeys(3)
+var sceneKeys = vk.NewKeys(5)
 
 func paintStatic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 	dp := vmodel.NewMaterialProperties()
@@ -219,11 +222,8 @@ func paintStatic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 	vdraw3d.DrawDecal(dl, app.model, mgl32.Translate3D(2, 1, 0).Mul4(mgl32.Scale3D(3, 3, 3)), dp)
 	// f := app.nodes["Solid1.003_1"]
 	paintBg(dl)
+
 	vdraw3d.DrawProbe(dl, sceneKeys, mgl32.Vec3{0, 1, -1}, paintBg)
-	vdraw3d.DrawDirectionalLight(dl, mgl32.Vec3{0.1, -1, 0.1}, nil)
-	pl2 := vmodel.NewMaterialProperties()
-	pl2.SetColor(vmodel.CIntensity, mgl32.Vec4{2, 1, 0, 1})
-	vdraw3d.DrawPointLight(dl, sceneKeys+1, mgl32.Vec3{0, 5, -1}, pl2)
 	app.model2.GetNode(0).Enum(mgl32.Ident4(), func(local mgl32.Mat4, n vmodel.Node) {
 		if n.Name == "Cube_Grass_1" || n.Name == "Cube_Rock_1" {
 			return
@@ -252,6 +252,8 @@ func paintBg(fl *vdraw3d.FreezeList) {
 
 func paintGround(dl *vdraw3d.FreezeList, n vmodel.Node, local mgl32.Mat4) {
 	m := app.model2.GetMaterial(n.Material)
+	// vdraw3d.DrawMesh(dl, app.model2.GetMesh(n.Mesh), local, m.Props)
+	// return
 	props := m.Props
 	mg := app.model2.FindMaterial("Grass")
 	mr := app.model2.FindMaterial("Rock")
@@ -314,6 +316,21 @@ func moveMonkey(ev vapp.Event) {
 }
 
 func paintScene(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
+	pl1 := vmodel.NewMaterialProperties()
+	pl1.SetColor(vmodel.CIntensity, mgl32.Vec4{1, 1, 1, 1})
+	sk := vk.Key(0)
+	if app.drawShadow {
+		sk = sceneKeys + 2
+	}
+	vdraw3d.DrawDirectionalLight(dl, sk, mgl32.Vec3{0.1, -1, 0.1}, pl1)
+	pl2 := vmodel.NewMaterialProperties()
+	pl2.SetColor(vmodel.CIntensity, mgl32.Vec4{25, 10, 0, 1})
+	sk = 0
+	if app.drawShadow {
+		sk = sceneKeys + 1
+	}
+	vdraw3d.DrawPointLight(dl, sk, mgl32.Vec3{0, 6, 0}, pl2)
+
 	if eMonkey == 0 {
 		eMonkey = v.Elapsed
 	} else {

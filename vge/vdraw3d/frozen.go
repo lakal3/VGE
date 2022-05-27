@@ -92,6 +92,7 @@ type RenderShadow struct {
 	DL            *vk.DrawList
 	Pass          *vk.GeneralRenderPass
 	DSShadowFrame *vk.DescriptorSet
+	Directional   bool
 }
 
 type RenderProbe struct {

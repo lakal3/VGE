@@ -4,12 +4,14 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/lakal3/vge/vge/vk"
 	"github.com/lakal3/vge/vge/vmodel"
+	"math"
 	"unsafe"
 )
 
 type fLight struct {
 	storage     uint32
 	kind        uint32
+	plane       mgl32.Vec4
 	intensity   mgl32.Vec3
 	direction   mgl32.Vec4
 	position    mgl32.Vec4
@@ -68,6 +70,7 @@ func (f *fLight) Render(fi *vk.FrameInstance, phase Phase) {
 			f.image, f.views = fi.AllocImage(f.key)
 			sIdx := uf.AddView(f.views[0], vmodel.GetDefaultSampler(fi.Device()))
 			uf.UpdateStorage(f.storage+1, 2, sIdx)
+			uf.UpdateStorage(f.storage+1, 8, f.plane[:]...)
 		} else {
 			uf.UpdateStorage(f.storage+1, 2, 0)
 		}
@@ -89,6 +92,15 @@ func (f *fLight) Render(fi *vk.FrameInstance, phase Phase) {
 }
 
 func (f *fLight) addProps(props vmodel.MaterialProperties) {
+	dz := f.direction.Vec3().Dot(zDir)
+	if dz < 1 && f.direction.LenSqr() > 0 {
+		angle := float32(math.Acos(float64(dz)))
+		dir := f.direction.Vec3().Cross(zDir).Normalize()
+		q := mgl32.QuatRotate(-angle, dir)
+		f.plane = mgl32.Vec4{q.V[0], q.V[1], q.V[2], q.W}
+	} else {
+		f.plane = mgl32.Vec4{0, 0, 0, 1}
+	}
 	if props == nil {
 		return
 	}
@@ -106,16 +118,22 @@ func (f *fLight) addProps(props vmodel.MaterialProperties) {
 		if f.kind == 1 {
 			f.smDesc.Layers = 2
 		}
+		if f.kind == 0 {
+			f.smDesc.Layers = 3
+		}
 		f.smDesc.Height = f.smDesc.Width
 		f.minShadow, f.maxShadow = 0.1, 10
 	}
 }
 
+var zDir = mgl32.Vec3{0, 0, 1}
+
 func (f *fLight) renderShadowMap(fi *vk.FrameInstance, rm RenderMaps) {
 
 	rp := getDepthRenderPass(fi.Device())
-	fr := shadowFrame{lightPos: f.position, minShadow: f.minShadow, maxShadow: f.maxShadow}
-	fr.lightPos = f.position
+	fr := shadowFrame{lightPos: f.position, minShadow: f.minShadow, maxShadow: f.maxShadow,
+		plane: f.plane}
+
 	cmd := fi.AllocCommand(vk.QUEUEGraphicsBit)
 	cmd.Begin()
 	for idx := uint32(0); idx < f.smDesc.Layers; idx++ {
@@ -127,6 +145,7 @@ func (f *fLight) renderShadowMap(fi *vk.FrameInstance, rm RenderMaps) {
 				fr.yFactor = 1
 			}
 		}
+
 		*(*shadowFrame)(unsafe.Pointer(&ubBuf.Bytes()[0])) = fr
 		ds := fi.AllocDescriptor(f.la)
 		ds.WriteSlice(0, 0, ubBuf)
@@ -135,11 +154,14 @@ func (f *fLight) renderShadowMap(fi *vk.FrameInstance, rm RenderMaps) {
 		cmd.BeginRenderPass(rp, fb)
 		dl := &vk.DrawList{}
 		rs := RenderShadow{Render: Render{Name: "SHADOW", DSFrame: rm.DSFrame, Shaders: rm.Shaders},
-			DL: dl, DSShadowFrame: ds, Pass: rp}
+			DL: dl, DSShadowFrame: ds, Pass: rp, Directional: f.kind == 0}
 		rm.Static.RenderAll(fi, rs)
 		rm.Dynamic.RenderAll(fi, rs)
 		cmd.Draw(dl)
 		cmd.EndRenderPass()
+		if f.kind == 0 {
+			fr.maxShadow *= 4
+		}
 	}
 	si := cmd.SubmitForWait(0, vk.PIPELINEStageEarlyFragmentTestsBit)
 	rm.AtEnd(func() []vk.SubmitInfo {
@@ -147,8 +169,9 @@ func (f *fLight) renderShadowMap(fi *vk.FrameInstance, rm RenderMaps) {
 	})
 }
 
-func DrawDirectionalLight(fl *FreezeList, direction mgl32.Vec3, props vmodel.MaterialProperties) FrozenID {
-	l := &fLight{intensity: mgl32.Vec3{1, 1, 1}, direction: direction.Normalize().Vec4(0), attenuation: mgl32.Vec3{1, 0, 0}}
+func DrawDirectionalLight(fl *FreezeList, shadowKey vk.Key, direction mgl32.Vec3, props vmodel.MaterialProperties) FrozenID {
+	l := &fLight{intensity: mgl32.Vec3{1, 1, 1}, direction: direction.Normalize().Vec4(0),
+		attenuation: mgl32.Vec3{1, 0, 0}, key: shadowKey}
 	l.addProps(props)
 	l.id = fl.Add(l)
 	return l.id

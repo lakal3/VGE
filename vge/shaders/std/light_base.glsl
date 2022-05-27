@@ -19,6 +19,7 @@ void addLight(uint lightPos) {
         l.maxDistance = sizes.w;
         l.kind = uint(extrava.va[lightPos + 1].v1.y);
         l.tx_shadowmap = uint(extrava.va[lightPos + 1].v1.z);
+        l.plane = extrava.va[lightPos + 1].v3;
 
         l.lightToPos = l.position.xyz - i_position;
         l.lenToPos = length(l.lightToPos);

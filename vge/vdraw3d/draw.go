@@ -131,8 +131,12 @@ func (f *FrozenMesh) Render(fi *vk.FrameInstance, phase Phase) {
 		if len(f.shadowShader) == 0 {
 			return
 		}
-		pl := rs.Pass.Get(vk.NewHashKey(f.shadowShader), func() interface{} {
-			return f.buildShadowPass(fi, rs.Pass, f.shadowShader, false, rs.Shaders)
+		ss := f.shadowShader
+		if rs.Directional {
+			ss = "dir_" + ss
+		}
+		pl := rs.Pass.Get(vk.NewHashKey(ss), func() interface{} {
+			return f.buildShadowPass(fi, rs.Pass, ss, false, rs.Shaders)
 		}).(*vk.GraphicsPipeline)
 		dl := rs.DL
 		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(instance{})))
@@ -237,8 +241,12 @@ func (am *AnimatedMesh) Render(fi *vk.FrameInstance, phase Phase) {
 		if len(am.shadowShader) == 0 {
 			return
 		}
-		pl := rs.Pass.Get(vk.NewHashKey(am.shadowShader), func() interface{} {
-			return am.buildShadowPass(fi, rs.Pass, am.shadowShader, true, rs.Shaders)
+		ss := am.shadowShader
+		if rs.Directional {
+			ss = "dir_" + ss
+		}
+		pl := rs.Pass.Get(vk.NewHashKey(ss), func() interface{} {
+			return am.buildShadowPass(fi, rs.Pass, ss, true, rs.Shaders)
 		}).(*vk.GraphicsPipeline)
 		dl := rs.DL
 		ptr, offset := dl.AllocPushConstants(uint32(unsafe.Sizeof(instance{})))

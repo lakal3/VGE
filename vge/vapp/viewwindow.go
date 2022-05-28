@@ -332,9 +332,6 @@ func (w *ViewWindow) doAntiAlias(fi *vk.FrameInstance, cmd *vk.Command, dst vk.V
 	rp, fb := w.getRenderPass(fi, dst)
 	ds := fi.AllocDescriptor(w.getAaDescriptor(fi.Device()))
 	ds.WriteView(0, 0, src, vk.IMAGELayoutShaderReadOnlyOptimal, nil)
-	var tl vk.TransferList
-	tl.Transfer(src.VImage(), vk.IMAGELayoutShaderReadOnlyOptimal, vk.IMAGELayoutShaderReadOnlyOptimal, 0, 0)
-	cmd.Transfer(tl)
 	cmd.BeginRenderPass(rp, fb)
 	cp := w.getCopyPass(fi.Device(), rp)
 	var dl vk.DrawList

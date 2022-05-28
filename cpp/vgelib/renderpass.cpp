@@ -53,8 +53,16 @@ void vge::RenderPass::init()
 	}
 	rpci.pAttachments = _attachments.data();
 	rpci.attachmentCount = static_cast<uint32_t>(_attachments.size());
+	vk::SubpassDependency sDep;
+	sDep.dstSubpass = VK_SUBPASS_EXTERNAL;
+	sDep.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+	sDep.srcAccessMask = vk::AccessFlagBits::eMemoryWrite;
+	sDep.dstAccessMask = vk::AccessFlagBits::eMemoryRead;
+	sDep.dstStageMask = vk::PipelineStageFlagBits::eAllCommands;
 	rpci.pSubpasses = &sd;
 	rpci.subpassCount = 1;
+	rpci.dependencyCount = 1;
+	rpci.pDependencies = &sDep;
 	_renderPass = _dev->get_device().createRenderPass(rpci, allocator, _dev->get_dispatch());
 }
 

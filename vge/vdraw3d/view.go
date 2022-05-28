@@ -287,9 +287,9 @@ func (v *View) renderImage(fi *vk.FrameInstance, cv *currentView) {
 	rp2 := getDrawRenderPass2(fi.Device())
 
 	_, vOut := fi.AllocImage(v.key)
-	imgOut2, vOut2 := fi.AllocImage(v.key + vkiImage2)
-	imgDepth, vDepth := fi.AllocImage(v.key + vkiDepth)
-	imgId, vId := fi.AllocImage(v.key + vkiIdentity)
+	_, vOut2 := fi.AllocImage(v.key + vkiImage2)
+	_, vDepth := fi.AllocImage(v.key + vkiDepth)
+	_, vId := fi.AllocImage(v.key + vkiIdentity)
 	cv.outputView = vOut[0]
 	cv.depthView = vDepth[0]
 	fpDepth := fi.Get(v.key+vkDepthFrame, func() interface{} {
@@ -324,15 +324,8 @@ func (v *View) renderImage(fi *vk.FrameInstance, cv *currentView) {
 	sampler := vmodel.GetDefaultSampler(fi.Device())
 	cv.dsFrame.WriteView(2, 0, vOut2[0], vk.IMAGELayoutShaderReadOnlyOptimal, sampler)
 	cv.dsFrame.WriteView(2, 1, vDepth[0], vk.IMAGELayoutShaderReadOnlyOptimal, sampler)
-	var tr vk.TransferList
-	tr.TransferAll(imgOut2, vk.IMAGELayoutShaderReadOnlyOptimal, vk.IMAGELayoutShaderReadOnlyOptimal)
-	tr.TransferAll(imgDepth, vk.IMAGELayoutShaderReadOnlyOptimal, vk.IMAGELayoutShaderReadOnlyOptimal)
-	cmd.Transfer(tr)
 	v.renderPick(fi, cv, cmd, vId[0])
 	cv.dsFrame.WriteView(2, 2, vId[0], vk.IMAGELayoutShaderReadOnlyOptimal, sampler)
-	tr = vk.TransferList{}
-	tr.TransferAll(imgId, vk.IMAGELayoutShaderReadOnlyOptimal, vk.IMAGELayoutShaderReadOnlyOptimal)
-	cmd.Transfer(tr)
 	if len(transparents) != 0 {
 		sort.Slice(transparents, func(i, j int) bool {
 			return transparents[i].priority > transparents[j].priority

@@ -1,0 +1,9 @@
+{
+  "include": [".", "../std"],
+  "programs": {
+    "highlight": {
+      "vertex": "hl_tri.vert", "fragment": "highlight",
+      "flags": []
+    }
+  }
+}

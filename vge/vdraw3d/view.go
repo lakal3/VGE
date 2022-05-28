@@ -30,6 +30,7 @@ type View struct {
 	debug    uint32
 	prevDraw time.Time
 	dev      *vk.Device
+
 	// 0 - output image, 1 - depth buffer, 2 - frame buffer, 3 - command, 4 - blend render pass
 	key       vk.Key
 	shaders   *shaders.Pack
@@ -58,6 +59,7 @@ const (
 	vkColorFrame2            = 5
 	vkBlendPipeline          = 6
 	vkPickFrame              = 7
+	vkiIdentity              = 8
 	storageSize              = 16 * 4
 )
 
@@ -118,7 +120,7 @@ func (v *View) Reserve(fi *vk.FrameInstance) {
 	v.dynamicScene(v, dl)
 	desc := fi.MainDesc
 	cv := fi.Get(v.key, func() interface{} {
-		cv := &currentView{fl: dl, imageIndex: 2}
+		cv := &currentView{fl: dl, imageIndex: 4}
 		if v.OnSize != nil {
 			cv.area = v.OnSize(fi)
 			desc.Width = uint32(cv.area.Size()[0])
@@ -131,6 +133,9 @@ func (v *View) Reserve(fi *vk.FrameInstance) {
 		cv.picked, cv.pickFrame = v.picked, v.pickFrame
 		v.picked, v.pickFrame = nil, nil
 		v.lock.Unlock()
+		if cv.pickFrame == nil {
+			cv.pickFrame = &pickFrame{max: 1}
+		}
 		return cv
 	}).(*currentView)
 	aa := 1 / float32(fi.AntiAlias)
@@ -139,11 +144,15 @@ func (v *View) Reserve(fi *vk.FrameInstance) {
 	desc.Format = vk.FORMATR8g8b8a8Unorm
 	dDepth := desc
 	dDepth.Format = vk.FORMATD32Sfloat
+	dId := desc
+	dId.Format = vk.FORMATR32Sfloat
 	fi.ReserveImage(v.key, vk.IMAGEUsageColorAttachmentBit|vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageSampledBit, desc,
 		desc.FullRange())
 	fi.ReserveImage(v.key+vkiImage2, vk.IMAGEUsageColorAttachmentBit|vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageSampledBit, desc,
 		desc.FullRange())
 	fi.ReserveImage(v.key+vkiDepth, vk.IMAGEUsageDepthStencilAttachmentBit|vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageSampledBit, dDepth,
+		desc.FullRange())
+	fi.ReserveImage(v.key+vkiIdentity, vk.IMAGEUsageColorAttachmentBit|vk.IMAGEUsageTransferSrcBit|vk.IMAGEUsageSampledBit, dId,
 		desc.FullRange())
 	fi.ReserveDescriptor(GetFrameLayout(fi.Device()))
 	offset := uint32(1)
@@ -160,11 +169,9 @@ func (v *View) Reserve(fi *vk.FrameInstance) {
 	cv.size = image.Pt(int(desc.Width), int(desc.Height))
 	fi.ReserveSlice(vk.BUFFERUsageStorageBufferBit, uint64(offset)*storageSize)
 	fi.ReserveSlice(vk.BUFFERUsageUniformBufferBit, uint64(unsafe.Sizeof(frame{})))
-	if cv.picked != nil {
-		cv.pickFrame.pickArea = cv.pickFrame.pickArea.Sub(mgl32.Vec4{cv.area.From[0], cv.area.From[1], cv.area.From[0], cv.area.From[1]})
-		fi.ReserveSlice(vk.BUFFERUsageStorageBufferBit, uint64(unsafe.Sizeof(PickInfo{}))*uint64(cv.pickFrame.max)+uint64(unsafe.Sizeof(pickFrame{})))
-		fi.ReserveDescriptor(GetPickFrameLayout(fi.Device()))
-	}
+	cv.pickFrame.pickArea = cv.pickFrame.pickArea.Sub(mgl32.Vec4{cv.area.From[0], cv.area.From[1], cv.area.From[0], cv.area.From[1]})
+	fi.ReserveSlice(vk.BUFFERUsageStorageBufferBit, uint64(unsafe.Sizeof(PickInfo{}))*uint64(cv.pickFrame.max)+uint64(unsafe.Sizeof(pickFrame{})))
+	fi.ReserveDescriptor(GetPickFrameLayout(fi.Device()))
 }
 
 func (v *View) PreRender(fi *vk.FrameInstance) (done vapp.Completed) {
@@ -280,15 +287,15 @@ func (v *View) renderImage(fi *vk.FrameInstance, cv *currentView) {
 	rp2 := getDrawRenderPass2(fi.Device())
 
 	_, vOut := fi.AllocImage(v.key)
-	_, vOut2 := fi.AllocImage(v.key + vkiImage2)
-	_, vDepth := fi.AllocImage(v.key + vkiDepth)
+	imgOut2, vOut2 := fi.AllocImage(v.key + vkiImage2)
+	imgDepth, vDepth := fi.AllocImage(v.key + vkiDepth)
+	imgId, vId := fi.AllocImage(v.key + vkiIdentity)
 	cv.outputView = vOut[0]
 	cv.depthView = vDepth[0]
 	fpDepth := fi.Get(v.key+vkDepthFrame, func() interface{} {
 		return vk.NewFramebuffer2(rpDepth, vDepth[0])
 	}).(*vk.Framebuffer)
 	cmd := cv.cmd
-	v.renderPick(fi, cv, cmd)
 	cmd.BeginRenderPass(rpDepth, fpDepth)
 	renderCommon := Render{DSFrame: cv.dsFrame, Name: "DEPTH", Shaders: v.shaders}
 	rd := RenderDepth{DL: &vk.DrawList{}, Pass: rpDepth, Render: renderCommon}
@@ -313,34 +320,44 @@ func (v *View) renderImage(fi *vk.FrameInstance, cv *currentView) {
 	cv.fl.RenderAll(fi, rc)
 	cmd.Draw(rc.DL)
 	cmd.EndRenderPass()
-	if len(transparents) == 0 {
-		return
-	}
-	sort.Slice(transparents, func(i, j int) bool {
-		return transparents[i].priority > transparents[j].priority
-	})
+	// Update output2, depth and id buffers to frame
 	sampler := vmodel.GetDefaultSampler(fi.Device())
 	cv.dsFrame.WriteView(2, 0, vOut2[0], vk.IMAGELayoutShaderReadOnlyOptimal, sampler)
 	cv.dsFrame.WriteView(2, 1, vDepth[0], vk.IMAGELayoutShaderReadOnlyOptimal, sampler)
+	var tr vk.TransferList
+	tr.TransferAll(imgOut2, vk.IMAGELayoutShaderReadOnlyOptimal, vk.IMAGELayoutShaderReadOnlyOptimal)
+	tr.TransferAll(imgDepth, vk.IMAGELayoutShaderReadOnlyOptimal, vk.IMAGELayoutShaderReadOnlyOptimal)
+	cmd.Transfer(tr)
+	v.renderPick(fi, cv, cmd, vId[0])
+	cv.dsFrame.WriteView(2, 2, vId[0], vk.IMAGELayoutShaderReadOnlyOptimal, sampler)
+	tr = vk.TransferList{}
+	tr.TransferAll(imgId, vk.IMAGELayoutShaderReadOnlyOptimal, vk.IMAGELayoutShaderReadOnlyOptimal)
+	cmd.Transfer(tr)
+	if len(transparents) != 0 {
+		sort.Slice(transparents, func(i, j int) bool {
+			return transparents[i].priority > transparents[j].priority
+		})
+	}
 	fpColor2 := fi.Get(v.key+vkColorFrame2, func() interface{} {
 		return vk.NewFramebuffer2(rp2, vOut[0])
 	}).(*vk.Framebuffer)
 	dl2 := &vk.DrawList{}
+	ro := RenderOverlay{DL: dl2, Pass: rp2, Render: renderCommon}
+	ro.Name = "OVERLAY"
 	cmd.BeginRenderPass(rp2, fpColor2)
 	for _, tr := range transparents {
 		tr.render(dl2, rp2)
 	}
+	v.staticList.RenderAll(fi, ro)
+	cv.fl.RenderAll(fi, ro)
 	cmd.Draw(dl2)
 	cmd.EndRenderPass()
 }
 
-func (v *View) renderPick(fi *vk.FrameInstance, cv *currentView, cmd *vk.Command) {
-	if cv.picked == nil {
-		return
-	}
+func (v *View) renderPick(fi *vk.FrameInstance, cv *currentView, cmd *vk.Command, idView vk.VImageView) {
 	rpPick := getPickRenderPass(fi.Device())
 	fpPick := fi.Get(v.key+vkPickFrame, func() interface{} {
-		return vk.NewNullFramebuffer(rpPick, uint32(cv.area.Width()), uint32(cv.area.Height()))
+		return vk.NewFramebuffer2(rpPick, idView)
 	}).(*vk.Framebuffer)
 	cv.slPick = fi.AllocSlice(vk.BUFFERUsageStorageBufferBit,
 		uint64(unsafe.Sizeof(PickInfo{}))*uint64(cv.pickFrame.max)+uint64(unsafe.Sizeof(pickFrame{})))

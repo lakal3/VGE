@@ -11,4 +11,8 @@ layout(push_constant) uniform INSTANCE {
     uint probe;
     uint materialID;
     uint decalPos;
+    uint idMethod;
+    float idValue;
+    float reserved1;
+    float reserved2;
 } instance;

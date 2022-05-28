@@ -3,10 +3,11 @@ package vdraw3d
 import "github.com/go-gl/mathgl/mgl32"
 
 type PickInfo struct {
-	MeshID uint32
-	Vertex uint32
-	Depth  float32
-	ColorR float32
+	MeshID  uint32
+	Vertex  uint32
+	Depth   float32
+	IDValue float32
+	Color   mgl32.Vec4
 }
 
 type pickFrame struct {

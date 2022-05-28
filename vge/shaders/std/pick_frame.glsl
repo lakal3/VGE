@@ -3,7 +3,8 @@ struct PICK {
     uint id;
     uint vertex_nro;
     float depth;
-    float colorR;
+    float idValue;
+    vec4 color;
 };
 
 

@@ -370,6 +370,7 @@ func (fm *FrozenMesh) fillProps(mesh vmodel.Mesh, props vmodel.MaterialPropertie
 	fm.mat.emissive = props.GetColor(vmodel.CEmissive, mgl32.Vec4{0, 0, 0, 0})
 	fm.mat.metalRoughess = mgl32.Vec4{props.GetFactor(vmodel.FMetalness, 0), props.GetFactor(vmodel.FRoughness, 1)}
 	fm.mat.materialID = props.GetUInt(vmodel.UMaterialID, 0)
+
 	txIdx := props.GetImage(vmodel.TxAlbedo)
 	if txIdx != 0 {
 		fm.views[0], fm.sampler[0] = mesh.Model.GetImageView(txIdx)
@@ -479,6 +480,18 @@ func (c ColorShader) apply(fm *FrozenMesh) {
 
 func (c ColorShader) applyAnimated(am *AnimatedMesh) {
 	am.colorShader = c.Shader
+}
+
+type InstanceID struct {
+	ID float32
+}
+
+func (i InstanceID) apply(fm *FrozenMesh) {
+	fm.mat.idMethod, fm.mat.idValue = 1, i.ID
+}
+
+func (i InstanceID) applyAnimated(am *AnimatedMesh) {
+	am.mat.idMethod, am.mat.idValue = 1, i.ID
 }
 
 func DrawMesh(fl *FreezeList, mesh vmodel.Mesh, world mgl32.Mat4, props vmodel.MaterialProperties, options ...DrawOption) FrozenID {

@@ -89,7 +89,10 @@ func getProbeRenderPass(dev *vk.Device) *vk.GeneralRenderPass {
 
 func getPickRenderPass(dev *vk.Device) *vk.GeneralRenderPass {
 	return dev.Get(kRenderPasses+4, func() interface{} {
-		return vk.NewGeneralRenderPass(dev, false, []vk.AttachmentInfo{})
+		return vk.NewGeneralRenderPass(dev, false, []vk.AttachmentInfo{
+			vk.AttachmentInfo{InitialLayout: vk.IMAGELayoutUndefined, FinalLayout: vk.IMAGELayoutShaderReadOnlyOptimal,
+				Format: vk.FORMATR32Sfloat, ClearColor: [4]float32{0}},
+		})
 	}).(*vk.GeneralRenderPass)
 }
 
@@ -133,4 +136,10 @@ type instance struct {
 	probe         uint32
 	materialID    uint32
 	decalPos      uint32
+	// ID method used to write id value in depth pass
+	// 0 - Ignore, 1 - value, 2 - depth
+	idMethod  uint32
+	idValue   float32
+	reserved1 float32
+	reserved2 float32
 }

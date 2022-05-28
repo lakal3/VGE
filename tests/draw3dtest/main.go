@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/lakal3/vge/vge/shaders/highlight"
 	"github.com/lakal3/vge/vge/shaders/mixshader"
 	"github.com/lakal3/vge/vge/shaders/phongshader"
 	"github.com/lakal3/vge/vge/vapp"
@@ -81,6 +82,10 @@ func buildScene() error {
 		return err
 	}
 	sp, err := mixshader.LoadPack()
+	if err != nil {
+		return err
+	}
+	err = highlight.AddPack(sp)
 	if err != nil {
 		return err
 	}
@@ -344,7 +349,7 @@ func paintScene(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 		if n.Mesh >= 0 {
 			props := app.model.GetMaterial(n.Material).Props
 			props.SetColor(vmodel.CAlbedo, mgl32.Vec4{0.2, 0.8, 0.2, 0.2})
-			vdraw3d.DrawMesh(dl, app.model.GetMesh(n.Mesh), monkeyPos, props, vdraw3d.Transparent{})
+			vdraw3d.DrawMesh(dl, app.model.GetMesh(n.Mesh), monkeyPos, props, vdraw3d.Transparent{}, vdraw3d.InstanceID{ID: 1})
 		}
 	} else {
 		n := app.model3.GetNode(5)
@@ -353,9 +358,9 @@ func paintScene(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 			p := monkeyPos.Mul4(mgl32.Scale3D(0.01, 0.01, 0.01)).Mul4(mgl32.HomogRotate3DX(math.Pi / 2))
 			// vimscene.DrawMesh(dl, app.model3.GetMesh(n.Mesh), p, props)
 			sk := app.model3.GetSkin(n.Skin)
-			vdraw3d.DrawAnimated(dl, app.model3.GetMesh(n.Mesh), sk, sk.Animations[0], v.Elapsed, p, props)
+			vdraw3d.DrawAnimated(dl, app.model3.GetMesh(n.Mesh), sk, sk.Animations[0], v.Elapsed, p, props, vdraw3d.InstanceID{ID: 1})
 		}
 
 	}
-
+	highlight.DrawHighlight(dl)
 }

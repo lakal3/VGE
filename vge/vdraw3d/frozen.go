@@ -79,6 +79,12 @@ type RenderColor struct {
 	RenderTransparent func(priority float32, render func(dl *vk.DrawList, pass *vk.GeneralRenderPass))
 }
 
+type RenderOverlay struct {
+	Render
+	DL   *vk.DrawList
+	Pass *vk.GeneralRenderPass
+}
+
 type RenderMaps struct {
 	Render
 	Static        *FreezeList

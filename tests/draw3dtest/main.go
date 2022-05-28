@@ -362,5 +362,5 @@ func paintScene(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 		}
 
 	}
-	highlight.DrawHighlight(dl)
+	highlight.DrawHighlight(dl, mgl32.Vec4{0.8, 0.2, 0.2, 0.5}, 3)
 }

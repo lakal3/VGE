@@ -11,7 +11,7 @@ layout(push_constant) uniform INSTANCE {
 
 void main() {
     ivec2 pos = ivec2(gl_FragCoord.x, gl_FragCoord.y);
-    int lw = 1;
+    int lw = instance.lineWidth;
     float count = 0;
     float sum = 0;
     for (int y = -lw; y <= lw; y++) {
@@ -24,5 +24,5 @@ void main() {
     if (tot < 0.05 || tot > 0.95) {
         discard;
     }
-    o_color = vec4(0.8,0.8,0.8,1);
+    o_color = instance.color;
 }

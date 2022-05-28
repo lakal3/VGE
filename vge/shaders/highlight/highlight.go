@@ -10,9 +10,9 @@ import (
 	"unsafe"
 )
 
-func DrawHighlight(fl *vdraw3d.FreezeList) {
+func DrawHighlight(fl *vdraw3d.FreezeList, color mgl32.Vec4, lineWidth uint32) {
 
-	fl.Add(flHighlight{})
+	fl.Add(flHighlight{color: color, lineWidth: lineWidth})
 }
 
 func AddPack(base *shaders.Pack) error {
@@ -20,6 +20,8 @@ func AddPack(base *shaders.Pack) error {
 }
 
 type flHighlight struct {
+	color     mgl32.Vec4
+	lineWidth uint32
 }
 
 func (f flHighlight) Reserve(fi *vk.FrameInstance, storageOffset uint32) (newOffset uint32) {
@@ -36,7 +38,7 @@ func (f flHighlight) Render(fi *vk.FrameInstance, phase vdraw3d.Phase) {
 	if ok {
 		pl := f.getPlPipeline(fi, ro.Pass, ro.Shaders)
 		ptr, off := ro.DL.AllocPushConstants(uint32(unsafe.Sizeof(hlInstance{})))
-		*(*hlInstance)(ptr) = hlInstance{color: mgl32.Vec4{0.8, 0.8, 0.8, 1}, lineWidth: 2}
+		*(*hlInstance)(ptr) = hlInstance{color: f.color, lineWidth: f.lineWidth}
 		ro.DL.Draw(pl, 0, 3).AddDescriptor(0, ro.DSFrame).
 			AddPushConstants(uint32(unsafe.Sizeof(hlInstance{})), off)
 	}

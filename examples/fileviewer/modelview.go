@@ -181,7 +181,7 @@ var probeKey = vk.NewKey()
 func (mv *modelViewer) drawStatic(v *vdraw3d.View, dl *vdraw3d.FreezeList) {
 	p := vmodel.NewMaterialProperties()
 	p.SetColor(vmodel.CIntensity, mgl32.Vec4{0.7, 0.7, 0.7, 1})
-	vdraw3d.DrawDirectionalLight(dl, mgl32.Vec3{0, -1, 0.1}.Normalize(), p)
+	vdraw3d.DrawDirectionalLight(dl, 0, mgl32.Vec3{0, -1, 0.1}.Normalize(), p)
 	if mv.mbImage != 0 {
 		mv.drawBg(dl)
 		mv.probe = vdraw3d.DrawProbe(dl, probeKey, mv.pc.Target, mv.drawBg)

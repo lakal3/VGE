@@ -14,7 +14,7 @@ vdraw library will then fill path and convert it to drawable element using:
 - path splitting
 - or converting path to glyph
 
-*Path stroking is currently not supported but will support later.*
+*Path stroking is currently not supported but will be supported later.*
 
 ### Path splitting
 
@@ -32,6 +32,10 @@ GPU will draw whole squares but edge lines are used to limit where we actually d
 Near edges we can smooth image using alpha blend. 
 If pixel is near edge we can start adjusting pixels alpha values instead just completely drawing or discarding a pixel.
 This will smoothen image in X direction.
+
+*When draw small letters / symbols from font, some horizontally thin features may
+disappear if they size is less than one pixel. To prevent this use Glyph support or
+set antialiasing on on ViewWindow*
 
 ### Glyphs
 
@@ -56,8 +60,6 @@ Glyphs have some limitation:
 - Glyph can't be rotated. (Neither can path splits but as they are cheaper to create new path and rotate those)
 
 So, glyph suits best for static shapes like fonts, icons etc. and path splits for dynamic shapes.
-Instead, path split can lose some details in Y direction. So some small horizontal details can be lost
-in path splitting.
 
 ## Shape
 

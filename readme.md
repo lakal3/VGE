@@ -169,7 +169,7 @@ You can also install the VGE and run the same examples yourself!
 
 ## Installation
 
-First: you need a Go compiler. Go version 1.17 or later is required to build VGE.
+First: you need a Go compiler. Go version 1.18 or later is required to build VGE.
 Some modules use new go:embed directive to import shaders and other assets to modules.
 
 
@@ -230,14 +230,14 @@ This is a short list of the features (existing). [Roadmap](docs/roadmap.md) has 
 - [Image](docs/vimage.md) loading and handling
 - [Model](docs/vmodel.md) building and loading. VGE currently supports OBJ and glTF 2.0 formats.
 - Basic materials: Unlit, Phong and PBR [Model](docs/vmodel.md)
-- Lights: Point and directional, including shadows for point lights
-- Scene building and animation [Scene](docs/vscene.md)
+- Lights: Point and directional, including shadows
+- Scene building and animation [Scene](docs/vscene.md) (old)
 - Glyph rendering including support for TTF fonts in [Vector drawing library](docs/vdraw.md)
 - Background environment using (HDR) equirectangular images [Scene](docs/vscene.md)
 - An environmental probe to support reflections of PBR materials.
 Probe will also generate spherical harmonics to approximate ambient lightning.  [Scene](docs/vscene.md)
-- Easily extendable game UI support [Immediate mode UI](docs/vimgui.md) (<s>[VGE UI](docs/vui.md)</s>).
-- UI theming [Immediate mode UI](docs/vimgui.md) (<s>[VGE UI](docs/vui.md)</s>).
+- Easily extendable game UI support [Immediate mode UI](docs/vimgui.md).
+- UI theming [Immediate mode UI](docs/vimgui.md) .
 - Event queue to handle system level events [VGE App](docs/vapp.md)
 - Window, mouse, keyboard etc management  (Uses GLFW C library for multi platform support)
 - High level, easier to use setup for basic applications [VGE App](docs/vapp.md)
@@ -250,7 +250,7 @@ Probe will also generate spherical harmonics to approximate ambient lightning.  
 - (New) [Vector drawing library](docs/vdraw.md)
 - (New) [Immediate mode UI](docs/vimgui.md)
 - (New) MultiView support (mix several UI/3D/Custom views in one window)
-- (New) [3D Drawing library](docs/vscene.md)
+- (New,Experimental) [3D Drawing library](docs/vdraw3d.md)
 - (New) Tool to compile several glsl fragments into shader packs [vgecompile](docs/vgecompile.md)
 
 

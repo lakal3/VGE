@@ -9,8 +9,9 @@
   - Based on vdraw library
 - Integrated glsl -> SPIR-V compiler
   - Allows dynamic shader compilation while application is running
-- FrameCache that allows better management on resources needed to render one frame
-- MultiView window support splitting one real OS window to multiple views to 
+- FrameCache that allows better management on resources needed to render one frame. 
+Used by new vdraw and vdraw3d modules and ViewWindow  
+- ViewWindow window type that supports splitting one real OS window to multiple views to 
   render for example same 3D image from different camera angles.
 - [VGECompile](docs/vgecompile.md) shader compiler tool
 - 3D (immediate mode) drawing module [vdraw3d](docs/vdraw3d.md)

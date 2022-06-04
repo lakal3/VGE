@@ -115,7 +115,7 @@ Use Pop to restore values. Pop call are often good candidates for defer calls.
 All standard controls draw them at location specified by ControlArea in UIFrame. 
 There are few helper methods to move control position to next column or next line. 
 For more advances layouts, just use DrawArea and ControlArea to calculate position for control(s) 
-before drawing them. In most cases this is much simpled that using complex UI controls.
+before drawing them. In most cases this is much simpled that using complex UI controls to do layout calculations.
 
 
 ## Styles and themes
